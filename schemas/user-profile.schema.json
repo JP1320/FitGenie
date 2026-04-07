@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UserProfile",
+  "type": "object",
+  "required": ["userId", "name", "age", "gender", "location", "stylePreferences", "budgetRange"],
+  "properties": {
+    "userId": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "age": { "type": "integer", "minimum": 13, "maximum": 100 },
+    "gender": { "type": "string", "enum": ["male", "female", "non_binary", "prefer_not_to_say"] },
+    "location": { "type": "string" },
+    "stylePreferences": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "budgetRange": {
+      "type": "object",
+      "required": ["min", "max", "currency"],
+      "properties": {
+        "min": { "type": "number", "minimum": 0 },
+        "max": { "type": "number", "minimum": 0 },
+        "currency": { "type": "string", "minLength": 3, "maxLength": 3 }
+      }
+    }
+  }
+}
