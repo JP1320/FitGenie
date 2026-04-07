@@ -1,0 +1,13 @@
+{
+  "name": "fitgenie-backend",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node src/server.js"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "express": "^4.19.2",
+    "pino": "^9.3.2"
+  }
+}
