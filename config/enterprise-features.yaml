@@ -1,0 +1,9 @@
+enterprise_features:
+  tenant_isolation: true
+  rbac: true
+  admin_console: true
+  sso_oidc: true
+  sso_saml: false
+  scim: false
+  audit_export: true
+  custom_sla: false
