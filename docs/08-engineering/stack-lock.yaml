@@ -1,0 +1,16 @@
+frontend:
+  framework: react
+  styling: tailwindcss
+backend:
+  runtime: nodejs
+  framework: express
+database:
+  primary: postgresql
+ai:
+  orchestration: backend-only
+  output_mode: deterministic_json
+storage:
+  object: s3-compatible
+notes:
+  - "No direct frontend-to-LLM calls"
+  - "All AI responses validated by JSON schema"
