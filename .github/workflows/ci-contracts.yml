@@ -1,0 +1,14 @@
+name: CI Contracts
+on: [push, pull_request]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate schema files exist
+        run: |
+          test -f schemas/user-profile.schema.json
+          test -f schemas/measurements.schema.json
+          test -f schemas/recommendation-result.schema.json
+          test -f schemas/fit-card.schema.json
+          echo "Contracts present ✅"
