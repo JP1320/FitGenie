@@ -1,0 +1,12 @@
+name: Nightly Reliability Check
+on:
+  schedule:
+    - cron: "0 2 * * *"
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit health endpoint
+        run: |
+          curl -f https://app.fitgenie.ai/health
+          curl -f https://app.fitgenie.ai/ready
