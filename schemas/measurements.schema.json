@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BodyMeasurements",
+  "type": "object",
+  "required": ["userId", "unit", "chest", "waist", "hip", "height"],
+  "properties": {
+    "userId": { "type": "string" },
+    "unit": { "type": "string", "enum": ["cm", "inch"] },
+    "chest": { "type": "number", "minimum": 1 },
+    "waist": { "type": "number", "minimum": 1 },
+    "hip": { "type": "number", "minimum": 1 },
+    "height": { "type": "number", "minimum": 1 }
+  }
+}
