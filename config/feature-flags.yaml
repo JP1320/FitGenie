@@ -1,0 +1,6 @@
+flags:
+  ai_recommendations: true
+  tailor_booking: true
+  fit_card_generation: true
+  feedback_photo_upload: false
+  public_signup: false
