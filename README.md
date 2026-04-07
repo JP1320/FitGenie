@@ -224,7 +224,7 @@ This project is licensed under the MIT License.
 
 ## 👨‍💻 Author
 
-**Jafar Kachhi**  
+**Janvi Patel**  
 - Aspiring Data Analyst & Developer  
 - Passionate about AI-powered solutions  
 
