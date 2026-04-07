@@ -1,0 +1,16 @@
+{
+  "sprint": "phase2-sprint1",
+  "in_scope": [
+    "onboarding",
+    "profile_input",
+    "scan_body_basic",
+    "recommendations_api",
+    "recommendation_ui"
+  ],
+  "out_of_scope": [
+    "real_time_chat",
+    "advanced_notifications",
+    "photo_based_auto_measurement_v2",
+    "multi_vendor_payouts"
+  ]
+}
