@@ -1,0 +1,12 @@
+slos:
+  api_success_rate:
+    target: 99.9
+    window: 30d
+  recommendation_latency_p95_ms:
+    target: 1800
+    window: 30d
+  booking_success_rate:
+    target: 99.0
+    window: 30d
+  error_budget_policy:
+    freeze_releases_if_breached: true
