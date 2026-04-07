@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FitCard",
+  "type": "object",
+  "required": ["fitCardId", "userId", "summary", "measurements", "generatedAt"],
+  "properties": {
+    "fitCardId": { "type": "string" },
+    "userId": { "type": "string" },
+    "summary": { "type": "string" },
+    "measurements": { "$ref": "./measurements.schema.json" },
+    "generatedAt": { "type": "string", "format": "date-time" }
+  }
+}
