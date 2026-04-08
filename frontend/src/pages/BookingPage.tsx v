@@ -1,0 +1,25 @@
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import AppShell from "../components/layout/AppShell";
+import { Card } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { Input } from "../components/ui/Input";
+import { SectionHeader } from "../components/ui/SectionHeader";
+
+export default function BookingPage() {
+  const nav = useNavigate();
+
+  return (
+    <AppShell>
+      <SectionHeader title="Booking" subtitle="Schedule your tailoring service with confidence." />
+      <Card className="p-6 max-w-2xl">
+        <div className="grid gap-4">
+          <Input placeholder="Preferred Date (YYYY-MM-DD)" />
+          <Input placeholder="Preferred Time (e.g. 14:00)" />
+          <Input placeholder="Notes for tailor/designer" />
+          <Button onClick={() => nav("/fit-card")}>Confirm Booking</Button>
+        </div>
+      </Card>
+    </AppShell>
+  );
+}
