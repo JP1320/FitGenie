@@ -1,0 +1,7 @@
+launch_day_flags:
+  public_signup: true
+  ai_recommendations: true
+  tailor_booking: true
+  fit_card_generation: true
+  partner_api: true
+  enterprise_sso_oidc: true
