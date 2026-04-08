@@ -1,13 +1,13 @@
 import express from "express";
 import pino from "pino";
-import fs from "fs";
 
 const app = express();
 const logger = pino();
 app.use(express.json());
 
 const health = { status: "ok", service: "fitgenie-backend" };
-app.get("/health", (_, res) => res.json(health));
+app.get("/health", (_req, res) => res.status(200).json(health));
+app.get("/ready", (_req, res) => res.status(200).json({ status: "ready" }));
 
 app.post("/user/profile", (req, res) => {
   logger.info({ route: "/user/profile" }, "profile received");
@@ -38,7 +38,7 @@ app.post("/fit-card", (req, res) => {
   });
 });
 
-app.get("/tailors", (_, res) => {
+app.get("/tailors", (_req, res) => {
   res.json([{ id: "t1", name: "Urban Tailor Studio", rating: 4.7, location: "City Center" }]);
 });
 
@@ -46,9 +46,10 @@ app.post("/booking", (req, res) => {
   res.status(201).json({ bookingId: "b_001", status: "Accepted", ...req.body });
 });
 
-app.use((err, _, res, __) => {
+app.use((err, _req, res, _next) => {
   logger.error(err);
   res.status(500).json({ error: { code: "INTERNAL_ERROR", message: "Something went wrong" } });
 });
 
-app.listen(4000, () => logger.info("API running on :4000"));
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => logger.info(`API running on :${PORT}`));
