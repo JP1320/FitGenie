@@ -1,8 +1,13 @@
 import express from "express";
 import pino from "pino";
+import cors from "cors";
 
 const app = express();
 const logger = pino();
+
+const allowedOrigin = process.env.CORS_ORIGIN || "https://fit-genie-two.vercel.app";
+app.use(cors({ origin: allowedOrigin }));
+
 app.use(express.json());
 
 const health = { status: "ok", service: "fitgenie-backend" };
