@@ -1,0 +1,14 @@
+in_scope:
+  - onboarding
+  - profile_input
+  - body_measurements_input
+  - ai_recommendations
+  - tailor_listing
+  - booking
+  - fit_card
+  - order_tracking_basic
+out_of_scope:
+  - social_features
+  - advanced_chat
+  - multi-region_rollout
+  - deep_experimentation
