@@ -1,0 +1,8 @@
+release_criteria:
+  test_coverage_min_percent: 80
+  p95_latency_ms_max: 2000
+  crash_free_sessions_min_percent: 99.5
+  sev1_open_incidents_allowed: 0
+  sev2_open_incidents_allowed: 3
+  accessibility_wcag_target: "2.1-AA"
+  security_high_findings_allowed: 0
