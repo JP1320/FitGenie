@@ -1,0 +1,19 @@
+default_locale: en-US
+supported_locales:
+  - en-US
+  - en-GB
+  - hi-IN
+  - ar-SA
+  - fr-FR
+currency_by_locale:
+  en-US: USD
+  en-GB: GBP
+  hi-IN: INR
+  ar-SA: SAR
+  fr-FR: EUR
+size_system_by_locale:
+  en-US: US
+  en-GB: UK
+  hi-IN: IN
+  ar-SA: EU
+  fr-FR: EU
