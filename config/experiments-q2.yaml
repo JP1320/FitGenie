@@ -1,0 +1,13 @@
+experiments:
+  - key: onboarding_short_form
+    hypothesis: "Shorter onboarding increases profile completion"
+    success_metric: "profile_completion_rate"
+    target_lift_percent: 10
+  - key: recommendation_explanations_v2
+    hypothesis: "Clearer 'why this suits you' increases booking conversion"
+    success_metric: "booking_conversion_rate"
+    target_lift_percent: 8
+  - key: express_booking_badge
+    hypothesis: "Express badge improves order completion"
+    success_metric: "order_completion_rate"
+    target_lift_percent: 5
