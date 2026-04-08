@@ -1,0 +1,14 @@
+name: Post-Launch Governance
+on:
+  schedule:
+    - cron: "0 8 * * 1"
+jobs:
+  governance-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify key operating docs
+        run: |
+          test -f docs/38-post-launch/90-day-operating-plan.md
+          test -f docs/42-risk/live-risk-register.md
+          echo "Governance docs present ✅"
