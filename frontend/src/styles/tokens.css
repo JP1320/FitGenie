@@ -1,0 +1,39 @@
+:root {
+  /* Brand */
+  --bg: #0b0f19;
+  --bg-elev: #121829;
+  --card: #151c2f;
+  --text: #e9eefc;
+  --muted: #9aa6c7;
+  --primary: #7c5cff;
+  --primary-2: #5eead4;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --border: rgba(255, 255, 255, 0.12);
+
+  /* Radius */
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+
+  /* Shadows */
+  --shadow-1: 0 8px 24px rgba(0,0,0,0.25);
+  --shadow-2: 0 20px 50px rgba(0,0,0,0.35);
+
+  /* Spacing */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+
+  /* Motion */
+  --ease: cubic-bezier(.2,.8,.2,1);
+  --fast: 160ms;
+  --normal: 260ms;
+}
