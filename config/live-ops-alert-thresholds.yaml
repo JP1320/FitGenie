@@ -1,0 +1,13 @@
+alerts:
+  api_5xx_rate_percent:
+    warn: 1
+    critical: 2
+  booking_failure_rate_percent:
+    warn: 2
+    critical: 4
+  recommendation_failure_rate_percent:
+    warn: 2
+    critical: 4
+  p95_latency_ms:
+    warn: 1800
+    critical: 2500
