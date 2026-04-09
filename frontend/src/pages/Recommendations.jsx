@@ -1,24 +1,48 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import StepLayout from "../components/layout/StepLayout";
+import { useFlowStore } from "../app/store";
 import { callApi } from "../services/api";
 
 export default function Recommendations() {
   const nav = useNavigate();
-  const location = useLocation();
-  const userId = location.state?.userId || "u_live_001";
-  const [data, setData] = useState(null);
+  const { userId, preferences, setRecommendations, markStepCompleted } = useFlowStore();
+  const [loading, setLoading] = useState(false);
+  const [out, setOut] = useState(null);
 
-  const fetchRecos = async () => {
-    const r = await callApi("/recommendations", "POST", { userId, preferences: { style: "casual", budget: 2000 } });
-    if (r.ok) setData(r.data);
-  };
+  async function getRecos() {
+    setLoading(true);
+    const r = await callApi("/recommendations", "POST", {
+      userId,
+      preferences: {
+        style: preferences.styles?.[0] || "casual",
+        budget: 2000
+      }
+    });
+    setLoading(false);
+    if (r.ok) {
+      setRecommendations(r.data);
+      setOut(r.data);
+      markStepCompleted("recommendations");
+    }
+  }
 
   return (
-    <section className="card">
-      <h2>Step 3: Recommendations</h2>
-      <button className="btn" onClick={fetchRecos}>Get My Outfits</button>
-      {data && <pre>{JSON.stringify(data, null, 2)}</pre>}
-      <button className="btn ghost" onClick={() => nav("/tailors", { state: { userId } })}>Next: Tailors</button>
-    </section>
+    <StepLayout
+      step={4}
+      total={8}
+      title="Step 4 · AI Recommendations"
+      subtitle="Generate personalized recommendations."
+      actions={
+        <>
+          <button className="btn" onClick={getRecos} disabled={loading}>
+            {loading ? "Generating..." : "Generate"}
+          </button>
+          <button className="btn ghost" onClick={() => nav("/tailors")}>Next</button>
+        </>
+      }
+    >
+      {out ? <pre>{JSON.stringify(out, null, 2)}</pre> : <p>No recommendations yet.</p>}
+    </StepLayout>
   );
 }
