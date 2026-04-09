@@ -6,6 +6,13 @@ export async function callApi(path, method = "GET", body) {
     headers: { "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined
   });
-  const data = await res.json();
+
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    data = { message: "Non-JSON response from server" };
+  }
+
   return { ok: res.ok, status: res.status, data };
 }
