@@ -1,26 +1,48 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
+import StepLayout from "../components/layout/StepLayout";
+import { useFlowStore } from "../app/store";
 import { callApi } from "../services/api";
 
 export default function Onboarding() {
-  const [userId, setUserId] = useState("u_live_001");
-  const [name, setName] = useState("Ritesh");
-  const [msg, setMsg] = useState("");
   const nav = useNavigate();
+  const { userId, setUserId, onboarding, setOnboarding, markStepCompleted, markStepSkipped } = useFlowStore();
 
-  const submit = async () => {
-    const r = await callApi("/user/profile", "POST", { userId, name });
-    if (r.ok) nav("/scan", { state: { userId } });
-    else setMsg("Failed to save profile");
-  };
+  async function saveAndContinue() {
+    await callApi("/user/profile", "POST", {
+      userId,
+      name: onboarding.name || "Guest User"
+    });
+    markStepCompleted("onboarding");
+    nav("/preferences");
+  }
+
+  function skip() {
+    markStepSkipped("onboarding");
+    nav("/preferences");
+  }
 
   return (
-    <section className="card">
-      <h2>Step 1: Onboarding</h2>
-      <input value={userId} onChange={(e)=>setUserId(e.target.value)} placeholder="User ID" />
-      <input value={name} onChange={(e)=>setName(e.target.value)} placeholder="Name" />
-      <button className="btn" onClick={submit}>Continue</button>
-      {msg && <p>{msg}</p>}
-    </section>
+    <StepLayout
+      step={1}
+      total={8}
+      title="Step 1 · Onboarding"
+      subtitle="All fields are optional. You can skip this section."
+      actions={
+        <>
+          <button className="btn" onClick={saveAndContinue}>Save & Continue</button>
+          <button className="btn ghost" onClick={skip}>Skip for now</button>
+        </>
+      }
+    >
+      <label>User ID</label>
+      <input value={userId} onChange={(e) => setUserId(e.target.value)} />
+
+      <label>Name (optional)</label>
+      <input value={onboarding.name} onChange={(e) => setOnboarding({ name: e.target.value })} />
+
+      <label>Email (optional)</label>
+      <input value={onboarding.email} onChange={(e) => setOnboarding({ email: e.target.value })} />
+    </StepLayout>
   );
 }
