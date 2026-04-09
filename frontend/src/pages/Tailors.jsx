@@ -1,26 +1,43 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import StepLayout from "../components/layout/StepLayout";
+import { useFlowStore } from "../app/store";
 import { callApi } from "../services/api";
 
 export default function Tailors() {
   const nav = useNavigate();
-  const location = useLocation();
-  const userId = location.state?.userId || "u_live_001";
-  const [tailors, setTailors] = useState([]);
+  const { setTailors, markStepCompleted } = useFlowStore();
+  const [list, setList] = useState([]);
 
-  const load = async () => {
+  async function load() {
     const r = await callApi("/tailors");
-    if (r.ok) setTailors(r.data);
-  };
+    if (r.ok) {
+      setList(r.data);
+      setTailors(r.data);
+      markStepCompleted("tailors");
+    }
+  }
 
   return (
-    <section className="card">
-      <h2>Step 4: Tailors</h2>
-      <button className="btn" onClick={load}>Load Tailors</button>
-      <ul>
-        {tailors.map(t => <li key={t.id}>{t.name} • ⭐{t.rating} • {t.location}</li>)}
-      </ul>
-      <button className="btn ghost" onClick={() => nav("/booking", { state: { userId } })}>Next: Booking</button>
-    </section>
+    <StepLayout
+      step={5}
+      total={8}
+      title="Step 5 · Tailor Discovery"
+      subtitle="Browse available partners."
+      actions={
+        <>
+          <button className="btn" onClick={load}>Load Tailors</button>
+          <button className="btn ghost" onClick={() => nav("/booking")}>Next</button>
+        </>
+      }
+    >
+      {list.length === 0 ? <p>No tailors loaded yet.</p> : (
+        <ul>
+          {list.map((t) => (
+            <li key={t.id}>{t.name} · ⭐{t.rating} · {t.location}</li>
+          ))}
+        </ul>
+      )}
+    </StepLayout>
   );
 }
