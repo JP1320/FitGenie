@@ -1,55 +1,47 @@
-import React, { useState } from "react";
+import React from "react";
+import { Routes, Route, Link, useLocation } from "react-router-dom";
+import Home from "./pages/Home.jsx";
+import Onboarding from "./pages/Onboarding.jsx";
+import Scan from "./pages/Scan.jsx";
+import Recommendations from "./pages/Recommendations.jsx";
+import Tailors from "./pages/Tailors.jsx";
+import Booking from "./pages/Booking.jsx";
+import Success from "./pages/Success.jsx";
 
-const API = import.meta.env.VITE_API_BASE_URL || "https://fitgenie-26il.onrender.com";
+function Stepper() {
+  const location = useLocation();
+  const steps = ["/onboarding", "/scan", "/recommendations", "/tailors", "/booking", "/success"];
+  const idx = steps.indexOf(location.pathname);
+  return (
+    <div className="stepper">
+      {steps.map((s, i) => (
+        <div key={s} className={`step ${i <= idx ? "active" : ""}`}>{i + 1}</div>
+      ))}
+    </div>
+  );
+}
 
 export default function App() {
-  const [userId, setUserId] = useState("u_live_001");
-  const [name, setName] = useState("Ritesh");
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  async function callApi(path, method = "GET", body) {
-    setLoading(true);
-    setResult(null);
-    try {
-      const res = await fetch(`${API}${path}`, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: body ? JSON.stringify(body) : undefined
-      });
-      const data = await res.json();
-      setResult({ ok: res.ok, status: res.status, data });
-    } catch (e) {
-      setResult({ ok: false, error: String(e) });
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
-    <main style={{ fontFamily: "Arial", maxWidth: 900, margin: "20px auto", padding: 16 }}>
-      <h1>FitGenie Live</h1>
-      <p><b>API Base:</b> {API}</p>
+    <div className="app-shell">
+      <header className="nav">
+        <Link to="/" className="brand">FitGenie</Link>
+        <Link to="/onboarding" className="btn ghost">Start</Link>
+      </header>
 
-      <div style={{ display: "grid", gap: 8, marginBottom: 16 }}>
-        <input value={userId} onChange={(e) => setUserId(e.target.value)} placeholder="User ID" />
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
-      </div>
+      <Stepper />
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button onClick={() => callApi("/health")}>Health</button>
-        <button onClick={() => callApi("/user/profile", "POST", { userId, name })}>Save Profile</button>
-        <button onClick={() => callApi("/scan/body", "POST", { userId, measurements: { chest: 38, waist: 32 } })}>Scan Body</button>
-        <button onClick={() => callApi("/recommendations", "POST", { userId, preferences: { style: "casual", budget: 2000 } })}>Get Recommendations</button>
-        <button onClick={() => callApi("/tailors")}>Get Tailors</button>
-        <button onClick={() => callApi("/booking", "POST", { userId, tailorId: "t1", slot: "2026-04-10T11:00:00Z" })}>Create Booking</button>
-      </div>
-
-      {loading && <p>Loading...</p>}
-
-      <pre style={{ background: "#111", color: "#0f0", padding: 12, marginTop: 16, overflow: "auto" }}>
-        {JSON.stringify(result, null, 2)}
-      </pre>
-    </main>
+      <main className="container">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/scan" element={<Scan />} />
+          <Route path="/recommendations" element={<Recommendations />} />
+          <Route path="/tailors" element={<Tailors />} />
+          <Route path="/booking" element={<Booking />} />
+          <Route path="/success" element={<Success />} />
+        </Routes>
+      </main>
+    </div>
   );
 }
