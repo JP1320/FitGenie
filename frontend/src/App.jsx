@@ -1,33 +1,41 @@
 import React from "react";
-import { Routes, Route, Link } from "react-router-dom";
-import Home from "./pages/Home";
-import Onboarding from "./pages/Onboarding";
-import Preferences from "./pages/Preferences";
-import Scan from "./pages/Scan";
-import Recommendations from "./pages/Recommendations";
-import Tailors from "./pages/Tailors";
-import Booking from "./pages/Booking";
-import Success from "./pages/Success";
+import { Routes, Route } from "react-router-dom";
+import TopNav from "./components/TopNav";
+import WelcomePage from "./pages/WelcomePage";
+import IntentPage from "./pages/IntentPage";
+import BasicProfilePage from "./pages/BasicProfilePage";
+import SizeBodyPage from "./pages/SizeBodyPage";
+import CameraScanPage from "./pages/CameraScanPage";
+import GuidedFiltersPage from "./pages/GuidedFiltersPage";
+import RecommendationsPage from "./pages/RecommendationsPage";
+import ServiceTypePage from "./pages/ServiceTypePage";
+import QualityLocationPage from "./pages/QualityLocationPage";
+import ExpertsPage from "./pages/ExpertsPage";
+import DeliveryPage from "./pages/DeliveryPage";
+import FitCardPage from "./pages/FitCardPage";
+import TrackingPage from "./pages/TrackingPage";
+import FeedbackPage from "./pages/FeedbackPage";
 
 export default function App() {
   return (
     <>
-      <header className="nav">
-        <Link className="brand" to="/">FitGenie</Link>
-        <Link className="btn ghost" to="/onboarding">Start</Link>
-      </header>
-      <main className="container">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/preferences" element={<Preferences />} />
-          <Route path="/scan" element={<Scan />} />
-          <Route path="/recommendations" element={<Recommendations />} />
-          <Route path="/tailors" element={<Tailors />} />
-          <Route path="/booking" element={<Booking />} />
-          <Route path="/success" element={<Success />} />
-        </Routes>
-      </main>
+      <TopNav />
+      <Routes>
+        <Route path="/" element={<WelcomePage />} />
+        <Route path="/intent" element={<IntentPage />} />
+        <Route path="/basic-profile" element={<BasicProfilePage />} />
+        <Route path="/size-body" element={<SizeBodyPage />} />
+        <Route path="/camera-scan" element={<CameraScanPage />} />
+        <Route path="/guided-filters" element={<GuidedFiltersPage />} />
+        <Route path="/recommendations" element={<RecommendationsPage />} />
+        <Route path="/service-type" element={<ServiceTypePage />} />
+        <Route path="/quality-location" element={<QualityLocationPage />} />
+        <Route path="/experts" element={<ExpertsPage />} />
+        <Route path="/delivery" element={<DeliveryPage />} />
+        <Route path="/fit-card" element={<FitCardPage />} />
+        <Route path="/tracking" element={<TrackingPage />} />
+        <Route path="/feedback" element={<FeedbackPage />} />
+      </Routes>
     </>
   );
 }
