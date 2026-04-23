@@ -1,40 +1,37 @@
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import TopNav from "./components/TopNav";
-import WelcomePage from "./pages/WelcomePage";
-import IntentPage from "./pages/IntentPage";
-import BasicProfilePage from "./pages/BasicProfilePage";
-import SizeBodyPage from "./pages/SizeBodyPage";
-import CameraScanPage from "./pages/CameraScanPage";
-import GuidedFiltersPage from "./pages/GuidedFiltersPage";
-import RecommendationsPage from "./pages/RecommendationsPage";
-import ServiceTypePage from "./pages/ServiceTypePage";
-import QualityLocationPage from "./pages/QualityLocationPage";
-import ExpertsPage from "./pages/ExpertsPage";
-import DeliveryPage from "./pages/DeliveryPage";
-import FitCardPage from "./pages/FitCardPage";
-import TrackingPage from "./pages/TrackingPage";
-import FeedbackPage from "./pages/FeedbackPage";
+import Welcome from "./pages/Welcome";
+import Intent from "./pages/Intent";
+import BasicProfile from "./pages/BasicProfile";
+import BodyInput from "./pages/BodyInput";
+import Scanner from "./pages/Scanner";
+import Store from "./pages/Store";
+import ServiceSelection from "./pages/ServiceSelection";
+import ExpertList from "./pages/ExpertList";
+import Delivery from "./pages/Delivery";
+import FitCard from "./pages/FitCard";
+import Tracking from "./pages/Tracking";
+import Feedback from "./pages/Feedback";
 
 export default function App() {
   return (
     <>
       <TopNav />
       <Routes>
-        <Route path="/" element={<WelcomePage />} />
-        <Route path="/intent" element={<IntentPage />} />
-        <Route path="/basic-profile" element={<BasicProfilePage />} />
-        <Route path="/size-body" element={<SizeBodyPage />} />
-        <Route path="/camera-scan" element={<CameraScanPage />} />
-        <Route path="/guided-filters" element={<GuidedFiltersPage />} />
-        <Route path="/recommendations" element={<RecommendationsPage />} />
-        <Route path="/service-type" element={<ServiceTypePage />} />
-        <Route path="/quality-location" element={<QualityLocationPage />} />
-        <Route path="/experts" element={<ExpertsPage />} />
-        <Route path="/delivery" element={<DeliveryPage />} />
-        <Route path="/fit-card" element={<FitCardPage />} />
-        <Route path="/tracking" element={<TrackingPage />} />
-        <Route path="/feedback" element={<FeedbackPage />} />
+        <Route path="/" element={<Navigate to="/welcome" replace />} />
+        <Route path="/welcome" element={<Welcome />} />
+        <Route path="/intent" element={<Intent />} />
+        <Route path="/basic-profile" element={<BasicProfile />} />
+        <Route path="/body-input" element={<BodyInput />} />
+        <Route path="/scanner" element={<Scanner />} />
+        <Route path="/store" element={<Store />} />
+        <Route path="/service-selection" element={<ServiceSelection />} />
+        <Route path="/expert-list" element={<ExpertList />} />
+        <Route path="/delivery" element={<Delivery />} />
+        <Route path="/fit-card" element={<FitCard />} />
+        <Route path="/tracking" element={<Tracking />} />
+        <Route path="/feedback" element={<Feedback />} />
       </Routes>
     </>
   );
