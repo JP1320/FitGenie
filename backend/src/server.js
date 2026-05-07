@@ -14,6 +14,30 @@ const health = { status: "ok", service: "fitgenie-backend" };
 app.get("/health", (_req, res) => res.status(200).json(health));
 app.get("/ready", (_req, res) => res.status(200).json({ status: "ready" }));
 
+app.post("/auth/login", (req, res) => {
+  const { email } = req.body || {};
+  if (!email) {
+    return res.status(400).json({ success: false, message: "Email is required" });
+  }
+  res.json({
+    success: true,
+    user: { id: "u_001", email },
+    token: "mock_token_google"
+  });
+});
+
+app.post("/auth/otp", (req, res) => {
+  const { phone } = req.body || {};
+  if (!phone) {
+    return res.status(400).json({ success: false, message: "Phone is required" });
+  }
+  res.json({
+    success: true,
+    user: { id: "u_002", phone },
+    token: "mock_token_otp"
+  });
+});
+
 app.post("/user/profile", (req, res) => {
   logger.info({ route: "/user/profile" }, "profile received");
   res.json({ success: true, data: req.body });
