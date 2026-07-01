@@ -1,45 +1,81 @@
 import { create } from "zustand";
 
-export const useFlowStore = create((set) => ({
-  userId: "u_live_001",
-  loginMode: "guest",
-
-  intent: "",
-  intentSubType: "",
-  ageRange: "",
-  gender: "",
-
-  bodyType: "",
-  size: "",
-  heightCm: "",
-  heightRange: "",
-
-  scanResult: null,
-  selectedProduct: null,
-
-  filters: {
+const initialState = {
+  userId: "guest_user",
+  auth: {
+    loginMode: "guest",
+    token: "",
+    isGuest: true,
+  },
+  intent: {
+    type: "",
+    subType: "",
+  },
+  profile: {
+    ageRange: "",
+    gender: "",
+  },
+  body: {
+    bodyType: "",
+    size: "",
+    heightCm: "",
+    heightRange: "",
+    scanResult: null,
+  },
+  preferences: {
     style: "",
     budget: "",
-    fabric: "",
-    fit: "",
+    fabric: [],
     sleeve: "",
-    length: ""
+    length: "",
+    fit: "",
   },
-
-  recommendations: null,
-  serviceType: "",
-  ratingFilter: "",
-  locationFilter: "",
-  selectedExpert: null,
-
-  deliveryMode: "",
-  schedule: "",
-
+  recommendations: {
+    list: [],
+    selectedOutfit: null,
+  },
+  marketplace: {
+    serviceType: "",
+    ratingFilter: "",
+    locationFilter: "",
+    experts: [],
+    selectedExpert: null,
+  },
+  delivery: {
+    mode: "",
+    schedule: "",
+    chatEnabled: false,
+  },
   fitCard: null,
-  trackingStatus: "Accepted",
-  feedback: { fit: 0, service: 0, delivery: 0, image: "" },
+  order: {
+    bookingId: "",
+    status: "Accepted",
+    timeline: ["Accepted"],
+  },
+  feedback: {
+    fitAccuracy: 0,
+    service: 0,
+    delivery: 0,
+    photoUrl: "",
+    comment: "",
+  },
+};
 
-  patch: (payload) => set((s) => ({ ...s, ...payload })),
-  patchFilters: (payload) =>
-    set((s) => ({ filters: { ...s.filters, ...payload } }))
+export const useFlowStore = create((set) => ({
+  ...initialState,
+
+  patch: (section, payload) =>
+    set((state) => ({
+      [section]: {
+        ...state[section],
+        ...payload,
+      },
+    })),
+
+  setValue: (key, value) =>
+    set(() => ({
+      [key]: value,
+    })),
+
+  reset: () => set(initialState),
 }));
