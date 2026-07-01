@@ -16,6 +16,8 @@ app.use(
 
 app.use(express.json());
 
+const otpRequests = new Map();
+
 const health = {
   status: "ok",
   service: "fitgenie-backend",
@@ -114,6 +116,18 @@ function normalizeBudget(value) {
     .replace(/\s+/g, "")
     .replace("–", "-")
     .trim();
+}
+
+function createId(prefix) {
+  return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+function createDemoOtp() {
+  if (process.env.NODE_ENV === "production" && process.env.REAL_SMS_ENABLED === "true") {
+    return String(Math.floor(100000 + Math.random() * 900000));
+  }
+
+  return "123456";
 }
 
 function getRecommendedSize(body = {}) {
@@ -274,6 +288,124 @@ app.get("/ready", (_req, res) => {
   });
 });
 
+app.get("/auth/google/url", (req, res) => {
+  const redirectUri = req.query.redirectUri;
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+
+  if (!clientId) {
+    return res.json({
+      success: false,
+      configured: false,
+      message:
+        "Google OAuth is not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable real Google account chooser.",
+    });
+  }
+
+  if (!redirectUri) {
+    return res.status(400).json({
+      success: false,
+      message: "redirectUri is required.",
+    });
+  }
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope: "openid email profile",
+    access_type: "offline",
+    prompt: "select_account",
+  });
+
+  return res.json({
+    success: true,
+    configured: true,
+    authUrl: `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`,
+  });
+});
+
+app.post("/auth/google/callback", async (req, res) => {
+  const { code, redirectUri } = req.body || {};
+
+  if (!code || !redirectUri) {
+    return res.status(400).json({
+      success: false,
+      message: "Google authorization code and redirectUri are required.",
+    });
+  }
+
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "Google OAuth credentials are missing. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend environment variables.",
+    });
+  }
+
+  try {
+    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        grant_type: "authorization_code",
+      }),
+    });
+
+    const tokenData = await tokenResponse.json();
+
+    if (!tokenResponse.ok) {
+      return res.status(401).json({
+        success: false,
+        message: "Google token exchange failed.",
+        details: tokenData?.error_description || tokenData?.error || "",
+      });
+    }
+
+    const userResponse = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: {
+        Authorization: `Bearer ${tokenData.access_token}`,
+      },
+    });
+
+    const googleUser = await userResponse.json();
+
+    if (!userResponse.ok) {
+      return res.status(401).json({
+        success: false,
+        message: "Unable to read Google profile.",
+      });
+    }
+
+    return res.json({
+      success: true,
+      user: {
+        id: googleUser.sub,
+        name: googleUser.name,
+        email: googleUser.email,
+        picture: googleUser.picture,
+        provider: "google",
+      },
+      token: tokenData.id_token || tokenData.access_token,
+    });
+  } catch (error) {
+    logger.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Google sign-in failed.",
+    });
+  }
+});
+
 app.post("/auth/login", (req, res) => {
   const { email } = req.body || {};
 
@@ -291,6 +423,112 @@ app.post("/auth/login", (req, res) => {
       email,
     },
     token: "mock_token_google",
+  });
+});
+
+app.post("/auth/mobile/request-otp", (req, res) => {
+  const { countryCode, countryName, phone, fullPhone } = req.body || {};
+
+  if (!countryCode || !phone || !fullPhone) {
+    return res.status(400).json({
+      success: false,
+      message: "Country code and mobile number are required.",
+    });
+  }
+
+  const otp = createDemoOtp();
+  const requestId = createId("otp");
+
+  otpRequests.set(requestId, {
+    otp,
+    phone,
+    fullPhone,
+    countryCode,
+    countryName,
+    createdAt: Date.now(),
+    expiresAt: Date.now() + 5 * 60 * 1000,
+    attempts: 0,
+  });
+
+  logger.info(
+    {
+      route: "/auth/mobile/request-otp",
+      fullPhone,
+      requestId,
+    },
+    "OTP generated"
+  );
+
+  return res.json({
+    success: true,
+    requestId,
+    fullPhone,
+    message: `OTP sent to ${fullPhone}.`,
+    developmentOtp:
+      process.env.NODE_ENV === "production" && process.env.REAL_SMS_ENABLED === "true"
+        ? undefined
+        : otp,
+  });
+});
+
+app.post("/auth/mobile/verify-otp", (req, res) => {
+  const { requestId, otp, fullPhone, countryCode, phone } = req.body || {};
+
+  if (!requestId || !otp) {
+    return res.status(400).json({
+      success: false,
+      message: "Request ID and OTP are required.",
+    });
+  }
+
+  const record = otpRequests.get(requestId);
+
+  if (!record) {
+    return res.status(400).json({
+      success: false,
+      message: "OTP request not found. Please request a new OTP.",
+    });
+  }
+
+  if (Date.now() > record.expiresAt) {
+    otpRequests.delete(requestId);
+
+    return res.status(400).json({
+      success: false,
+      message: "OTP has expired. Please request a new OTP.",
+    });
+  }
+
+  record.attempts += 1;
+
+  if (record.attempts > 5) {
+    otpRequests.delete(requestId);
+
+    return res.status(429).json({
+      success: false,
+      message: "Too many incorrect attempts. Please request a new OTP.",
+    });
+  }
+
+  if (String(record.otp) !== String(otp)) {
+    return res.status(401).json({
+      success: false,
+      message: "Incorrect OTP. Please try again.",
+    });
+  }
+
+  otpRequests.delete(requestId);
+
+  return res.json({
+    success: true,
+    user: {
+      id: createId("mobile_user"),
+      phone: phone || record.phone,
+      countryCode: countryCode || record.countryCode,
+      fullPhone: fullPhone || record.fullPhone,
+      provider: "mobile_otp",
+    },
+    token: `mobile_token_${Date.now()}`,
   });
 });
 
