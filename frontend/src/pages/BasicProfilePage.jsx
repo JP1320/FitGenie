@@ -21,7 +21,7 @@ export default function BasicProfilePage() {
 
         <label>Gender</label>
         <div className="row">
-          <button className={`chip ${gender==="Male"?"active":""}`} onClick={() => patch({ gender: "Male" })}>Male</button>
+          <button className={`chip ${gender==="Male"?"active":""}`} onClick={() => patch("profile", { gender: "Male" })}>Male</button>
           <button className={`chip ${gender==="Female"?"active":""}`} onClick={() => patch({ gender: "Female" })}>Female</button>
         </div>
 
