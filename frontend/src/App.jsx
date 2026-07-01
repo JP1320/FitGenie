@@ -24,11 +24,13 @@ export default function App() {
       <Route path="/login/mobile" element={<LoginMobile />} />
       <Route path="/intent" element={<IntentPage />} />
       <Route path="/basic-profile" element={<BasicProfilePage />} />
-      <Route path="/body-input" element={<SizeBodyPage />} />
-      <Route path="/scanner" element={<Scanner />} />
-      <Route path="/store" element={<Store />} />
-      <Route path="/service-selection" element={<ServiceTypePage />} />
-      <Route path="/expert-list" element={<ExpertsPage />} />
+      <Route path="/size-body" element={<SizeBodyPage />} />
+      <Route path="/camera-scan" element={<Scanner />} />
+      <Route path="/guided-filters" element={<GuidedFiltersPage />} />
+      <Route path="/recommendations" element={<RecommendationsPage />} />
+      <Route path="/service-type" element={<ServiceTypePage />} />
+      <Route path="/quality-location" element={<QualityLocationPage />} />
+      <Route path="/experts" element={<ExpertsPage />} />
       <Route path="/delivery" element={<DeliveryPage />} />
       <Route path="/fit-card" element={<FitCardPage />} />
       <Route path="/tracking" element={<TrackingPage />} />
