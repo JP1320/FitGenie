@@ -3,25 +3,49 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import PageShell from "../components/PageShell";
 import { useFlowStore } from "../store/useFlowStore";
-import { callApi } from "../services/api";
 
-function getNowText() {
-  return new Date().toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+const RATING_CATEGORIES = [
+  {
+    key: "fit",
+    title: "Fit Accuracy",
+    subtitle: "How well did the outfit fit compared to the FitGenie recommendation?",
+    icon: "📏",
+    lowLabel: "Poor fit",
+    highLabel: "Perfect fit",
+  },
+  {
+    key: "service",
+    title: "Service Quality",
+    subtitle: "How was the tailor, designer, boutique, or stylist experience?",
+    icon: "🧵",
+    lowLabel: "Not good",
+    highLabel: "Excellent",
+  },
+  {
+    key: "delivery",
+    title: "Delivery Experience",
+    subtitle: "How smooth was the delivery, pickup, or consultation process?",
+    icon: "📦",
+    lowLabel: "Delayed",
+    highLabel: "Smooth",
+  },
+];
 
-function getSafeValue(value, fallback = "Not provided") {
+const FEEDBACK_TAGS = [
+  "Perfect fit",
+  "Good stitching",
+  "Fast delivery",
+  "Helpful expert",
+  "Good fabric suggestion",
+  "Easy consultation",
+  "Needs better sizing",
+  "Delivery was late",
+  "Communication issue",
+];
+
+function getSafeValue(value, fallback = "Not available") {
   if (value === undefined || value === null || value === "") {
     return fallback;
-  }
-
-  if (Array.isArray(value)) {
-    return value.length > 0 ? value.join(", ") : fallback;
   }
 
   return value;
@@ -35,364 +59,227 @@ function getSelectedExpert(state) {
   return state.selectedExpert || state.marketplace?.selectedExpert || null;
 }
 
-function getDeliveryMode(state) {
-  return state.deliveryMode || state.delivery?.mode || "Not selected";
-}
-
-function getDeliverySchedule(state) {
+function getOrderId(state) {
   return (
-    state.deliverySchedule ||
-    state.schedule ||
-    state.delivery?.schedule ||
-    "Not selected"
+    state.order?.bookingId ||
+    state.order?.orderId ||
+    state.bookingId ||
+    "FitGenie order"
   );
 }
 
-function getBodyType(state) {
+function getAverageRating(feedback) {
+  const values = [
+    Number(feedback?.fit || 0),
+    Number(feedback?.service || 0),
+    Number(feedback?.delivery || 0),
+  ].filter((value) => value > 0);
+
+  if (values.length === 0) return 0;
+
+  const total = values.reduce((sum, value) => sum + value, 0);
+  return Number((total / values.length).toFixed(1));
+}
+
+function getExperienceLabel(score) {
+  if (score >= 4.5) return "Excellent experience";
+  if (score >= 4) return "Very good experience";
+  if (score >= 3) return "Good, but can improve";
+  if (score > 0) return "Needs improvement";
+  return "Waiting for rating";
+}
+
+function StarRating({ value, onChange }) {
   return (
-    state.bodyType ||
-    state.body?.bodyType ||
-    state.scanResult?.bodyType ||
-    state.body?.scanResult?.bodyType ||
-    "Not provided"
+    <div style={styles.starRow}>
+      {[1, 2, 3, 4, 5].map((number) => {
+        const active = number <= Number(value || 0);
+
+        return (
+          <motion.button
+            key={number}
+            type="button"
+            whileHover={{ y: -3, scale: 1.04 }}
+            whileTap={{ scale: 0.94 }}
+            onClick={() => onChange(number)}
+            style={{
+              ...styles.starButton,
+              ...(active ? styles.starButtonActive : {}),
+            }}
+            aria-label={`Rate ${number} star${number === 1 ? "" : "s"}`}
+          >
+            ★
+          </motion.button>
+        );
+      })}
+    </div>
   );
 }
 
-function getRecommendedSize(state) {
-  return (
-    state.size ||
-    state.body?.size ||
-    state.scanResult?.recommendedSize ||
-    state.body?.scanResult?.recommendedSize ||
-    "Not provided"
-  );
-}
-
-function getHeight(state) {
-  const exactHeight =
-    state.heightCm ||
-    state.body?.heightCm ||
-    state.scanResult?.detectedHeightCm ||
-    state.scanResult?.height ||
-    state.body?.scanResult?.detectedHeightCm ||
-    state.body?.scanResult?.height;
-
-  if (exactHeight) {
-    return `${exactHeight} cm`;
-  }
-
-  return state.heightRange || state.body?.heightRange || "Not provided";
-}
-
-function buildFitCard(state) {
-  const selectedOutfit = getSelectedOutfit(state);
-  const selectedExpert = getSelectedExpert(state);
-
-  const deliveryMode = getDeliveryMode(state);
-  const deliverySchedule = getDeliverySchedule(state);
-
-  return {
-    fitCardId: `FC-${Date.now()}`,
-    generatedAt: getNowText(),
-
-    userIntent: {
-      purchaseFor:
-        state.forWhom ||
-        state.intent?.type ||
-        "Not provided",
-      relation:
-        state.relation ||
-        state.intent?.subType ||
-        "Not provided",
-      occasion:
-        state.occasion ||
-        state.intent?.subType ||
-        "Not provided",
-    },
-
-    basicProfile: {
-      ageRange:
-        state.ageRange ||
-        state.age ||
-        state.profile?.ageRange ||
-        "Not provided",
-      gender:
-        state.gender ||
-        state.profile?.gender ||
-        "Not provided",
-    },
-
-    measurements: {
-      bodyType: getBodyType(state),
-      size: getRecommendedSize(state),
-      height: getHeight(state),
-      scanConfidence:
-        state.scanResult?.confidence ||
-        state.body?.scanResult?.confidence ||
-        "Manual / Not scanned",
-      fitType:
-        state.scanResult?.fitType ||
-        state.body?.scanResult?.fitType ||
-        state.fitDetails?.fit ||
-        state.preferences?.fit ||
-        "Not provided",
-    },
-
-    stylePreferences: {
-      style:
-        state.style ||
-        state.preferences?.style ||
-        "Not provided",
-      budget:
-        state.budget ||
-        state.preferences?.budget ||
-        "Not provided",
-      fabric:
-        state.fabric ||
-        state.preferences?.fabric ||
-        [],
-      sleeve:
-        state.fitDetails?.sleeve ||
-        state.preferences?.sleeve ||
-        "Not provided",
-      length:
-        state.fitDetails?.length ||
-        state.preferences?.length ||
-        "Not provided",
-      fit:
-        state.fitDetails?.fit ||
-        state.preferences?.fit ||
-        "Not provided",
-    },
-
-    selectedOutfit: selectedOutfit
-      ? {
-          title: selectedOutfit.title || selectedOutfit.name || "Selected outfit",
-          recommendedSize:
-            selectedOutfit.recommendedSize || getRecommendedSize(state),
-          fitType:
-            selectedOutfit.fitType ||
-            state.fitDetails?.fit ||
-            state.preferences?.fit ||
-            "Regular",
-          priceRange:
-            selectedOutfit.priceRange ||
-            selectedOutfit.price ||
-            "Price on request",
-          matchScore:
-            selectedOutfit.matchScore ||
-            selectedOutfit.fitScore ||
-            "Not provided",
-          sizeConfidence:
-            selectedOutfit.sizeConfidence ||
-            state.recommendations?.confidenceScore ||
-            "Not provided",
-          whyThisSuitsYou:
-            selectedOutfit.whyThisSuitsYou ||
-            selectedOutfit.reason ||
-            "Selected from FitGenie recommendations.",
-        }
-      : null,
-
-    selectedService:
-      state.serviceType ||
-      state.marketplace?.serviceType ||
-      "Not provided",
-
-    selectedExpert: selectedExpert
-      ? {
-          name: selectedExpert.name || "Selected expert",
-          phone: selectedExpert.phone || "Not provided",
-          address: selectedExpert.address || selectedExpert.location || "Not provided",
-          rating: selectedExpert.rating || "Not provided",
-          priceRange: selectedExpert.priceRange || "Not provided",
-          deliveryTime: selectedExpert.deliveryTime || "Not provided",
-          specialization: selectedExpert.specialization || "Not provided",
-        }
-      : null,
-
-    delivery: {
-      mode: deliveryMode,
-      schedule: deliverySchedule,
-      chatEnabled:
-        state.chatEnabled ||
-        state.delivery?.chatEnabled ||
-        false,
-      notes:
-        state.deliveryNotes ||
-        "No additional delivery notes added.",
-    },
-
-    tailorNotes: [
-      "Use the measurement and body type details before cutting or alteration.",
-      "Confirm final size and fit type with the user before stitching.",
-      "Use style, fabric, sleeve, length, and budget preferences while suggesting final options.",
-      "If online delivery is selected, send regular updates for accepted, in progress, stitching, ready, and shipped/pickup stages.",
-    ],
-  };
-}
-
-export default function FitCardPage() {
+export default function FeedbackPage() {
   const nav = useNavigate();
   const state = useFlowStore();
-  const { patch } = state;
-
-  const [loading, setLoading] = useState(false);
-  const [sentStatus, setSentStatus] = useState("");
-  const [error, setError] = useState("");
-
-  const currentFitCard = state.fitCard || buildFitCard(state);
+  const { feedback = {}, patch, reset } = state;
 
   const selectedOutfit = getSelectedOutfit(state);
   const selectedExpert = getSelectedExpert(state);
+  const orderId = getOrderId(state);
 
-  const fitCardStats = useMemo(() => {
-    let completed = 0;
-    const total = 6;
+  const [comment, setComment] = useState(feedback.comment || "");
+  const [photoUrl, setPhotoUrl] = useState(feedback.photoUrl || "");
+  const [selectedTags, setSelectedTags] = useState(feedback.tags || []);
+  const [submitted, setSubmitted] = useState(Boolean(feedback.submittedAt));
+  const [error, setError] = useState("");
 
-    if (currentFitCard.userIntent.purchaseFor !== "Not provided") completed += 1;
-    if (currentFitCard.basicProfile.ageRange !== "Not provided") completed += 1;
-    if (currentFitCard.measurements.size !== "Not provided") completed += 1;
-    if (currentFitCard.stylePreferences.style !== "Not provided") completed += 1;
-    if (currentFitCard.selectedOutfit) completed += 1;
-    if (currentFitCard.selectedExpert) completed += 1;
+  const averageRating = useMemo(
+    () => getAverageRating(feedback),
+    [feedback]
+  );
 
-    return {
-      completed,
-      total,
-      score: Math.round((completed / total) * 100),
-    };
-  }, [currentFitCard]);
+  const completionScore = useMemo(() => {
+    let score = 0;
 
-  function generateFitCard() {
+    if (feedback.fit) score += 25;
+    if (feedback.service) score += 25;
+    if (feedback.delivery) score += 25;
+    if (comment.trim() || selectedTags.length > 0 || photoUrl.trim()) score += 25;
+
+    return score;
+  }, [feedback, comment, selectedTags, photoUrl]);
+
+  function updateRating(key, value) {
     setError("");
-    setSentStatus("");
-
-    const card = buildFitCard(state);
+    setSubmitted(false);
 
     patch({
-      fitCard: card,
+      feedback: {
+        ...feedback,
+        [key]: value,
+      },
     });
-
-    setSentStatus("Fit Card generated and refreshed successfully.");
   }
 
-  async function sendFitCard() {
-    setLoading(true);
+  function toggleTag(tag) {
     setError("");
-    setSentStatus("");
+    setSubmitted(false);
 
-    const card = state.fitCard || buildFitCard(state);
+    const nextTags = selectedTags.includes(tag)
+      ? selectedTags.filter((item) => item !== tag)
+      : [...selectedTags, tag];
+
+    setSelectedTags(nextTags);
 
     patch({
-      fitCard: card,
+      feedback: {
+        ...feedback,
+        tags: nextTags,
+      },
     });
+  }
 
-    try {
-      const response = await callApi("/fit-card", "POST", {
-        userId: state.userId || "guest_user",
-        measurements: card.measurements,
-        selectedOutfit: card.selectedOutfit,
-        selectedExpert: card.selectedExpert,
-        delivery: card.delivery,
-        stylePreferences: card.stylePreferences,
-        notes: card.tailorNotes.join(" "),
-      });
+  function updateComment(value) {
+    setComment(value);
+    setSubmitted(false);
 
-      if (!response.ok) {
-        setError(
-          response.data?.message ||
-            "Fit Card was generated, but sharing could not be confirmed."
-        );
-        return;
-      }
+    patch({
+      feedback: {
+        ...feedback,
+        comment: value,
+      },
+    });
+  }
 
-      setSentStatus(
-        "Fit Card shared with the selected expert and saved to the user dashboard."
-      );
-    } catch (_error) {
-      setSentStatus(
-        "Fit Card generated locally. Backend sharing is unavailable right now."
-      );
-    } finally {
-      setLoading(false);
+  function updatePhotoUrl(value) {
+    setPhotoUrl(value);
+    setSubmitted(false);
+
+    patch({
+      feedback: {
+        ...feedback,
+        photoUrl: value,
+      },
+    });
+  }
+
+  function submitFeedback() {
+    if (!feedback.fit || !feedback.service || !feedback.delivery) {
+      setError("Please rate fit accuracy, service quality, and delivery experience.");
+      return;
     }
-  }
 
-  function continueToTracking() {
-    const card = state.fitCard || buildFitCard(state);
+    const submittedFeedback = {
+      ...feedback,
+      fit: feedback.fit,
+      service: feedback.service,
+      delivery: feedback.delivery,
+      comment: comment.trim(),
+      photoUrl: photoUrl.trim(),
+      tags: selectedTags,
+      averageRating: getAverageRating(feedback),
+      submittedAt: new Date().toISOString(),
+      orderId,
+      expertName: selectedExpert?.name || "",
+      outfitName: selectedOutfit?.title || selectedOutfit?.name || "",
+    };
 
     patch({
-      fitCard: card,
+      feedback: submittedFeedback,
       order: {
-        bookingId: `ORD-${Date.now()}`,
-        status: "Accepted",
-        timeline: [
-          "Accepted",
-          "In Progress",
-          "Stitching",
-          "Ready",
-          card.delivery.mode === "Offline"
-            ? "Ready for Pickup"
-            : "Shipped / Ready for Pickup",
-        ],
+        ...(state.order || {}),
+        feedbackSubmitted: true,
+        feedbackRating: submittedFeedback.averageRating,
+        completedAt: new Date().toISOString(),
       },
     });
 
-    nav("/tracking");
+    setSubmitted(true);
+    setError("");
+  }
+
+  function startNewJourney() {
+    reset();
+    nav("/welcome");
   }
 
   return (
     <PageShell>
       <style>
         {`
-          @keyframes fitCardFloat {
+          @keyframes feedbackFloat {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
             100% { transform: translateY(0px); }
           }
 
-          @keyframes fitCardPulse {
+          @keyframes feedbackPulse {
             0% { opacity: 0.55; transform: scale(0.96); }
             50% { opacity: 1; transform: scale(1.04); }
             100% { opacity: 0.55; transform: scale(0.96); }
           }
 
           @media (max-width: 1080px) {
-            .fit-card-header {
+            .feedback-header {
               grid-template-columns: 1fr !important;
             }
 
-            .fit-card-title {
+            .feedback-title {
               font-size: 36px !important;
             }
 
-            .fit-card-layout {
+            .feedback-layout {
               grid-template-columns: 1fr !important;
             }
 
-            .fit-card-grid {
+            .feedback-rating-grid {
               grid-template-columns: 1fr !important;
             }
 
-            .fit-card-footer {
+            .feedback-footer {
               flex-direction: column !important;
             }
 
-            .fit-card-footer button {
+            .feedback-footer button {
               width: 100% !important;
-            }
-          }
-
-          @media print {
-            body {
-              background: #ffffff !important;
-            }
-
-            .fit-card-actions,
-            .fit-card-footer,
-            .fit-card-hide-print {
-              display: none !important;
             }
           }
         `}
@@ -408,435 +295,328 @@ export default function FitCardPage() {
           transition={{ duration: 0.55 }}
           style={styles.content}
         >
-          <section className="fit-card-header" style={styles.header}>
+          <section className="feedback-header" style={styles.header}>
             <div>
               <div style={styles.stepPill}>
                 <span style={styles.stepDot} />
-                Step 10 of 12 · Auto-generated Fit Card
+                Step 12 of 12 · Delivery + Feedback
               </div>
 
-              <h1 className="fit-card-title" style={styles.title}>
-                Your Fit Card is ready.
+              <h1 className="feedback-title" style={styles.title}>
+                How was your FitGenie experience?
               </h1>
 
               <p style={styles.subtitle}>
-                FitGenie creates a shareable card with measurements, body type,
-                style preferences, selected outfit, expert details, delivery
-                schedule, and tailor notes.
+                Rate the fit accuracy, expert service, and delivery experience.
+                Your feedback helps improve future outfit matching and expert
+                recommendations.
               </p>
             </div>
 
             <aside style={styles.previewCard}>
-              <div style={styles.previewIcon}>📇</div>
+              <div style={styles.previewIcon}>
+                {submitted ? "🎉" : "⭐"}
+              </div>
 
               <div>
-                <p style={styles.previewLabel}>Fit Card completeness</p>
-                <h2 style={styles.previewScore}>{fitCardStats.score}%</h2>
+                <p style={styles.previewLabel}>Feedback completion</p>
+                <h2 style={styles.previewScore}>{completionScore}%</h2>
               </div>
 
               <div style={styles.progressTrack}>
                 <div
                   style={{
                     ...styles.progressFill,
-                    width: `${fitCardStats.score}%`,
+                    width: `${completionScore}%`,
                   }}
                 />
               </div>
 
               <p style={styles.previewText}>
-                {fitCardStats.score >= 85
-                  ? "Great. This card is ready to share with the expert."
-                  : "Some details are missing, but the card can still be generated."}
+                {submitted
+                  ? "Thank you. Your feedback has been submitted successfully."
+                  : completionScore < 75
+                  ? "Rate all three categories to submit your feedback."
+                  : "Almost ready. Add comments or submit your feedback."}
               </p>
             </aside>
           </section>
 
-          <section className="fit-card-layout" style={styles.layout}>
+          <section className="feedback-layout" style={styles.layout}>
             <main style={styles.mainPanel}>
-              <section style={styles.cardShell}>
-                <div style={styles.cardTopBand}>
+              <section style={styles.thankYouCard}>
+                <div>
+                  <p style={styles.thankYouLabel}>Delivery confirmed</p>
+                  <h2 style={styles.thankYouTitle}>
+                    {submitted ? "Thank you for your feedback!" : "Final step before completion"}
+                  </h2>
+
+                  <p style={styles.thankYouText}>
+                    {submitted
+                      ? "Your ratings are saved to the order and can be used to improve future expert matching."
+                      : "Share how accurate the fit was and how smooth the expert service felt."}
+                  </p>
+                </div>
+
+                <div style={styles.scoreBubble}>
+                  <strong>{averageRating || "—"}</strong>
+                  <span>{getExperienceLabel(averageRating)}</span>
+                </div>
+              </section>
+
+              <section style={styles.ratingBlock}>
+                <div style={styles.blockHeader}>
+                  <span style={styles.blockIcon}>⭐</span>
+
                   <div>
-                    <p style={styles.cardLabel}>FitGenie Fit Card</p>
-                    <h2 style={styles.cardTitle}>
-                      {currentFitCard.fitCardId || "Auto-generated card"}
-                    </h2>
-                    <p style={styles.cardGenerated}>
-                      Generated: {currentFitCard.generatedAt}
+                    <h2 style={styles.blockTitle}>Rate your experience</h2>
+                    <p style={styles.blockText}>
+                      These ratings are required before submitting feedback.
                     </p>
                   </div>
-
-                  <div style={styles.cardLogo}>FG</div>
                 </div>
 
-                <div className="fit-card-grid" style={styles.cardGrid}>
-                  <section style={styles.sectionCard}>
-                    <h3 style={styles.sectionTitle}>Basic Profile</h3>
+                <div className="feedback-rating-grid" style={styles.ratingGrid}>
+                  {RATING_CATEGORIES.map((category) => (
+                    <motion.div
+                      key={category.key}
+                      whileHover={{ y: -5 }}
+                      style={styles.ratingCard}
+                    >
+                      <div style={styles.ratingTop}>
+                        <span style={styles.ratingIcon}>{category.icon}</span>
 
-                    <div style={styles.dataList}>
-                      <div style={styles.dataRow}>
-                        <span>Purchase For</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.userIntent.purchaseFor)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Relation / Occasion</span>
-                        <strong>
-                          {currentFitCard.userIntent.purchaseFor === "gift"
-                            ? getSafeValue(currentFitCard.userIntent.occasion)
-                            : getSafeValue(currentFitCard.userIntent.relation)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Age Range</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.basicProfile.ageRange)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Gender</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.basicProfile.gender)}
-                        </strong>
-                      </div>
-                    </div>
-                  </section>
-
-                  <section style={styles.sectionCard}>
-                    <h3 style={styles.sectionTitle}>Measurements</h3>
-
-                    <div style={styles.dataList}>
-                      <div style={styles.dataRow}>
-                        <span>Body Type</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.measurements.bodyType)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Recommended Size</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.measurements.size)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Height</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.measurements.height)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Fit Type</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.measurements.fitType)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Scan Confidence</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.measurements.scanConfidence)}
-                        </strong>
-                      </div>
-                    </div>
-                  </section>
-
-                  <section style={styles.sectionCard}>
-                    <h3 style={styles.sectionTitle}>Style Preferences</h3>
-
-                    <div style={styles.dataList}>
-                      <div style={styles.dataRow}>
-                        <span>Style</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.stylePreferences.style)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Budget</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.stylePreferences.budget)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Fabric</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.stylePreferences.fabric)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Sleeve</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.stylePreferences.sleeve)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Length</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.stylePreferences.length)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Fit</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.stylePreferences.fit)}
-                        </strong>
-                      </div>
-                    </div>
-                  </section>
-
-                  <section style={styles.sectionCard}>
-                    <h3 style={styles.sectionTitle}>Selected Outfit</h3>
-
-                    {currentFitCard.selectedOutfit ? (
-                      <div style={styles.dataList}>
-                        <div style={styles.dataRow}>
-                          <span>Outfit</span>
-                          <strong>{currentFitCard.selectedOutfit.title}</strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Recommended Size</span>
-                          <strong>
-                            {currentFitCard.selectedOutfit.recommendedSize}
-                          </strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Fit Type</span>
-                          <strong>{currentFitCard.selectedOutfit.fitType}</strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Price Range</span>
-                          <strong>{currentFitCard.selectedOutfit.priceRange}</strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Match Score</span>
-                          <strong>{currentFitCard.selectedOutfit.matchScore}</strong>
-                        </div>
-
-                        <div style={styles.reasonBox}>
-                          {currentFitCard.selectedOutfit.whyThisSuitsYou}
+                        <div>
+                          <h3 style={styles.ratingTitle}>{category.title}</h3>
+                          <p style={styles.ratingSubtitle}>
+                            {category.subtitle}
+                          </p>
                         </div>
                       </div>
-                    ) : (
-                      <p style={styles.emptyText}>No outfit selected.</p>
-                    )}
-                  </section>
 
-                  <section style={styles.sectionCard}>
-                    <h3 style={styles.sectionTitle}>Selected Expert</h3>
+                      <StarRating
+                        value={feedback[category.key]}
+                        onChange={(value) => updateRating(category.key, value)}
+                      />
 
-                    {currentFitCard.selectedExpert ? (
-                      <div style={styles.dataList}>
-                        <div style={styles.dataRow}>
-                          <span>Name</span>
-                          <strong>{currentFitCard.selectedExpert.name}</strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Mobile</span>
-                          <strong>{currentFitCard.selectedExpert.phone}</strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Address</span>
-                          <strong>{currentFitCard.selectedExpert.address}</strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Rating</span>
-                          <strong>⭐ {currentFitCard.selectedExpert.rating}</strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Price Range</span>
-                          <strong>{currentFitCard.selectedExpert.priceRange}</strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Delivery Time</span>
-                          <strong>{currentFitCard.selectedExpert.deliveryTime}</strong>
-                        </div>
-
-                        <div style={styles.reasonBox}>
-                          Specialization:{" "}
-                          {currentFitCard.selectedExpert.specialization}
-                        </div>
-                      </div>
-                    ) : (
-                      <p style={styles.emptyText}>No expert selected.</p>
-                    )}
-                  </section>
-
-                  <section style={styles.sectionCard}>
-                    <h3 style={styles.sectionTitle}>Delivery & Interaction</h3>
-
-                    <div style={styles.dataList}>
-                      <div style={styles.dataRow}>
-                        <span>Mode</span>
-                        <strong>{getSafeValue(currentFitCard.delivery.mode)}</strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Schedule</span>
+                      <div style={styles.ratingLabels}>
+                        <span>{category.lowLabel}</span>
                         <strong>
-                          {getSafeValue(currentFitCard.delivery.schedule)}
+                          {feedback[category.key]
+                            ? `${feedback[category.key]} / 5`
+                            : "Not rated"}
                         </strong>
+                        <span>{category.highLabel}</span>
                       </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Chat</span>
-                        <strong>
-                          {currentFitCard.delivery.chatEnabled
-                            ? "Enabled"
-                            : "Disabled"}
-                        </strong>
-                      </div>
-
-                      <div style={styles.reasonBox}>
-                        Notes: {currentFitCard.delivery.notes}
-                      </div>
-                    </div>
-                  </section>
+                    </motion.div>
+                  ))}
                 </div>
+              </section>
 
-                <section style={styles.notesCard}>
-                  <h3 style={styles.sectionTitle}>Notes for Tailor / Designer</h3>
+              <section style={styles.ratingBlock}>
+                <div style={styles.blockHeader}>
+                  <span style={styles.blockIcon}>🏷️</span>
 
-                  <div style={styles.noteList}>
-                    {currentFitCard.tailorNotes.map((note) => (
-                      <div key={note} style={styles.noteItem}>
-                        <span style={styles.noteCheck}>✓</span>
-                        <span>{note}</span>
-                      </div>
-                    ))}
+                  <div>
+                    <h2 style={styles.blockTitle}>
+                      Quick feedback tags{" "}
+                      <span style={styles.optionalText}>(optional)</span>
+                    </h2>
+                    <p style={styles.blockText}>
+                      Select tags that describe your experience.
+                    </p>
                   </div>
-                </section>
+                </div>
+
+                <div style={styles.tagGrid}>
+                  {FEEDBACK_TAGS.map((tag) => {
+                    const selected = selectedTags.includes(tag);
+
+                    return (
+                      <motion.button
+                        key={tag}
+                        type="button"
+                        whileHover={{ y: -3 }}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => toggleTag(tag)}
+                        style={{
+                          ...styles.tagButton,
+                          ...(selected ? styles.tagButtonSelected : {}),
+                        }}
+                      >
+                        {selected ? "✓ " : ""}
+                        {tag}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <section style={styles.ratingBlock}>
+                <div style={styles.blockHeader}>
+                  <span style={styles.blockIcon}>📝</span>
+
+                  <div>
+                    <h2 style={styles.blockTitle}>
+                      Add review details{" "}
+                      <span style={styles.optionalText}>(optional)</span>
+                    </h2>
+                    <p style={styles.blockText}>
+                      Add a short review or photo URL for social proof.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={styles.inputGrid}>
+                  <div style={styles.inputBlock}>
+                    <label style={styles.inputLabel}>Review comment</label>
+
+                    <textarea
+                      value={comment}
+                      onChange={(event) => updateComment(event.target.value)}
+                      placeholder="Example: The fit was accurate and the tailor delivered on time."
+                      style={styles.textarea}
+                    />
+                  </div>
+
+                  <div style={styles.inputBlock}>
+                    <label style={styles.inputLabel}>Photo URL</label>
+
+                    <input
+                      value={photoUrl}
+                      onChange={(event) => updatePhotoUrl(event.target.value)}
+                      placeholder="Paste image URL for optional photo proof"
+                      style={styles.input}
+                    />
+
+                    {photoUrl ? (
+                      <div style={styles.photoPreview}>
+                        <img
+                          src={photoUrl}
+                          alt="Feedback upload preview"
+                          style={styles.photoImage}
+                        />
+                      </div>
+                    ) : (
+                      <div style={styles.photoPlaceholder}>
+                        📸 Optional photo preview will appear here
+                      </div>
+                    )}
+                  </div>
+                </div>
               </section>
             </main>
 
             <aside style={styles.sidePanel}>
               <div style={styles.sideTop}>
-                <span style={styles.sideIcon}>📤</span>
+                <span style={styles.sideIcon}>🧞</span>
 
                 <div>
-                  <p style={styles.sideLabel}>Share status</p>
+                  <p style={styles.sideLabel}>Feedback summary</p>
                   <h2 style={styles.sideTitle}>
-                    {sentStatus ? "Ready" : "Not sent yet"}
+                    {submitted ? "Submitted" : "Pending"}
                   </h2>
                 </div>
               </div>
 
-              <div className="fit-card-actions" style={styles.actions}>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={generateFitCard}
-                  style={styles.actionButton}
-                >
-                  Generate / Refresh Fit Card
-                </button>
-
-                <button
-                  type="button"
-                  className="btn ghost"
-                  onClick={sendFitCard}
-                  disabled={loading}
-                  style={styles.actionButton}
-                >
-                  {loading ? "Sharing..." : "Share with Expert & User"}
-                </button>
-
-                <button
-                  type="button"
-                  className="btn ghost"
-                  onClick={() => window.print()}
-                  style={styles.actionButton}
-                >
-                  Print / Save Card
-                </button>
-              </div>
-
-              {error ? <div style={styles.errorBox}>{error}</div> : null}
-              {sentStatus ? <div style={styles.successBox}>{sentStatus}</div> : null}
-
-              <div style={styles.messagePreview}>
-                <span style={styles.messageBadge}>User message</span>
-
-                <p style={styles.messageText}>
-                  Your Fit Card has been generated. Expert{" "}
-                  <strong>{selectedExpert?.name || "selected expert"}</strong>{" "}
-                  will receive your size, style, outfit and schedule details.
-                </p>
-              </div>
-
-              <div style={styles.messagePreview}>
-                <span style={styles.messageBadge}>Expert message</span>
-
-                <p style={styles.messageText}>
-                  New FitGenie request received for{" "}
-                  <strong>
-                    {selectedOutfit?.title || selectedOutfit?.name || "selected outfit"}
-                  </strong>
-                  . Please review measurements, style preferences and notes before
-                  accepting.
-                </p>
-              </div>
-
               <div style={styles.summaryList}>
                 <div style={styles.summaryItem}>
+                  <span>Order</span>
+                  <strong>{orderId}</strong>
+                </div>
+
+                <div style={styles.summaryItem}>
+                  <span>Outfit</span>
+                  <strong>
+                    {getSafeValue(
+                      selectedOutfit?.title || selectedOutfit?.name,
+                      "Selected outfit"
+                    )}
+                  </strong>
+                </div>
+
+                <div style={styles.summaryItem}>
                   <span>Expert</span>
-                  <strong>{selectedExpert?.name || "Not selected"}</strong>
+                  <strong>{getSafeValue(selectedExpert?.name)}</strong>
                 </div>
 
                 <div style={styles.summaryItem}>
-                  <span>User receives</span>
-                  <strong>Fit Card + shop/contact details</strong>
+                  <span>Fit Accuracy</span>
+                  <strong>{feedback.fit ? `${feedback.fit} / 5` : "Required"}</strong>
                 </div>
 
                 <div style={styles.summaryItem}>
-                  <span>Expert receives</span>
-                  <strong>Measurements + style notes</strong>
+                  <span>Service</span>
+                  <strong>
+                    {feedback.service ? `${feedback.service} / 5` : "Required"}
+                  </strong>
                 </div>
 
                 <div style={styles.summaryItem}>
-                  <span>Next page</span>
-                  <strong>Order Tracking</strong>
+                  <span>Delivery</span>
+                  <strong>
+                    {feedback.delivery ? `${feedback.delivery} / 5` : "Required"}
+                  </strong>
+                </div>
+
+                <div style={styles.summaryItem}>
+                  <span>Average Rating</span>
+                  <strong>
+                    {averageRating ? `${averageRating} / 5` : "Not calculated"}
+                  </strong>
                 </div>
               </div>
+
+              <div style={styles.socialCard}>
+                <span style={styles.socialBadge}>Social proof</span>
+
+                <h3 style={styles.socialTitle}>Optional photo feedback</h3>
+
+                <p style={styles.socialText}>
+                  Later, this can support real upload, fit accuracy stories, and
+                  customer reviews on expert profiles.
+                </p>
+
+                <div style={styles.socialPills}>
+                  <span>📸 Photo</span>
+                  <span>⭐ Rating</span>
+                  <span>💬 Review</span>
+                </div>
+              </div>
+
+              {submitted ? (
+                <div style={styles.successBox}>
+                  Feedback submitted successfully. You can now start a new
+                  FitGenie journey.
+                </div>
+              ) : null}
             </aside>
           </section>
 
+          {error ? <div style={styles.errorBox}>{error}</div> : null}
+
           <section style={styles.finalSummary}>
-            <div style={styles.finalIcon}>📇</div>
+            <div style={styles.finalIcon}>
+              {submitted ? "🎉" : "⭐"}
+            </div>
 
             <div>
-              <p style={styles.finalLabel}>Fit Card handoff summary</p>
+              <p style={styles.finalLabel}>Final feedback status</p>
               <strong style={styles.finalText}>
-                {currentFitCard.selectedExpert
-                  ? `Fit Card prepared for ${currentFitCard.selectedExpert.name}`
-                  : "Fit Card prepared, expert details missing"}
+                {submitted
+                  ? `${getExperienceLabel(averageRating)} · ${averageRating} / 5`
+                  : averageRating
+                  ? `${getExperienceLabel(averageRating)} · ready to submit`
+                  : "No feedback submitted yet"}
               </strong>
             </div>
           </section>
 
-          <div className="fit-card-footer" style={styles.footer}>
+          <div className="feedback-footer" style={styles.footer}>
             <button
               type="button"
               className="btn ghost"
-              onClick={() => nav("/delivery")}
+              onClick={() => nav("/tracking")}
               style={styles.footerButton}
             >
               Back
@@ -845,10 +625,19 @@ export default function FitCardPage() {
             <button
               type="button"
               className="btn"
-              onClick={continueToTracking}
+              onClick={submitFeedback}
               style={styles.footerButton}
             >
-              Continue to Order Tracking
+              Submit Feedback
+            </button>
+
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={startNewJourney}
+              style={styles.footerButton}
+            >
+              Start New Journey
             </button>
           </div>
         </motion.div>
@@ -920,7 +709,7 @@ const styles = {
     borderRadius: "50%",
     background: "#00d4ff",
     boxShadow: "0 0 18px rgba(0,212,255,0.9)",
-    animation: "fitCardPulse 2s ease-in-out infinite",
+    animation: "feedbackPulse 2s ease-in-out infinite",
   },
   title: {
     margin: 0,
@@ -953,7 +742,7 @@ const styles = {
     border: "1px solid rgba(255,255,255,0.14)",
     fontSize: "31px",
     marginBottom: "15px",
-    animation: "fitCardFloat 3.2s ease-in-out infinite",
+    animation: "feedbackFloat 3.2s ease-in-out infinite",
   },
   previewLabel: {
     margin: "0 0 4px",
@@ -996,123 +785,231 @@ const styles = {
     display: "grid",
     gap: "18px",
   },
-  cardShell: {
-    overflow: "hidden",
-    border: "1px solid rgba(255,255,255,0.14)",
+  thankYouCard: {
+    border: "1px solid rgba(255,255,255,0.13)",
     borderRadius: "30px",
-    background: "rgba(255,255,255,0.065)",
+    padding: "24px",
+    background:
+      "linear-gradient(135deg, rgba(124,92,255,0.24), rgba(0,212,255,0.10))",
     boxShadow: "0 22px 52px rgba(0,0,0,0.20)",
-  },
-  cardTopBand: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: "16px",
-    padding: "24px",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.95), rgba(0,212,255,0.82))",
+    gap: "18px",
+    flexWrap: "wrap",
   },
-  cardLabel: {
+  thankYouLabel: {
     margin: "0 0 6px",
-    color: "rgba(255,255,255,0.78)",
-    fontSize: "12px",
+    color: "rgba(255,255,255,0.62)",
     fontWeight: 900,
+    fontSize: "12px",
     textTransform: "uppercase",
-    letterSpacing: "0.1em",
+    letterSpacing: "0.08em",
   },
-  cardTitle: {
+  thankYouTitle: {
     margin: 0,
-    fontSize: "26px",
+    fontSize: "30px",
   },
-  cardGenerated: {
-    margin: "7px 0 0",
-    color: "rgba(255,255,255,0.76)",
-    fontSize: "13px",
+  thankYouText: {
+    margin: "8px 0 0",
+    color: "rgba(255,255,255,0.72)",
+    lineHeight: 1.5,
+    maxWidth: "620px",
   },
-  cardLogo: {
-    width: "62px",
-    height: "62px",
-    borderRadius: "22px",
+  scoreBubble: {
+    width: "132px",
+    height: "132px",
+    borderRadius: "34px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.20)",
-    border: "1px solid rgba(255,255,255,0.26)",
-    fontWeight: 900,
-    fontSize: "22px",
+    textAlign: "center",
+    padding: "15px",
+    background: "rgba(255,255,255,0.12)",
+    border: "1px solid rgba(255,255,255,0.18)",
   },
-  cardGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "14px",
-    padding: "18px",
-  },
-  sectionCard: {
-    padding: "16px",
-    borderRadius: "22px",
-    background: "rgba(0,0,0,0.16)",
-    border: "1px solid rgba(255,255,255,0.08)",
-  },
-  sectionTitle: {
-    margin: "0 0 12px",
-    fontSize: "19px",
-  },
-  dataList: {
-    display: "grid",
-    gap: "9px",
-  },
-  dataRow: {
-    display: "grid",
-    gridTemplateColumns: "130px minmax(0, 1fr)",
-    gap: "12px",
-    padding: "10px",
-    borderRadius: "14px",
+  ratingBlock: {
+    border: "1px solid rgba(255,255,255,0.13)",
+    borderRadius: "28px",
+    padding: "22px",
     background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.06)",
-    alignItems: "start",
+    boxShadow: "0 18px 42px rgba(0,0,0,0.16)",
   },
-  reasonBox: {
-    marginTop: "4px",
-    padding: "11px",
-    borderRadius: "14px",
-    background: "rgba(0,212,255,0.10)",
-    border: "1px solid rgba(0,212,255,0.20)",
-    color: "#d9fbff",
-    lineHeight: 1.5,
-    fontSize: "13px",
+  blockHeader: {
+    display: "flex",
+    gap: "14px",
+    alignItems: "flex-start",
+    marginBottom: "18px",
   },
-  emptyText: {
-    margin: 0,
-    color: "rgba(255,255,255,0.66)",
-  },
-  notesCard: {
-    margin: "0 18px 18px",
-    padding: "16px",
-    borderRadius: "22px",
-    background: "rgba(0,212,255,0.09)",
-    border: "1px solid rgba(0,212,255,0.20)",
-  },
-  noteList: {
+  blockIcon: {
+    width: "46px",
+    height: "46px",
+    borderRadius: "16px",
     display: "grid",
-    gap: "10px",
+    placeItems: "center",
+    background:
+      "linear-gradient(135deg, rgba(124,92,255,0.90), rgba(0,212,255,0.78))",
+    border: "1px solid rgba(255,255,255,0.18)",
+    fontSize: "22px",
+    flex: "0 0 auto",
   },
-  noteItem: {
+  blockTitle: {
+    margin: "0 0 6px",
+    fontSize: "25px",
+  },
+  blockText: {
+    margin: 0,
+    color: "rgba(255,255,255,0.68)",
+    lineHeight: 1.55,
+  },
+  ratingGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gap: "14px",
+  },
+  ratingCard: {
+    border: "1px solid rgba(255,255,255,0.13)",
+    borderRadius: "24px",
+    padding: "16px",
+    background: "rgba(255,255,255,0.065)",
+    boxShadow: "0 16px 36px rgba(0,0,0,0.18)",
+  },
+  ratingTop: {
     display: "flex",
     alignItems: "flex-start",
-    gap: "10px",
-    lineHeight: 1.5,
-    color: "rgba(255,255,255,0.78)",
+    gap: "13px",
+    marginBottom: "14px",
   },
-  noteCheck: {
-    width: "22px",
-    height: "22px",
-    borderRadius: "50%",
+  ratingIcon: {
+    width: "48px",
+    height: "48px",
+    borderRadius: "17px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(0,212,255,0.16)",
-    color: "#d9fbff",
-    fontSize: "12px",
-    fontWeight: 900,
+    background: "rgba(255,255,255,0.10)",
+    border: "1px solid rgba(255,255,255,0.13)",
+    fontSize: "24px",
     flex: "0 0 auto",
+  },
+  ratingTitle: {
+    margin: 0,
+    fontSize: "19px",
+  },
+  ratingSubtitle: {
+    margin: "6px 0 0",
+    color: "rgba(255,255,255,0.68)",
+    fontSize: "13px",
+    lineHeight: 1.45,
+  },
+  starRow: {
+    display: "flex",
+    gap: "8px",
+    marginBottom: "12px",
+    flexWrap: "wrap",
+  },
+  starButton: {
+    width: "44px",
+    height: "44px",
+    borderRadius: "16px",
+    border: "1px solid rgba(255,255,255,0.13)",
+    background: "rgba(255,255,255,0.07)",
+    color: "rgba(255,255,255,0.34)",
+    cursor: "pointer",
+    fontSize: "23px",
+  },
+  starButtonActive: {
+    background: "rgba(255,211,107,0.18)",
+    borderColor: "rgba(255,211,107,0.45)",
+    color: "#ffd36b",
+    boxShadow: "0 10px 24px rgba(255,211,107,0.08)",
+  },
+  ratingLabels: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "8px",
+    color: "rgba(255,255,255,0.58)",
+    fontSize: "12px",
+  },
+  optionalText: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: "15px",
+  },
+  tagGrid: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "10px",
+  },
+  tagButton: {
+    border: "1px solid rgba(255,255,255,0.13)",
+    borderRadius: "999px",
+    padding: "11px 13px",
+    background: "rgba(255,255,255,0.07)",
+    color: "inherit",
+    cursor: "pointer",
+    fontWeight: 900,
+  },
+  tagButtonSelected: {
+    border: "1px solid rgba(0,212,255,0.85)",
+    background: "rgba(0,212,255,0.12)",
+    color: "#d9fbff",
+  },
+  inputGrid: {
+    display: "grid",
+    gap: "16px",
+  },
+  inputBlock: {
+    display: "grid",
+    gap: "8px",
+  },
+  inputLabel: {
+    fontWeight: 900,
+    fontSize: "14px",
+  },
+  textarea: {
+    width: "100%",
+    minHeight: "120px",
+    resize: "vertical",
+    border: "1px solid rgba(255,255,255,0.15)",
+    borderRadius: "18px",
+    padding: "14px",
+    background: "rgba(255,255,255,0.08)",
+    color: "inherit",
+    outline: "none",
+    lineHeight: 1.5,
+    fontFamily: "inherit",
+  },
+  input: {
+    width: "100%",
+    border: "1px solid rgba(255,255,255,0.15)",
+    borderRadius: "18px",
+    padding: "14px",
+    background: "rgba(255,255,255,0.08)",
+    color: "inherit",
+    outline: "none",
+    fontWeight: 800,
+  },
+  photoPreview: {
+    height: "190px",
+    overflow: "hidden",
+    borderRadius: "22px",
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(0,0,0,0.18)",
+  },
+  photoImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    display: "block",
+  },
+  photoPlaceholder: {
+    minHeight: "120px",
+    display: "grid",
+    placeItems: "center",
+    borderRadius: "22px",
+    border: "1px dashed rgba(255,255,255,0.22)",
+    background: "rgba(0,0,0,0.12)",
+    color: "rgba(255,255,255,0.58)",
+    textAlign: "center",
+    padding: "16px",
   },
   sidePanel: {
     position: "sticky",
@@ -1153,54 +1050,6 @@ const styles = {
     margin: 0,
     fontSize: "22px",
   },
-  actions: {
-    display: "grid",
-    gap: "10px",
-    marginBottom: "14px",
-  },
-  actionButton: {
-    width: "100%",
-  },
-  successBox: {
-    marginBottom: "14px",
-    padding: "13px 15px",
-    borderRadius: "16px",
-    background: "rgba(0,212,255,0.10)",
-    border: "1px solid rgba(0,212,255,0.25)",
-    color: "#d9fbff",
-    lineHeight: 1.45,
-  },
-  errorBox: {
-    marginBottom: "14px",
-    padding: "13px 15px",
-    borderRadius: "16px",
-    background: "rgba(255, 86, 86, 0.16)",
-    border: "1px solid rgba(255, 120, 120, 0.35)",
-    color: "#ffdede",
-  },
-  messagePreview: {
-    marginBottom: "12px",
-    padding: "14px",
-    borderRadius: "20px",
-    background: "rgba(0,0,0,0.16)",
-    border: "1px solid rgba(255,255,255,0.08)",
-  },
-  messageBadge: {
-    display: "inline-flex",
-    marginBottom: "8px",
-    padding: "5px 8px",
-    borderRadius: "999px",
-    background: "rgba(255,255,255,0.10)",
-    color: "#d9fbff",
-    fontSize: "11px",
-    fontWeight: 900,
-  },
-  messageText: {
-    margin: 0,
-    color: "rgba(255,255,255,0.72)",
-    lineHeight: 1.5,
-    fontSize: "13px",
-  },
   summaryList: {
     display: "grid",
     gap: "10px",
@@ -1212,6 +1061,56 @@ const styles = {
     border: "1px solid rgba(255,255,255,0.08)",
     display: "grid",
     gap: "4px",
+  },
+  socialCard: {
+    marginTop: "14px",
+    padding: "14px",
+    borderRadius: "20px",
+    background: "rgba(0,212,255,0.10)",
+    border: "1px solid rgba(0,212,255,0.22)",
+  },
+  socialBadge: {
+    display: "inline-flex",
+    marginBottom: "8px",
+    padding: "5px 8px",
+    borderRadius: "999px",
+    background: "rgba(255,255,255,0.10)",
+    color: "#d9fbff",
+    fontSize: "11px",
+    fontWeight: 900,
+  },
+  socialTitle: {
+    margin: "0 0 8px",
+    fontSize: "18px",
+  },
+  socialText: {
+    margin: 0,
+    color: "rgba(255,255,255,0.72)",
+    lineHeight: 1.5,
+    fontSize: "13px",
+  },
+  socialPills: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+    marginTop: "12px",
+  },
+  successBox: {
+    marginTop: "14px",
+    padding: "13px 15px",
+    borderRadius: "16px",
+    background: "rgba(0,212,255,0.10)",
+    border: "1px solid rgba(0,212,255,0.25)",
+    color: "#d9fbff",
+    lineHeight: 1.45,
+  },
+  errorBox: {
+    marginTop: "16px",
+    padding: "13px 15px",
+    borderRadius: "16px",
+    background: "rgba(255, 86, 86, 0.16)",
+    border: "1px solid rgba(255, 120, 120, 0.35)",
+    color: "#ffdede",
   },
   finalSummary: {
     display: "flex",
@@ -1250,8 +1149,9 @@ const styles = {
     justifyContent: "space-between",
     gap: "12px",
     marginTop: "22px",
+    flexWrap: "wrap",
   },
   footerButton: {
-    minWidth: "230px",
+    minWidth: "210px",
   },
 };
