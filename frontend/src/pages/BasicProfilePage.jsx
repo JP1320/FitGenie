@@ -11,6 +11,8 @@ const AGE_OPTIONS = [
     title: "Baby / Toddler",
     icon: "🍼",
     note: "Soft, safe and comfort-first fit guidance.",
+    gradient: "linear-gradient(135deg, #fef3c7, #ffedd5, #ffe4e6)",
+    accent: "#f97316",
   },
   {
     value: "4-10",
@@ -18,6 +20,8 @@ const AGE_OPTIONS = [
     title: "Child",
     icon: "🧸",
     note: "Comfortable sizing for active daily wear.",
+    gradient: "linear-gradient(135deg, #dcfce7, #d1fae5, #cffafe)",
+    accent: "#059669",
   },
   {
     value: "11-18",
@@ -25,6 +29,8 @@ const AGE_OPTIONS = [
     title: "Teen",
     icon: "🎒",
     note: "Trendy and flexible fit recommendations.",
+    gradient: "linear-gradient(135deg, #dbeafe, #e0e7ff, #ede9fe)",
+    accent: "#4f46e5",
   },
   {
     value: "19-29",
@@ -32,6 +38,8 @@ const AGE_OPTIONS = [
     title: "Young Adult",
     icon: "✨",
     note: "Style-forward choices with smart fit matching.",
+    gradient: "linear-gradient(135deg, #fce7f3, #ede9fe, #dbeafe)",
+    accent: "#9333ea",
   },
   {
     value: "30-45",
@@ -39,6 +47,8 @@ const AGE_OPTIONS = [
     title: "Adult",
     icon: "👔",
     note: "Balanced comfort, occasion and styling fit.",
+    gradient: "linear-gradient(135deg, #e0f2fe, #ecfeff, #f0fdfa)",
+    accent: "#0284c7",
   },
   {
     value: "46-60",
@@ -46,6 +56,8 @@ const AGE_OPTIONS = [
     title: "Mature Adult",
     icon: "🌿",
     note: "Comfort-aware and refined recommendations.",
+    gradient: "linear-gradient(135deg, #ecfccb, #dcfce7, #f0fdfa)",
+    accent: "#65a30d",
   },
   {
     value: "60+",
@@ -53,6 +65,8 @@ const AGE_OPTIONS = [
     title: "Senior",
     icon: "🕊️",
     note: "Ease, comfort and relaxed fit priority.",
+    gradient: "linear-gradient(135deg, #f8fafc, #e0f2fe, #ede9fe)",
+    accent: "#64748b",
   },
 ];
 
@@ -62,56 +76,64 @@ const GENDER_OPTIONS = [
     title: "Male",
     icon: "👨",
     note: "Recommended sizing and silhouettes tuned for male fits.",
-    gradient:
-      "linear-gradient(135deg, rgba(124,92,255,0.95), rgba(0,212,255,0.85))",
+    gradient: "linear-gradient(135deg, #dbeafe, #e0e7ff, #ede9fe)",
+    accent: "#4f46e5",
   },
   {
     value: "Female",
     title: "Female",
     icon: "👩",
     note: "Recommended sizing and silhouettes tuned for female fits.",
-    gradient:
-      "linear-gradient(135deg, rgba(255,122,162,0.95), rgba(255,170,91,0.85))",
+    gradient: "linear-gradient(135deg, #fce7f3, #ffe4e6, #fed7aa)",
+    accent: "#db2777",
   },
 ];
 
 export default function BasicProfilePage() {
   const nav = useNavigate();
-  const { ageRange, gender, patch } = useFlowStore();
+  const flow = useFlowStore();
+
+  const { ageRange, age, gender, profile, patch } = flow;
+
+  const selectedAgeValue = ageRange || age || profile?.ageRange || "";
+  const selectedGenderValue = gender || profile?.gender || "";
 
   const [error, setError] = useState("");
 
   const selectedAge = useMemo(
-    () => AGE_OPTIONS.find((item) => item.value === ageRange),
-    [ageRange]
+    () => AGE_OPTIONS.find((item) => item.value === selectedAgeValue),
+    [selectedAgeValue]
   );
 
   const selectedGender = useMemo(
-    () => GENDER_OPTIONS.find((item) => item.value === gender),
-    [gender]
+    () => GENDER_OPTIONS.find((item) => item.value === selectedGenderValue),
+    [selectedGenderValue]
   );
 
   function selectAge(value) {
     setError("");
+
     patch({
       ageRange: value,
+      age: value,
     });
   }
 
   function selectGender(value) {
     setError("");
+
     patch({
       gender: value,
     });
   }
 
   function continueNext() {
-    if (!ageRange) {
+    if (!selectedAgeValue) {
       setError("Please select an age range to continue.");
       return;
     }
 
-    if (!gender) {
+    if (!selectedGenderValue) {
       setError("Please select gender to continue.");
       return;
     }
@@ -123,46 +145,46 @@ export default function BasicProfilePage() {
     <PageShell>
       <style>
         {`
-          @keyframes basicProfileFloat {
+          @keyframes basicSoftFloat {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
             100% { transform: translateY(0px); }
           }
 
-          @keyframes basicProfilePulse {
+          @keyframes basicSoftPulse {
             0% { opacity: 0.55; transform: scale(0.96); }
             50% { opacity: 1; transform: scale(1.04); }
             100% { opacity: 0.55; transform: scale(0.96); }
           }
 
-          @media (max-width: 900px) {
+          @media (max-width: 980px) {
             .basic-profile-header {
               grid-template-columns: 1fr !important;
             }
 
             .basic-profile-title {
-              font-size: 36px !important;
+              font-size: 38px !important;
             }
 
-            .basic-profile-grid {
+            .basic-profile-layout {
               grid-template-columns: 1fr !important;
             }
 
-            .basic-profile-age-grid {
+            .basic-age-grid {
               grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             }
 
-            .basic-profile-footer {
+            .basic-footer {
               flex-direction: column !important;
             }
 
-            .basic-profile-footer button {
+            .basic-footer button {
               width: 100% !important;
             }
           }
 
-          @media (max-width: 560px) {
-            .basic-profile-age-grid {
+          @media (max-width: 600px) {
+            .basic-age-grid {
               grid-template-columns: 1fr !important;
             }
           }
@@ -172,6 +194,7 @@ export default function BasicProfilePage() {
       <div style={styles.page}>
         <div style={styles.glowOne} />
         <div style={styles.glowTwo} />
+        <div style={styles.glowThree} />
 
         <motion.div
           initial={{ opacity: 0, y: 22 }}
@@ -196,190 +219,242 @@ export default function BasicProfilePage() {
               </p>
             </div>
 
-            <aside style={styles.profilePreview}>
-              <div style={styles.previewIcon}>
-                {selectedGender?.icon || selectedAge?.icon || "🧵"}
+            <aside style={styles.previewCard}>
+              <div style={styles.previewTop}>
+                <span style={styles.previewIcon}>
+                  {selectedGender?.icon || selectedAge?.icon || "🧵"}
+                </span>
+
+                <div>
+                  <p style={styles.previewLabel}>Profile preview</p>
+                  <h2 style={styles.previewTitle}>
+                    {selectedAge?.label || "Age"} ·{" "}
+                    {selectedGender?.title || "Gender"}
+                  </h2>
+                </div>
               </div>
 
-              <div>
-                <p style={styles.previewLabel}>Profile preview</p>
-                <h2 style={styles.previewTitle}>
-                  {selectedAge?.label || "Age"} · {selectedGender?.title || "Gender"}
-                </h2>
-                <p style={styles.previewText}>
-                  {selectedAge?.note ||
-                    "Choose age and gender to unlock better recommendations."}
-                </p>
-              </div>
+              <p style={styles.previewText}>
+                {selectedAge?.note ||
+                  "Choose age and gender to unlock better recommendations."}
+              </p>
 
-              <div style={styles.previewLine} />
-
-              <div style={styles.previewChips}>
-                <span style={styles.previewChip}>
-                  {ageRange ? `Age ${ageRange}` : "Age pending"}
+              <div style={styles.previewTags}>
+                <span style={styles.previewTag}>
+                  {selectedAgeValue ? `Age ${selectedAgeValue}` : "Age pending"}
                 </span>
-                <span style={styles.previewChip}>
-                  {gender || "Gender pending"}
+                <span style={styles.previewTag}>
+                  {selectedGenderValue || "Gender pending"}
                 </span>
+                <span style={styles.previewTag}>Fit profile</span>
               </div>
             </aside>
           </section>
 
-          <section className="basic-profile-grid" style={styles.mainGrid}>
-            <div style={styles.block}>
-              <div style={styles.blockHeader}>
-                <span style={styles.blockIcon}>🎯</span>
+          <section className="basic-profile-layout" style={styles.layout}>
+            <main style={styles.mainPanel}>
+              <section style={styles.block}>
+                <div style={styles.blockHeader}>
+                  <span style={styles.blockIcon}>🎯</span>
 
-                <div>
-                  <h2 style={styles.blockTitle}>What is your age?</h2>
-                  <p style={styles.blockText}>
-                    Choose the closest age range. This keeps the next size and
-                    outfit questions more relevant.
-                  </p>
+                  <div>
+                    <h2 style={styles.blockTitle}>What is your age?</h2>
+                    <p style={styles.blockText}>
+                      Choose the closest age range. This keeps the next size,
+                      outfit, and expert questions more relevant.
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="basic-profile-age-grid" style={styles.ageGrid}>
-                {AGE_OPTIONS.map((option) => {
-                  const selected = ageRange === option.value;
+                <div className="basic-age-grid" style={styles.ageGrid}>
+                  {AGE_OPTIONS.map((option) => {
+                    const selected = selectedAgeValue === option.value;
 
-                  return (
-                    <motion.button
-                      key={option.value}
-                      type="button"
-                      whileHover={{ y: -4 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => selectAge(option.value)}
-                      style={{
-                        ...styles.ageCard,
-                        ...(selected ? styles.ageCardSelected : {}),
-                      }}
-                    >
-                      <span style={styles.ageIcon}>{option.icon}</span>
-
-                      <span style={styles.ageCopy}>
-                        <strong>{option.label}</strong>
-                        <small>{option.title}</small>
-                      </span>
-
-                      <span
+                    return (
+                      <motion.button
+                        key={option.value}
+                        type="button"
+                        whileHover={{ y: -5, scale: 1.01 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => selectAge(option.value)}
                         style={{
-                          ...styles.checkCircle,
-                          ...(selected ? styles.checkCircleSelected : {}),
+                          ...styles.ageCard,
+                          ...(selected
+                            ? {
+                                borderColor: option.accent,
+                                background: "#ffffff",
+                                boxShadow: `0 18px 34px ${option.accent}24`,
+                              }
+                            : {}),
                         }}
                       >
-                        {selected ? "✓" : ""}
-                      </span>
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </div>
+                        <div
+                          style={{
+                            ...styles.ageIconWrap,
+                            background: option.gradient,
+                          }}
+                        >
+                          <span style={styles.ageIcon}>{option.icon}</span>
+                        </div>
 
-            <div style={styles.block}>
-              <div style={styles.blockHeader}>
-                <span style={styles.blockIcon}>🧬</span>
+                        <div style={styles.ageContent}>
+                          <div style={styles.ageTitleRow}>
+                            <div>
+                              <strong style={styles.ageLabel}>
+                                {option.label}
+                              </strong>
+                              <small style={styles.ageTitle}>
+                                {option.title}
+                              </small>
+                            </div>
 
-                <div>
-                  <h2 style={styles.blockTitle}>Gender</h2>
-                  <p style={styles.blockText}>
-                    This helps personalize size mapping, cuts, and fit
-                    recommendations.
-                  </p>
+                            <span
+                              style={{
+                                ...styles.checkCircle,
+                                ...(selected
+                                  ? {
+                                      background: option.accent,
+                                      borderColor: option.accent,
+                                      color: "#ffffff",
+                                    }
+                                  : {}),
+                              }}
+                            >
+                              {selected ? "✓" : ""}
+                            </span>
+                          </div>
+
+                          <p style={styles.ageNote}>{option.note}</p>
+                        </div>
+                      </motion.button>
+                    );
+                  })}
                 </div>
-              </div>
+              </section>
+            </main>
 
-              <div style={styles.genderGrid}>
-                {GENDER_OPTIONS.map((option) => {
-                  const selected = gender === option.value;
+            <aside style={styles.sidePanel}>
+              <section style={styles.genderBlock}>
+                <div style={styles.blockHeader}>
+                  <span style={styles.blockIcon}>🧬</span>
 
-                  return (
-                    <motion.button
-                      key={option.value}
-                      type="button"
-                      whileHover={{ y: -6, scale: 1.01 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => selectGender(option.value)}
-                      style={{
-                        ...styles.genderCard,
-                        ...(selected ? styles.genderCardSelected : {}),
-                      }}
-                    >
-                      <div
+                  <div>
+                    <h2 style={styles.blockTitle}>Gender</h2>
+                    <p style={styles.blockText}>
+                      This helps personalize size mapping, cuts, and fit
+                      recommendations.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={styles.genderGrid}>
+                  {GENDER_OPTIONS.map((option) => {
+                    const selected = selectedGenderValue === option.value;
+
+                    return (
+                      <motion.button
+                        key={option.value}
+                        type="button"
+                        whileHover={{ y: -5, scale: 1.01 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => selectGender(option.value)}
                         style={{
-                          ...styles.genderVisual,
-                          background: option.gradient,
+                          ...styles.genderCard,
+                          ...(selected
+                            ? {
+                                borderColor: option.accent,
+                                boxShadow: `0 18px 34px ${option.accent}24`,
+                              }
+                            : {}),
                         }}
                       >
-                        <span style={styles.genderIcon}>{option.icon}</span>
-                      </div>
-
-                      <div style={styles.genderBody}>
-                        <div style={styles.genderTitleRow}>
-                          <h3 style={styles.genderTitle}>{option.title}</h3>
-
+                        <div
+                          style={{
+                            ...styles.genderVisual,
+                            background: option.gradient,
+                          }}
+                        >
+                          <span style={styles.genderIcon}>{option.icon}</span>
                           <span
                             style={{
-                              ...styles.radioCircle,
-                              ...(selected ? styles.radioCircleSelected : {}),
+                              ...styles.genderBadge,
+                              color: option.accent,
                             }}
                           >
-                            {selected ? "✓" : ""}
+                            {selected ? "Selected" : "Choose"}
                           </span>
                         </div>
 
-                        <p style={styles.genderNote}>{option.note}</p>
-                      </div>
-                    </motion.button>
-                  );
-                })}
-              </div>
+                        <div style={styles.genderBody}>
+                          <div style={styles.genderTitleRow}>
+                            <h3 style={styles.genderTitle}>{option.title}</h3>
 
-              <div style={styles.tipCard}>
+                            <span
+                              style={{
+                                ...styles.checkCircle,
+                                ...(selected
+                                  ? {
+                                      background: option.accent,
+                                      borderColor: option.accent,
+                                      color: "#ffffff",
+                                    }
+                                  : {}),
+                              }}
+                            >
+                              {selected ? "✓" : ""}
+                            </span>
+                          </div>
+
+                          <p style={styles.genderNote}>{option.note}</p>
+                        </div>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <section style={styles.tipCard}>
                 <span style={styles.tipIcon}>💡</span>
 
-                <p style={styles.tipText}>
-                  Later, the AI Fit Scanner can refine this with height, body
-                  proportions, and recommended size confidence.
-                </p>
-              </div>
-            </div>
+                <div>
+                  <h3 style={styles.tipTitle}>Why this matters</h3>
+                  <p style={styles.tipText}>
+                    Later, the AI Fit Scanner can refine this with height, body
+                    proportions, recommended size, and size confidence.
+                  </p>
+                </div>
+              </section>
+            </aside>
           </section>
 
           {error ? <div style={styles.errorBox}>{error}</div> : null}
 
-          <section style={styles.selectionSummary}>
+          <section style={styles.summaryCard}>
             <div style={styles.summaryIcon}>🪄</div>
 
             <div>
               <p style={styles.summaryLabel}>Selected basic profile</p>
               <strong style={styles.summaryText}>
-                {ageRange || gender
-                  ? `${ageRange || "Age not selected"} · ${
-                      gender || "Gender not selected"
+                {selectedAgeValue || selectedGenderValue
+                  ? `${selectedAgeValue || "Age not selected"} · ${
+                      selectedGenderValue || "Gender not selected"
                     }`
                   : "No basic profile selected yet"}
               </strong>
             </div>
           </section>
 
-          <div className="basic-profile-footer" style={styles.footer}>
+          <div className="basic-footer" style={styles.footer}>
             <button
               type="button"
-              className="btn ghost"
               onClick={() => nav("/intent")}
-              style={styles.footerButton}
+              style={styles.backButton}
             >
-              Back
+              ← Back
             </button>
 
-            <button
-              type="button"
-              className="btn"
-              onClick={continueNext}
-              style={styles.footerButton}
-            >
-              Continue to Size & Body
+            <button type="button" onClick={continueNext} style={styles.nextButton}>
+              Continue to Size & Body →
             </button>
           </div>
         </motion.div>
@@ -395,19 +470,21 @@ const styles = {
     overflow: "hidden",
     borderRadius: "34px",
     padding: "34px",
+    color: "#14213d",
     background:
-      "radial-gradient(circle at 12% 10%, rgba(124,92,255,0.28), transparent 30%), radial-gradient(circle at 88% 8%, rgba(0,212,255,0.22), transparent 28%), linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035))",
-    border: "1px solid rgba(255,255,255,0.12)",
+      "linear-gradient(135deg, #fff7ed 0%, #eef6ff 40%, #f5f3ff 72%, #ecfeff 100%)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    boxShadow: "0 24px 70px rgba(15, 23, 42, 0.12)",
   },
   glowOne: {
     position: "absolute",
     width: "360px",
     height: "360px",
     borderRadius: "50%",
-    background: "rgba(124,92,255,0.18)",
-    filter: "blur(72px)",
-    top: "-120px",
-    left: "-100px",
+    background: "rgba(255, 214, 165, 0.55)",
+    filter: "blur(68px)",
+    top: "-110px",
+    left: "-90px",
     pointerEvents: "none",
   },
   glowTwo: {
@@ -415,10 +492,21 @@ const styles = {
     width: "360px",
     height: "360px",
     borderRadius: "50%",
-    background: "rgba(0,212,255,0.14)",
+    background: "rgba(191, 219, 254, 0.72)",
     filter: "blur(72px)",
-    right: "-130px",
+    right: "-120px",
+    top: "60px",
+    pointerEvents: "none",
+  },
+  glowThree: {
+    position: "absolute",
+    width: "340px",
+    height: "340px",
+    borderRadius: "50%",
+    background: "rgba(221, 214, 254, 0.72)",
+    filter: "blur(74px)",
     bottom: "-140px",
+    left: "34%",
     pointerEvents: "none",
   },
   content: {
@@ -427,7 +515,7 @@ const styles = {
   },
   header: {
     display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr) 350px",
+    gridTemplateColumns: "minmax(0, 1fr) 340px",
     gap: "22px",
     alignItems: "stretch",
     marginBottom: "24px",
@@ -436,104 +524,114 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     gap: "9px",
-    padding: "8px 12px",
+    padding: "9px 13px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.08)",
-    border: "1px solid rgba(255,255,255,0.14)",
-    color: "rgba(255,255,255,0.84)",
+    background: "rgba(255, 255, 255, 0.72)",
+    border: "1px solid rgba(109, 93, 252, 0.16)",
+    color: "#4f46e5",
     fontSize: "13px",
-    fontWeight: 800,
+    fontWeight: 900,
     marginBottom: "16px",
+    boxShadow: "0 10px 24px rgba(79, 70, 229, 0.08)",
   },
   stepDot: {
     width: "9px",
     height: "9px",
     borderRadius: "50%",
-    background: "#00d4ff",
-    boxShadow: "0 0 18px rgba(0,212,255,0.9)",
-    animation: "basicProfilePulse 2s ease-in-out infinite",
+    background: "#6d5dfc",
+    boxShadow: "0 0 18px rgba(109, 93, 252, 0.7)",
+    animation: "basicSoftPulse 2s ease-in-out infinite",
   },
   title: {
     margin: 0,
-    fontSize: "48px",
+    color: "#111827",
+    fontSize: "50px",
     lineHeight: 1.04,
-    letterSpacing: "-1.5px",
+    letterSpacing: "-1.6px",
   },
   subtitle: {
     maxWidth: "760px",
     margin: "14px 0 0",
-    color: "rgba(255,255,255,0.74)",
-    lineHeight: 1.65,
+    color: "#475569",
+    lineHeight: 1.7,
     fontSize: "16px",
+    fontWeight: 600,
   },
-  profilePreview: {
-    border: "1px solid rgba(255,255,255,0.14)",
-    borderRadius: "26px",
+  previewCard: {
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "28px",
     padding: "20px",
-    background:
-      "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05))",
-    boxShadow: "0 18px 40px rgba(0,0,0,0.18)",
+    background: "rgba(255,255,255,0.76)",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.10)",
+    backdropFilter: "blur(18px)",
+  },
+  previewTop: {
+    display: "flex",
+    alignItems: "center",
+    gap: "14px",
   },
   previewIcon: {
-    width: "64px",
-    height: "64px",
+    width: "62px",
+    height: "62px",
     borderRadius: "22px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.11)",
-    border: "1px solid rgba(255,255,255,0.14)",
-    fontSize: "31px",
-    marginBottom: "15px",
-    animation: "basicProfileFloat 3.2s ease-in-out infinite",
+    background: "linear-gradient(135deg, #ffffff, #eef2ff)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    fontSize: "30px",
+    boxShadow: "0 14px 30px rgba(15, 23, 42, 0.10)",
+    animation: "basicSoftFloat 3.2s ease-in-out infinite",
   },
   previewLabel: {
     margin: "0 0 4px",
+    color: "#64748b",
     fontSize: "12px",
-    color: "rgba(255,255,255,0.62)",
-    fontWeight: 800,
+    fontWeight: 900,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
   },
   previewTitle: {
     margin: 0,
+    color: "#111827",
     fontSize: "20px",
   },
   previewText: {
-    margin: "9px 0 0",
-    color: "rgba(255,255,255,0.70)",
-    lineHeight: 1.5,
+    margin: "14px 0",
+    color: "#475569",
+    lineHeight: 1.55,
     fontSize: "14px",
+    fontWeight: 600,
   },
-  previewLine: {
-    height: "1px",
-    margin: "18px 0",
-    background: "rgba(255,255,255,0.13)",
-  },
-  previewChips: {
+  previewTags: {
     display: "flex",
     flexWrap: "wrap",
     gap: "8px",
   },
-  previewChip: {
-    padding: "7px 9px",
+  previewTag: {
+    padding: "7px 10px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.08)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    color: "#334155",
     fontSize: "12px",
-    color: "rgba(255,255,255,0.78)",
-    fontWeight: 800,
+    fontWeight: 900,
   },
-  mainGrid: {
+  layout: {
     display: "grid",
-    gridTemplateColumns: "1.25fr 0.75fr",
+    gridTemplateColumns: "minmax(0, 1fr) 360px",
+    gap: "18px",
+    alignItems: "start",
+  },
+  mainPanel: {
+    display: "grid",
     gap: "18px",
   },
   block: {
-    border: "1px solid rgba(255,255,255,0.13)",
-    borderRadius: "28px",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "30px",
     padding: "22px",
-    background: "rgba(255,255,255,0.06)",
-    boxShadow: "0 18px 42px rgba(0,0,0,0.16)",
+    background: "rgba(255,255,255,0.76)",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.09)",
   },
   blockHeader: {
     display: "flex",
@@ -542,115 +640,152 @@ const styles = {
     marginBottom: "18px",
   },
   blockIcon: {
-    width: "46px",
-    height: "46px",
-    borderRadius: "16px",
+    width: "48px",
+    height: "48px",
+    borderRadius: "17px",
     display: "grid",
     placeItems: "center",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.90), rgba(0,212,255,0.78))",
-    border: "1px solid rgba(255,255,255,0.18)",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
     fontSize: "22px",
     flex: "0 0 auto",
   },
   blockTitle: {
     margin: "0 0 6px",
+    color: "#111827",
     fontSize: "25px",
   },
   blockText: {
     margin: 0,
-    color: "rgba(255,255,255,0.68)",
-    lineHeight: 1.55,
+    color: "#475569",
+    lineHeight: 1.6,
+    fontWeight: 600,
   },
   ageGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "12px",
+    gap: "13px",
   },
   ageCard: {
-    border: "1px solid rgba(255,255,255,0.13)",
-    borderRadius: "20px",
-    padding: "14px",
-    background: "rgba(255,255,255,0.07)",
-    color: "inherit",
-    display: "flex",
-    alignItems: "center",
-    gap: "13px",
+    border: "2px solid rgba(148, 163, 184, 0.22)",
+    borderRadius: "24px",
+    padding: 0,
+    overflow: "hidden",
+    background: "rgba(255,255,255,0.82)",
+    color: "#111827",
     textAlign: "left",
     cursor: "pointer",
+    boxShadow: "0 12px 28px rgba(15, 23, 42, 0.07)",
   },
-  ageCardSelected: {
-    border: "1px solid rgba(0,212,255,0.8)",
-    background: "rgba(0,212,255,0.10)",
-    boxShadow: "0 14px 30px rgba(0,212,255,0.10)",
+  ageIconWrap: {
+    height: "82px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   ageIcon: {
-    width: "46px",
-    height: "46px",
-    borderRadius: "16px",
+    width: "54px",
+    height: "54px",
+    borderRadius: "20px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.10)",
-    border: "1px solid rgba(255,255,255,0.13)",
-    fontSize: "23px",
-    flex: "0 0 auto",
+    background: "rgba(255,255,255,0.68)",
+    border: "1px solid rgba(255,255,255,0.72)",
+    fontSize: "28px",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
   },
-  ageCopy: {
+  ageContent: {
+    padding: "14px",
+  },
+  ageTitleRow: {
     display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-    flex: 1,
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: "10px",
+  },
+  ageLabel: {
+    display: "block",
+    color: "#111827",
+    fontSize: "18px",
+  },
+  ageTitle: {
+    display: "block",
+    marginTop: "3px",
+    color: "#64748b",
+    fontWeight: 800,
   },
   checkCircle: {
-    width: "24px",
-    height: "24px",
+    width: "27px",
+    height: "27px",
     borderRadius: "50%",
     display: "grid",
     placeItems: "center",
-    border: "1px solid rgba(255,255,255,0.20)",
-    fontSize: "12px",
+    border: "1px solid #cbd5e1",
+    background: "#ffffff",
+    color: "#ffffff",
+    fontSize: "13px",
     fontWeight: 900,
     flex: "0 0 auto",
   },
-  checkCircleSelected: {
-    background: "#00d4ff",
-    color: "#061224",
-    borderColor: "#00d4ff",
+  ageNote: {
+    minHeight: "44px",
+    margin: "10px 0 0",
+    color: "#475569",
+    lineHeight: 1.45,
+    fontSize: "13px",
+    fontWeight: 600,
+  },
+  sidePanel: {
+    display: "grid",
+    gap: "16px",
+  },
+  genderBlock: {
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "30px",
+    padding: "22px",
+    background: "rgba(255,255,255,0.76)",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.09)",
   },
   genderGrid: {
     display: "grid",
-    gap: "14px",
+    gap: "13px",
   },
   genderCard: {
-    border: "1px solid rgba(255,255,255,0.13)",
+    border: "2px solid rgba(148, 163, 184, 0.22)",
     borderRadius: "24px",
     overflow: "hidden",
     padding: 0,
-    background: "rgba(255,255,255,0.065)",
-    color: "inherit",
+    background: "rgba(255,255,255,0.86)",
+    color: "#111827",
     textAlign: "left",
     cursor: "pointer",
-    boxShadow: "0 16px 36px rgba(0,0,0,0.18)",
-  },
-  genderCardSelected: {
-    border: "2px solid rgba(0,212,255,0.95)",
-    boxShadow: "0 22px 50px rgba(0,212,255,0.14)",
+    boxShadow: "0 12px 28px rgba(15, 23, 42, 0.07)",
   },
   genderVisual: {
-    height: "86px",
-    display: "grid",
-    placeItems: "center",
+    height: "92px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "18px",
   },
   genderIcon: {
-    width: "56px",
-    height: "56px",
-    borderRadius: "20px",
+    width: "58px",
+    height: "58px",
+    borderRadius: "22px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.22)",
-    border: "1px solid rgba(255,255,255,0.24)",
-    fontSize: "30px",
-    boxShadow: "0 14px 28px rgba(0,0,0,0.22)",
+    background: "rgba(255,255,255,0.68)",
+    border: "1px solid rgba(255,255,255,0.72)",
+    fontSize: "31px",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
+  },
+  genderBadge: {
+    padding: "8px 11px",
+    borderRadius: "999px",
+    background: "rgba(255,255,255,0.75)",
+    border: "1px solid rgba(255,255,255,0.72)",
+    fontSize: "12px",
+    fontWeight: 900,
   },
   genderBody: {
     padding: "15px",
@@ -663,67 +798,58 @@ const styles = {
   },
   genderTitle: {
     margin: 0,
+    color: "#111827",
     fontSize: "20px",
-  },
-  radioCircle: {
-    width: "27px",
-    height: "27px",
-    borderRadius: "50%",
-    display: "grid",
-    placeItems: "center",
-    border: "1px solid rgba(255,255,255,0.22)",
-    color: "#061224",
-    fontSize: "14px",
-    fontWeight: 900,
-    flex: "0 0 auto",
-  },
-  radioCircleSelected: {
-    background: "#00d4ff",
-    borderColor: "#00d4ff",
-    boxShadow: "0 0 20px rgba(0,212,255,0.5)",
   },
   genderNote: {
     margin: "8px 0 0",
-    color: "rgba(255,255,255,0.70)",
+    color: "#475569",
     lineHeight: 1.5,
     fontSize: "14px",
+    fontWeight: 600,
   },
   tipCard: {
     display: "flex",
     alignItems: "flex-start",
-    gap: "11px",
-    marginTop: "14px",
-    padding: "13px",
-    borderRadius: "18px",
-    background: "rgba(0,0,0,0.18)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    gap: "13px",
+    padding: "16px",
+    borderRadius: "24px",
+    background: "rgba(255,255,255,0.76)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    boxShadow: "0 14px 34px rgba(15, 23, 42, 0.08)",
   },
   tipIcon: {
+    width: "45px",
+    height: "45px",
+    borderRadius: "16px",
+    display: "grid",
+    placeItems: "center",
+    background: "linear-gradient(135deg, #fef3c7, #dbeafe)",
+    fontSize: "22px",
     flex: "0 0 auto",
+  },
+  tipTitle: {
+    margin: "0 0 6px",
+    color: "#111827",
+    fontSize: "17px",
   },
   tipText: {
     margin: 0,
-    color: "rgba(255,255,255,0.74)",
-    lineHeight: 1.5,
+    color: "#475569",
+    lineHeight: 1.55,
     fontSize: "13px",
+    fontWeight: 600,
   },
-  errorBox: {
-    marginTop: "16px",
-    padding: "13px 15px",
-    borderRadius: "16px",
-    background: "rgba(255, 86, 86, 0.16)",
-    border: "1px solid rgba(255, 120, 120, 0.35)",
-    color: "#ffdede",
-  },
-  selectionSummary: {
+  summaryCard: {
     display: "flex",
     alignItems: "center",
     gap: "13px",
     marginTop: "18px",
     padding: "16px",
     borderRadius: "22px",
-    background: "rgba(0,0,0,0.18)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.78)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    boxShadow: "0 14px 34px rgba(15, 23, 42, 0.08)",
   },
   summaryIcon: {
     width: "45px",
@@ -731,21 +857,30 @@ const styles = {
     borderRadius: "16px",
     display: "grid",
     placeItems: "center",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.9), rgba(0,212,255,0.8))",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
     fontSize: "22px",
     flex: "0 0 auto",
   },
   summaryLabel: {
     margin: "0 0 4px",
-    color: "rgba(255,255,255,0.58)",
+    color: "#64748b",
     fontSize: "12px",
     fontWeight: 900,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
   },
   summaryText: {
+    color: "#111827",
     fontSize: "16px",
+  },
+  errorBox: {
+    marginTop: "16px",
+    padding: "13px 15px",
+    borderRadius: "16px",
+    background: "#fff1f2",
+    border: "1px solid #fecdd3",
+    color: "#be123c",
+    fontWeight: 800,
   },
   footer: {
     display: "flex",
@@ -753,7 +888,26 @@ const styles = {
     gap: "12px",
     marginTop: "22px",
   },
-  footerButton: {
-    minWidth: "190px",
+  backButton: {
+    minWidth: "170px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "999px",
+    padding: "14px 22px",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
+  },
+  nextButton: {
+    minWidth: "240px",
+    border: "0",
+    borderRadius: "999px",
+    padding: "14px 24px",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 16px 34px rgba(79, 70, 229, 0.28)",
   },
 };
