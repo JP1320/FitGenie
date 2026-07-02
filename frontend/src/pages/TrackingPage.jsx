@@ -6,100 +6,93 @@ import { useFlowStore } from "../store/useFlowStore";
 
 const ORDER_STEPS = [
   {
-    key: "Accepted",
-    title: "Accepted",
-    subtitle: "Your Fit Card and order request have been received.",
+    value: "Accepted",
+    title: "Order Accepted",
+    subtitle: "Your expert has received the Fit Card.",
     icon: "✅",
-    customerMessage: "Your request has been accepted.",
-    expertMessage: "Expert has received your Fit Card and order details.",
+    description:
+      "The selected expert can now review outfit details, profile, delivery mode, and notes.",
+    gradient: "linear-gradient(135deg, #dcfce7, #cffafe, #e0e7ff)",
+    accent: "#059669",
   },
   {
-    key: "In Progress",
+    value: "In Progress",
     title: "In Progress",
-    subtitle: "The expert is reviewing your size, style, and service details.",
+    subtitle: "Expert is reviewing fit and service details.",
     icon: "🧾",
-    customerMessage: "Your expert is reviewing the fit details.",
-    expertMessage: "Expert is checking the measurements and preferences.",
+    description:
+      "Measurements, outfit choice, fabric preference, and delivery details are being checked.",
+    gradient: "linear-gradient(135deg, #dbeafe, #e0e7ff, #ede9fe)",
+    accent: "#4f46e5",
   },
   {
-    key: "Stitching",
+    value: "Stitching",
     title: "Stitching",
-    subtitle: "Your outfit is being stitched, altered, or prepared.",
+    subtitle: "Your outfit work has started.",
     icon: "🧵",
-    customerMessage: "Your outfit work is currently in progress.",
-    expertMessage: "Stitching or alteration stage is active.",
+    description:
+      "The tailor, designer, boutique, or stylist is working on the outfit or fit adjustment.",
+    gradient: "linear-gradient(135deg, #fce7f3, #ffe4e6, #fed7aa)",
+    accent: "#db2777",
   },
   {
-    key: "Ready",
+    value: "Ready",
     title: "Ready",
-    subtitle: "Your outfit is ready for final delivery or pickup.",
-    icon: "🎉",
-    customerMessage: "Your outfit is ready.",
-    expertMessage: "Expert has marked the outfit as ready.",
+    subtitle: "Your outfit is ready for final handoff.",
+    icon: "👗",
+    description:
+      "The expert has completed the outfit or service and it is ready for delivery or pickup.",
+    gradient: "linear-gradient(135deg, #fef3c7, #ffedd5, #ffe4e6)",
+    accent: "#f97316",
   },
   {
-    key: "Shipped / Ready for Pickup",
+    value: "Shipped / Ready for Pickup",
     title: "Shipped / Ready for Pickup",
-    subtitle: "Your outfit has been shipped or is ready for pickup.",
+    subtitle: "Final delivery or pickup stage.",
     icon: "📦",
-    customerMessage: "Your outfit is shipped or ready for pickup.",
-    expertMessage: "Final handoff stage has started.",
+    description:
+      "Your outfit is shipped, out for delivery, or ready to be picked up from the expert.",
+    gradient: "linear-gradient(135deg, #ecfccb, #dcfce7, #cffafe)",
+    accent: "#65a30d",
   },
 ];
 
 function getCurrentStatus(state) {
-  return (
-    state.order?.status ||
-    state.trackingStatus ||
-    "Accepted"
-  );
+  return state.order?.status || state.trackingStatus || "Accepted";
 }
 
 function getStatusIndex(status) {
-  const foundIndex = ORDER_STEPS.findIndex((step) => step.key === status);
-  return foundIndex >= 0 ? foundIndex : 0;
+  const index = ORDER_STEPS.findIndex((step) => step.value === status);
+  return index >= 0 ? index : 0;
 }
 
 function getProgressPercent(status) {
   const index = getStatusIndex(status);
-  return Math.round((index / (ORDER_STEPS.length - 1)) * 100);
-}
-
-function getSafeValue(value, fallback = "Not available") {
-  if (value === undefined || value === null || value === "") {
-    return fallback;
-  }
-
-  return value;
+  return Math.round(((index + 1) / ORDER_STEPS.length) * 100);
 }
 
 function getSelectedOutfit(state) {
-  return state.recommendations?.selectedOutfit || state.selectedOutfit || null;
+  return state.recommendations?.selectedOutfit || state.selectedOutfit || {};
 }
 
 function getSelectedExpert(state) {
-  return state.selectedExpert || state.marketplace?.selectedExpert || null;
-}
-
-function getDeliveryMode(state) {
-  return state.deliveryMode || state.delivery?.mode || "Not selected";
+  return state.selectedExpert || state.marketplace?.selectedExpert || {};
 }
 
 function getDeliverySchedule(state) {
-  return (
-    state.deliverySchedule ||
-    state.schedule ||
-    state.delivery?.schedule ||
-    "Not selected"
-  );
+  return state.deliverySchedule || state.schedule || state.delivery?.schedule || "";
+}
+
+function getDeliveryMode(state) {
+  return state.deliveryMode || state.delivery?.mode || "";
 }
 
 function getOrderId(state) {
   return (
     state.order?.bookingId ||
     state.order?.orderId ||
-    state.bookingId ||
-    `ORD-${Date.now()}`
+    state.fitCard?.fitCardId ||
+    "ORD-PREVIEW"
   );
 }
 
@@ -107,18 +100,10 @@ function buildTimeline(status) {
   const currentIndex = getStatusIndex(status);
 
   return ORDER_STEPS.map((step, index) => ({
-    ...step,
+    status: step.value,
+    title: step.title,
     completed: index <= currentIndex,
     active: index === currentIndex,
-    timestamp:
-      index <= currentIndex
-        ? new Date().toLocaleString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            hour: "2-digit",
-            minute: "2-digit",
-          })
-        : "",
   }));
 }
 
@@ -129,60 +114,58 @@ export default function TrackingPage() {
 
   const selectedOutfit = getSelectedOutfit(state);
   const selectedExpert = getSelectedExpert(state);
-
-  const [error, setError] = useState("");
-  const [statusMessage, setStatusMessage] = useState("");
+  const deliveryMode = getDeliveryMode(state);
+  const deliverySchedule = getDeliverySchedule(state);
+  const orderId = getOrderId(state);
 
   const currentStatus = getCurrentStatus(state);
   const currentIndex = getStatusIndex(currentStatus);
-  const currentStep = ORDER_STEPS[currentIndex];
+  const currentStep = ORDER_STEPS[currentIndex] || ORDER_STEPS[0];
   const progressPercent = getProgressPercent(currentStatus);
-  const timeline = useMemo(
-    () => buildTimeline(currentStatus),
-    [currentStatus]
-  );
 
-  const orderId = getOrderId(state);
-  const deliveryMode = getDeliveryMode(state);
-  const deliverySchedule = getDeliverySchedule(state);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [error, setError] = useState("");
+
+  const nextStep = useMemo(() => {
+    return ORDER_STEPS[currentIndex + 1] || null;
+  }, [currentIndex]);
 
   function updateStatus(nextStatus) {
     setError("");
-    setStatusMessage("");
-
-    const nextOrder = {
-      ...(state.order || {}),
-      bookingId: orderId,
-      orderId,
-      status: nextStatus,
-      timeline: buildTimeline(nextStatus),
-      updatedAt: new Date().toISOString(),
-    };
+    setStatusMessage(`${nextStatus} status saved.`);
 
     patch({
       trackingStatus: nextStatus,
-      order: nextOrder,
-    });
-
-    setStatusMessage(`Order status updated to "${nextStatus}".`);
-  }
-
-  function moveToNextStatus() {
-    const nextIndex = Math.min(currentIndex + 1, ORDER_STEPS.length - 1);
-    updateStatus(ORDER_STEPS[nextIndex].key);
-  }
-
-  function markAsDelivered() {
-    const finalStatus = "Shipped / Ready for Pickup";
-
-    patch({
-      trackingStatus: finalStatus,
       order: {
         ...(state.order || {}),
         bookingId: orderId,
         orderId,
-        status: finalStatus,
-        timeline: buildTimeline(finalStatus),
+        status: nextStatus,
+        timeline: buildTimeline(nextStatus),
+        updatedAt: new Date().toISOString(),
+      },
+    });
+  }
+
+  function moveToNextStatus() {
+    if (!nextStep) {
+      setStatusMessage("Order is already at the final delivery stage.");
+      return;
+    }
+
+    updateStatus(nextStep.value);
+  }
+
+  function markAsDelivered() {
+    updateStatus("Shipped / Ready for Pickup");
+
+    patch({
+      order: {
+        ...(state.order || {}),
+        bookingId: orderId,
+        orderId,
+        status: "Shipped / Ready for Pickup",
+        timeline: buildTimeline("Shipped / Ready for Pickup"),
         deliveredAt: new Date().toISOString(),
       },
     });
@@ -192,9 +175,7 @@ export default function TrackingPage() {
 
   function goToFeedback() {
     if (currentStatus !== "Shipped / Ready for Pickup") {
-      setError(
-        "Please mark the order as shipped or ready for pickup before giving feedback."
-      );
+      setError("Please mark the outfit as shipped or ready for pickup before feedback.");
       return;
     }
 
@@ -205,13 +186,13 @@ export default function TrackingPage() {
     <PageShell>
       <style>
         {`
-          @keyframes trackingFloat {
+          @keyframes trackingSoftFloat {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
             100% { transform: translateY(0px); }
           }
 
-          @keyframes trackingPulse {
+          @keyframes trackingSoftPulse {
             0% { opacity: 0.55; transform: scale(0.96); }
             50% { opacity: 1; transform: scale(1.04); }
             100% { opacity: 0.55; transform: scale(0.96); }
@@ -223,7 +204,7 @@ export default function TrackingPage() {
             }
 
             .tracking-title {
-              font-size: 36px !important;
+              font-size: 38px !important;
             }
 
             .tracking-layout {
@@ -231,7 +212,7 @@ export default function TrackingPage() {
             }
 
             .tracking-status-grid {
-              grid-template-columns: 1fr !important;
+              grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             }
 
             .tracking-footer {
@@ -243,14 +224,10 @@ export default function TrackingPage() {
             }
           }
 
-          @media (max-width: 720px) {
-            .tracking-timeline-item {
-              grid-template-columns: 48px minmax(0, 1fr) !important;
-            }
-
-            .tracking-timeline-meta {
-              grid-column: 2 !important;
-              text-align: left !important;
+          @media (max-width: 650px) {
+            .tracking-status-grid,
+            .tracking-actions-grid {
+              grid-template-columns: 1fr !important;
             }
           }
         `}
@@ -259,6 +236,7 @@ export default function TrackingPage() {
       <div style={styles.page}>
         <div style={styles.glowOne} />
         <div style={styles.glowTwo} />
+        <div style={styles.glowThree} />
 
         <motion.div
           initial={{ opacity: 0, y: 22 }}
@@ -270,7 +248,7 @@ export default function TrackingPage() {
             <div>
               <div style={styles.stepPill}>
                 <span style={styles.stepDot} />
-                Step 11 of 12 · Order Tracking Timeline
+                Step 11 of 12 · Order Tracking
               </div>
 
               <h1 className="tracking-title" style={styles.title}>
@@ -278,19 +256,20 @@ export default function TrackingPage() {
               </h1>
 
               <p style={styles.subtitle}>
-                Follow each order stage from accepted to stitching, ready, and
-                final shipped or pickup status. The user and expert can both see
-                the latest stage.
+                Follow the complete order journey from Fit Card handoff to
+                expert acceptance, stitching, readiness, shipping, pickup, and
+                final feedback.
               </p>
             </div>
 
             <aside style={styles.previewCard}>
-              <div style={styles.previewIcon}>{currentStep.icon}</div>
+              <div style={styles.previewTop}>
+                <span style={styles.previewIcon}>{currentStep.icon}</span>
 
-              <div>
-                <p style={styles.previewLabel}>Current order status</p>
-                <h2 style={styles.previewTitle}>{currentStep.title}</h2>
-                <p style={styles.previewText}>{currentStep.customerMessage}</p>
+                <div>
+                  <p style={styles.previewLabel}>Current status</p>
+                  <h2 style={styles.previewTitle}>{currentStep.title}</h2>
+                </div>
               </div>
 
               <div style={styles.progressTrack}>
@@ -302,286 +281,291 @@ export default function TrackingPage() {
                 />
               </div>
 
-              <div style={styles.previewChips}>
-                <span style={styles.previewChip}>{progressPercent}% complete</span>
-                <span style={styles.previewChip}>{orderId}</span>
+              <p style={styles.previewText}>
+                {progressPercent}% complete · {currentStep.subtitle}
+              </p>
+
+              <div style={styles.previewTags}>
+                <span style={styles.previewTag}>{orderId}</span>
+                <span style={styles.previewTag}>{deliveryMode || "Delivery mode"}</span>
               </div>
             </aside>
           </section>
 
           <section className="tracking-layout" style={styles.layout}>
             <main style={styles.mainPanel}>
-              <section style={styles.heroStatusCard}>
-                <div style={styles.heroStatusTop}>
-                  <div>
-                    <p style={styles.heroLabel}>Live order status</p>
-                    <h2 style={styles.heroTitle}>{currentStep.title}</h2>
-                    <p style={styles.heroText}>{currentStep.subtitle}</p>
-                  </div>
-
-                  <div style={styles.heroIcon}>{currentStep.icon}</div>
+              <section style={styles.heroCard}>
+                <div>
+                  <p style={styles.heroLabel}>Live order status</p>
+                  <h2 style={styles.heroTitle}>{currentStep.title}</h2>
+                  <p style={styles.heroText}>{currentStep.description}</p>
                 </div>
 
-                <div style={styles.largeProgressTrack}>
-                  <div
-                    style={{
-                      ...styles.largeProgressFill,
-                      width: `${progressPercent}%`,
-                    }}
-                  />
-                </div>
-
-                <div style={styles.progressMeta}>
-                  <span>Accepted</span>
-                  <strong>{progressPercent}% complete</strong>
-                  <span>Final handoff</span>
+                <div style={styles.statusBubble}>
+                  <strong>{progressPercent}%</strong>
+                  <span>Journey progress</span>
                 </div>
               </section>
 
-              <section style={styles.timelineCard}>
+              <section style={styles.block}>
                 <div style={styles.blockHeader}>
-                  <span style={styles.blockIcon}>🗓️</span>
+                  <span style={styles.blockIcon}>🛤️</span>
 
                   <div>
                     <h2 style={styles.blockTitle}>Order Timeline</h2>
                     <p style={styles.blockText}>
-                      This timeline gives regular delivery updates to the user.
+                      Each stage shows where your outfit is in the FitGenie
+                      service journey.
                     </p>
                   </div>
                 </div>
 
-                <div style={styles.timelineList}>
-                  {timeline.map((step, index) => (
-                    <motion.div
-                      key={step.key}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="tracking-timeline-item"
-                      style={{
-                        ...styles.timelineItem,
-                        ...(step.active ? styles.timelineItemActive : {}),
-                      }}
-                    >
-                      <div
+                <div style={styles.timeline}>
+                  {ORDER_STEPS.map((step, index) => {
+                    const completed = index <= currentIndex;
+                    const active = index === currentIndex;
+
+                    return (
+                      <motion.div
+                        key={step.value}
+                        whileHover={{ y: -4 }}
                         style={{
-                          ...styles.timelineIcon,
-                          ...(step.completed ? styles.timelineIconDone : {}),
-                          ...(step.active ? styles.timelineIconActive : {}),
+                          ...styles.timelineItem,
+                          ...(active
+                            ? {
+                                borderColor: step.accent,
+                                boxShadow: `0 18px 36px ${step.accent}22`,
+                              }
+                            : {}),
                         }}
                       >
-                        {step.completed ? "✓" : index + 1}
-                      </div>
-
-                      <div>
-                        <h3 style={styles.timelineTitle}>
-                          {step.icon} {step.title}
-                        </h3>
-
-                        <p style={styles.timelineText}>{step.subtitle}</p>
-
-                        <div style={styles.timelineMessages}>
-                          <span>{step.customerMessage}</span>
-                          <span>{step.expertMessage}</span>
-                        </div>
-                      </div>
-
-                      <div
-                        className="tracking-timeline-meta"
-                        style={styles.timelineMeta}
-                      >
-                        <span
+                        <div
                           style={{
-                            ...styles.statusPill,
-                            ...(step.completed ? styles.statusPillDone : {}),
-                            ...(step.active ? styles.statusPillActive : {}),
+                            ...styles.timelineVisual,
+                            background: step.gradient,
                           }}
                         >
-                          {step.active
-                            ? "Current"
-                            : step.completed
-                            ? "Done"
-                            : "Pending"}
-                        </span>
+                          <span style={styles.timelineIcon}>{step.icon}</span>
 
-                        {step.timestamp ? (
-                          <small style={styles.timestamp}>{step.timestamp}</small>
-                        ) : null}
-                      </div>
-                    </motion.div>
-                  ))}
+                          <span
+                            style={{
+                              ...styles.timelineBadge,
+                              color: step.accent,
+                            }}
+                          >
+                            {completed ? "Done" : "Pending"}
+                          </span>
+                        </div>
+
+                        <div style={styles.timelineBody}>
+                          <div style={styles.timelineTitleRow}>
+                            <div>
+                              <h3 style={styles.timelineTitle}>{step.title}</h3>
+                              <p style={styles.timelineText}>{step.subtitle}</p>
+                            </div>
+
+                            <span
+                              style={{
+                                ...styles.checkCircle,
+                                ...(completed
+                                  ? {
+                                      background: step.accent,
+                                      borderColor: step.accent,
+                                      color: "#ffffff",
+                                    }
+                                  : {}),
+                              }}
+                            >
+                              {completed ? "✓" : ""}
+                            </span>
+                          </div>
+
+                          <p style={styles.timelineDescription}>
+                            {step.description}
+                          </p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </section>
 
-              <section style={styles.timelineCard}>
+              <section style={styles.block}>
                 <div style={styles.blockHeader}>
                   <span style={styles.blockIcon}>⚙️</span>
 
                   <div>
                     <h2 style={styles.blockTitle}>Update Status</h2>
                     <p style={styles.blockText}>
-                      Demo control for moving the order through the tracking
-                      stages. Later this can be controlled by the expert dashboard.
+                      Demo controls for moving the order through the tracking
+                      timeline.
                     </p>
                   </div>
                 </div>
 
                 <div className="tracking-status-grid" style={styles.statusGrid}>
                   {ORDER_STEPS.map((step) => {
-                    const selected = currentStatus === step.key;
+                    const selected = currentStatus === step.value;
 
                     return (
                       <motion.button
-                        key={step.key}
+                        key={step.value}
                         type="button"
                         whileHover={{ y: -4 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => updateStatus(step.key)}
+                        onClick={() => updateStatus(step.value)}
                         style={{
                           ...styles.statusButton,
-                          ...(selected ? styles.statusButtonSelected : {}),
+                          ...(selected
+                            ? {
+                                borderColor: step.accent,
+                                background: "#ffffff",
+                                boxShadow: `0 14px 30px ${step.accent}20`,
+                              }
+                            : {}),
                         }}
                       >
-                        <span style={styles.statusIcon}>{step.icon}</span>
-
-                        <span style={styles.statusCopy}>
-                          <strong>{step.title}</strong>
-                          <small>{step.subtitle}</small>
-                        </span>
+                        <span>{step.icon}</span>
+                        <strong>{step.value}</strong>
                       </motion.button>
                     );
                   })}
                 </div>
 
-                <div style={styles.quickActions}>
+                <div className="tracking-actions-grid" style={styles.quickActions}>
                   <button
                     type="button"
-                    className="btn ghost"
                     onClick={moveToNextStatus}
-                    disabled={currentIndex === ORDER_STEPS.length - 1}
-                    style={styles.quickButton}
+                    style={styles.secondaryButton}
                   >
-                    Move to Next Stage
+                    Move to Next Status
                   </button>
 
                   <button
                     type="button"
-                    className="btn"
                     onClick={markAsDelivered}
-                    style={styles.quickButton}
+                    style={styles.primaryButton}
                   >
-                    Mark Shipped / Ready
+                    Delivery Confirmed
                   </button>
+                </div>
+              </section>
+
+              <section style={styles.messageGrid}>
+                <div style={styles.messageCard}>
+                  <span style={styles.messageIcon}>📲</span>
+
+                  <div>
+                    <h3 style={styles.messageTitle}>User notification</h3>
+                    <p style={styles.messageText}>
+                      Your order is currently at “{currentStep.value}”. FitGenie
+                      will keep your delivery and pickup details ready.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={styles.messageCard}>
+                  <span style={styles.messageIcon}>🧵</span>
+
+                  <div>
+                    <h3 style={styles.messageTitle}>Expert update</h3>
+                    <p style={styles.messageText}>
+                      The expert can use this status to coordinate stitching,
+                      readiness, shipping, pickup, or delivery confirmation.
+                    </p>
+                  </div>
                 </div>
               </section>
             </main>
 
             <aside style={styles.sidePanel}>
               <div style={styles.sideTop}>
-                <span style={styles.sideIcon}>📦</span>
+                <span style={styles.sideIcon}>{currentStep.icon}</span>
 
                 <div>
                   <p style={styles.sideLabel}>Order summary</p>
-                  <h2 style={styles.sideTitle}>{orderId}</h2>
+                  <h2 style={styles.sideTitle}>{currentStatus}</h2>
                 </div>
               </div>
 
               <div style={styles.summaryList}>
                 <div style={styles.summaryItem}>
-                  <span>Current Status</span>
-                  <strong>{currentStatus}</strong>
+                  <span>Order ID</span>
+                  <strong>{orderId}</strong>
                 </div>
 
                 <div style={styles.summaryItem}>
                   <span>Selected Outfit</span>
                   <strong>
-                    {getSafeValue(
-                      selectedOutfit?.title || selectedOutfit?.name,
-                      "Selected outfit"
-                    )}
+                    {selectedOutfit?.title ||
+                      selectedOutfit?.name ||
+                      "From recommendations"}
                   </strong>
                 </div>
 
                 <div style={styles.summaryItem}>
-                  <span>Recommended Size</span>
-                  <strong>
-                    {getSafeValue(
-                      selectedOutfit?.recommendedSize || state.size,
-                      "Not available"
-                    )}
-                  </strong>
+                  <span>Selected Expert</span>
+                  <strong>{selectedExpert?.name || "From expert step"}</strong>
                 </div>
 
                 <div style={styles.summaryItem}>
-                  <span>Expert</span>
-                  <strong>{getSafeValue(selectedExpert?.name)}</strong>
-                </div>
-
-                <div style={styles.summaryItem}>
-                  <span>Expert Mobile</span>
-                  <strong>{getSafeValue(selectedExpert?.phone)}</strong>
+                  <span>Expert Contact</span>
+                  <strong>{selectedExpert?.phone || "Available after selection"}</strong>
                 </div>
 
                 <div style={styles.summaryItem}>
                   <span>Shop Address</span>
-                  <strong>
-                    {getSafeValue(
-                      selectedExpert?.address || selectedExpert?.location
-                    )}
-                  </strong>
+                  <strong>{selectedExpert?.address || "Address pending"}</strong>
                 </div>
 
                 <div style={styles.summaryItem}>
                   <span>Delivery Mode</span>
-                  <strong>{deliveryMode}</strong>
+                  <strong>{deliveryMode || "From delivery step"}</strong>
                 </div>
 
                 <div style={styles.summaryItem}>
                   <span>Schedule</span>
-                  <strong>{deliverySchedule}</strong>
+                  <strong>{deliverySchedule || "Schedule pending"}</strong>
+                </div>
+
+                <div style={styles.summaryItem}>
+                  <span>Current Stage</span>
+                  <strong>{currentStep.title}</strong>
                 </div>
               </div>
 
-              <div style={styles.notificationCard}>
-                <span style={styles.notificationBadge}>User notification</span>
+              {statusMessage ? (
+                <div style={styles.successBox}>{statusMessage}</div>
+              ) : null}
 
-                <h3 style={styles.notificationTitle}>
-                  {currentStep.customerMessage}
-                </h3>
+              <div style={styles.nextCard}>
+                <span style={styles.nextBadge}>Final step</span>
 
-                <p style={styles.notificationText}>
-                  FitGenie will show this update to the user dashboard and order
-                  tracking screen.
+                <h3 style={styles.nextTitle}>Delivery + Feedback</h3>
+
+                <p style={styles.nextText}>
+                  Once delivery is confirmed or pickup is ready, collect ratings
+                  for fit accuracy, service quality, and delivery experience.
                 </p>
-              </div>
 
-              <div style={styles.notificationCard}>
-                <span style={styles.notificationBadge}>Expert update</span>
-
-                <h3 style={styles.notificationTitle}>
-                  {currentStep.expertMessage}
-                </h3>
-
-                <p style={styles.notificationText}>
-                  Expert-side updates can later be synced from a dashboard or
-                  backend order API.
-                </p>
+                <div style={styles.nextPills}>
+                  <span>⭐ Fit</span>
+                  <span>🧵 Service</span>
+                  <span>📦 Delivery</span>
+                </div>
               </div>
             </aside>
           </section>
 
           {error ? <div style={styles.errorBox}>{error}</div> : null}
-          {statusMessage ? (
-            <div style={styles.successBox}>{statusMessage}</div>
-          ) : null}
 
           <section style={styles.finalSummary}>
             <div style={styles.finalIcon}>{currentStep.icon}</div>
 
             <div>
-              <p style={styles.finalLabel}>Delivery update summary</p>
+              <p style={styles.finalLabel}>Tracking status</p>
               <strong style={styles.finalText}>
-                {orderId} · {currentStatus} · {progressPercent}% complete
+                {currentStep.title} · {progressPercent}% complete
               </strong>
             </div>
           </section>
@@ -589,29 +573,26 @@ export default function TrackingPage() {
           <div className="tracking-footer" style={styles.footer}>
             <button
               type="button"
-              className="btn ghost"
               onClick={() => nav("/fit-card")}
-              style={styles.footerButton}
+              style={styles.backButton}
             >
-              Back
+              ← Back
             </button>
 
             <button
               type="button"
-              className="btn ghost"
               onClick={goToFeedback}
-              style={styles.footerButton}
+              style={styles.secondaryButton}
             >
-              Delivery Confirmed
+              Delivery & Feedback
             </button>
 
             <button
               type="button"
-              className="btn"
               onClick={markAsDelivered}
-              style={styles.footerButton}
+              style={styles.nextButton}
             >
-              Continue to Feedback
+              Continue to Feedback →
             </button>
           </div>
         </motion.div>
@@ -627,19 +608,21 @@ const styles = {
     overflow: "hidden",
     borderRadius: "34px",
     padding: "34px",
+    color: "#14213d",
     background:
-      "radial-gradient(circle at 12% 10%, rgba(124,92,255,0.28), transparent 30%), radial-gradient(circle at 88% 8%, rgba(0,212,255,0.22), transparent 28%), linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035))",
-    border: "1px solid rgba(255,255,255,0.12)",
+      "linear-gradient(135deg, #fff7ed 0%, #eef6ff 40%, #f5f3ff 72%, #ecfeff 100%)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    boxShadow: "0 24px 70px rgba(15, 23, 42, 0.12)",
   },
   glowOne: {
     position: "absolute",
     width: "360px",
     height: "360px",
     borderRadius: "50%",
-    background: "rgba(124,92,255,0.18)",
-    filter: "blur(72px)",
-    top: "-120px",
-    left: "-100px",
+    background: "rgba(255, 214, 165, 0.55)",
+    filter: "blur(68px)",
+    top: "-110px",
+    left: "-90px",
     pointerEvents: "none",
   },
   glowTwo: {
@@ -647,10 +630,21 @@ const styles = {
     width: "360px",
     height: "360px",
     borderRadius: "50%",
-    background: "rgba(0,212,255,0.14)",
+    background: "rgba(191, 219, 254, 0.72)",
     filter: "blur(72px)",
-    right: "-130px",
+    right: "-120px",
+    top: "60px",
+    pointerEvents: "none",
+  },
+  glowThree: {
+    position: "absolute",
+    width: "340px",
+    height: "340px",
+    borderRadius: "50%",
+    background: "rgba(221, 214, 254, 0.72)",
+    filter: "blur(74px)",
     bottom: "-140px",
+    left: "34%",
     pointerEvents: "none",
   },
   content: {
@@ -668,100 +662,109 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     gap: "9px",
-    padding: "8px 12px",
+    padding: "9px 13px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.08)",
-    border: "1px solid rgba(255,255,255,0.14)",
-    color: "rgba(255,255,255,0.84)",
+    background: "rgba(255, 255, 255, 0.72)",
+    border: "1px solid rgba(109, 93, 252, 0.16)",
+    color: "#4f46e5",
     fontSize: "13px",
-    fontWeight: 800,
+    fontWeight: 900,
     marginBottom: "16px",
+    boxShadow: "0 10px 24px rgba(79, 70, 229, 0.08)",
   },
   stepDot: {
     width: "9px",
     height: "9px",
     borderRadius: "50%",
-    background: "#00d4ff",
-    boxShadow: "0 0 18px rgba(0,212,255,0.9)",
-    animation: "trackingPulse 2s ease-in-out infinite",
+    background: "#6d5dfc",
+    boxShadow: "0 0 18px rgba(109, 93, 252, 0.7)",
+    animation: "trackingSoftPulse 2s ease-in-out infinite",
   },
   title: {
     margin: 0,
-    fontSize: "48px",
+    color: "#111827",
+    fontSize: "50px",
     lineHeight: 1.04,
-    letterSpacing: "-1.5px",
+    letterSpacing: "-1.6px",
   },
   subtitle: {
     maxWidth: "760px",
     margin: "14px 0 0",
-    color: "rgba(255,255,255,0.74)",
-    lineHeight: 1.65,
+    color: "#475569",
+    lineHeight: 1.7,
     fontSize: "16px",
+    fontWeight: 600,
   },
   previewCard: {
-    border: "1px solid rgba(255,255,255,0.14)",
-    borderRadius: "26px",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "28px",
     padding: "20px",
-    background:
-      "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05))",
-    boxShadow: "0 18px 40px rgba(0,0,0,0.18)",
+    background: "rgba(255,255,255,0.76)",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.10)",
+    backdropFilter: "blur(18px)",
+  },
+  previewTop: {
+    display: "flex",
+    alignItems: "center",
+    gap: "14px",
   },
   previewIcon: {
-    width: "64px",
-    height: "64px",
+    width: "62px",
+    height: "62px",
     borderRadius: "22px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.11)",
-    border: "1px solid rgba(255,255,255,0.14)",
-    fontSize: "31px",
-    marginBottom: "15px",
-    animation: "trackingFloat 3.2s ease-in-out infinite",
+    background: "linear-gradient(135deg, #ffffff, #eef2ff)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    fontSize: "30px",
+    boxShadow: "0 14px 30px rgba(15, 23, 42, 0.10)",
+    animation: "trackingSoftFloat 3.2s ease-in-out infinite",
   },
   previewLabel: {
     margin: "0 0 4px",
-    color: "rgba(255,255,255,0.62)",
-    fontWeight: 900,
+    color: "#64748b",
     fontSize: "12px",
+    fontWeight: 900,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
   },
   previewTitle: {
     margin: 0,
-    fontSize: "22px",
-  },
-  previewText: {
-    margin: "9px 0 0",
-    color: "rgba(255,255,255,0.70)",
-    lineHeight: 1.5,
-    fontSize: "14px",
-  },
-  previewChips: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "8px",
-    marginTop: "14px",
-  },
-  previewChip: {
-    padding: "7px 9px",
-    borderRadius: "999px",
-    background: "rgba(255,255,255,0.08)",
-    border: "1px solid rgba(255,255,255,0.10)",
-    fontSize: "12px",
-    color: "rgba(255,255,255,0.78)",
-    fontWeight: 800,
+    color: "#111827",
+    fontSize: "21px",
   },
   progressTrack: {
     height: "11px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.12)",
+    background: "#e2e8f0",
     overflow: "hidden",
-    marginTop: "14px",
+    margin: "14px 0",
   },
   progressFill: {
     height: "100%",
     borderRadius: "inherit",
-    background: "linear-gradient(90deg,#7c5cff,#00d4ff)",
+    background: "linear-gradient(90deg, #6d5dfc, #00bcd4)",
+  },
+  previewText: {
+    margin: "0 0 14px",
+    color: "#475569",
+    lineHeight: 1.55,
+    fontSize: "14px",
+    fontWeight: 600,
+  },
+  previewTags: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+  },
+  previewTag: {
+    padding: "7px 10px",
+    borderRadius: "999px",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    color: "#334155",
+    fontSize: "12px",
+    fontWeight: 900,
   },
   layout: {
     display: "grid",
@@ -773,74 +776,57 @@ const styles = {
     display: "grid",
     gap: "18px",
   },
-  heroStatusCard: {
-    border: "1px solid rgba(255,255,255,0.13)",
-    borderRadius: "30px",
-    padding: "24px",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.24), rgba(0,212,255,0.10))",
-    boxShadow: "0 22px 52px rgba(0,0,0,0.20)",
-  },
-  heroStatusTop: {
+  heroCard: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: "16px",
-    marginBottom: "18px",
+    gap: "18px",
+    flexWrap: "wrap",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "30px",
+    padding: "24px",
+    background:
+      "linear-gradient(135deg, rgba(255,255,255,0.88), rgba(236,254,255,0.86))",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.09)",
   },
   heroLabel: {
     margin: "0 0 6px",
-    color: "rgba(255,255,255,0.62)",
-    fontWeight: 900,
+    color: "#64748b",
     fontSize: "12px",
+    fontWeight: 900,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
   },
   heroTitle: {
     margin: 0,
+    color: "#111827",
     fontSize: "32px",
   },
   heroText: {
+    maxWidth: "680px",
     margin: "8px 0 0",
-    color: "rgba(255,255,255,0.72)",
-    lineHeight: 1.5,
+    color: "#475569",
+    fontWeight: 700,
+    lineHeight: 1.6,
   },
-  heroIcon: {
-    width: "72px",
-    height: "72px",
-    borderRadius: "26px",
+  statusBubble: {
+    width: "138px",
+    height: "138px",
+    borderRadius: "34px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.14)",
-    border: "1px solid rgba(255,255,255,0.18)",
-    fontSize: "36px",
-    flex: "0 0 auto",
+    textAlign: "center",
+    padding: "14px",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    color: "#111827",
   },
-  largeProgressTrack: {
-    height: "14px",
-    borderRadius: "999px",
-    background: "rgba(255,255,255,0.12)",
-    overflow: "hidden",
-    marginBottom: "12px",
-  },
-  largeProgressFill: {
-    height: "100%",
-    borderRadius: "inherit",
-    background: "linear-gradient(90deg,#7c5cff,#00d4ff)",
-  },
-  progressMeta: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "10px",
-    color: "rgba(255,255,255,0.68)",
-    fontSize: "13px",
-  },
-  timelineCard: {
-    border: "1px solid rgba(255,255,255,0.13)",
-    borderRadius: "28px",
+  block: {
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "30px",
     padding: "22px",
-    background: "rgba(255,255,255,0.06)",
-    boxShadow: "0 18px 42px rgba(0,0,0,0.16)",
+    background: "rgba(255,255,255,0.76)",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.09)",
   },
   blockHeader: {
     display: "flex",
@@ -849,166 +835,175 @@ const styles = {
     marginBottom: "18px",
   },
   blockIcon: {
-    width: "46px",
-    height: "46px",
-    borderRadius: "16px",
+    width: "48px",
+    height: "48px",
+    borderRadius: "17px",
     display: "grid",
     placeItems: "center",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.90), rgba(0,212,255,0.78))",
-    border: "1px solid rgba(255,255,255,0.18)",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
     fontSize: "22px",
     flex: "0 0 auto",
   },
   blockTitle: {
     margin: "0 0 6px",
+    color: "#111827",
     fontSize: "25px",
   },
   blockText: {
     margin: 0,
-    color: "rgba(255,255,255,0.68)",
-    lineHeight: 1.55,
+    color: "#475569",
+    lineHeight: 1.6,
+    fontWeight: 600,
   },
-  timelineList: {
+  timeline: {
     display: "grid",
-    gap: "12px",
+    gap: "14px",
   },
   timelineItem: {
-    display: "grid",
-    gridTemplateColumns: "52px minmax(0, 1fr) 130px",
-    gap: "14px",
-    alignItems: "start",
-    padding: "15px",
-    borderRadius: "22px",
-    background: "rgba(0,0,0,0.16)",
-    border: "1px solid rgba(255,255,255,0.08)",
+    border: "2px solid rgba(148, 163, 184, 0.22)",
+    borderRadius: "26px",
+    overflow: "hidden",
+    background: "rgba(255,255,255,0.86)",
+    color: "#111827",
+    boxShadow: "0 12px 28px rgba(15, 23, 42, 0.07)",
   },
-  timelineItemActive: {
-    border: "1px solid rgba(0,212,255,0.45)",
-    background: "rgba(0,212,255,0.09)",
-    boxShadow: "0 14px 30px rgba(0,212,255,0.08)",
+  timelineVisual: {
+    height: "92px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "18px",
   },
   timelineIcon: {
+    width: "58px",
+    height: "58px",
+    borderRadius: "22px",
+    display: "grid",
+    placeItems: "center",
+    background: "rgba(255,255,255,0.68)",
+    border: "1px solid rgba(255,255,255,0.72)",
+    fontSize: "31px",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
+  },
+  timelineBadge: {
+    padding: "8px 11px",
+    borderRadius: "999px",
+    background: "rgba(255,255,255,0.75)",
+    border: "1px solid rgba(255,255,255,0.72)",
+    fontSize: "12px",
+    fontWeight: 900,
+  },
+  timelineBody: {
+    padding: "16px",
+  },
+  timelineTitleRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: "12px",
+  },
+  timelineTitle: {
+    margin: 0,
+    color: "#111827",
+    fontSize: "20px",
+  },
+  timelineText: {
+    margin: "6px 0 0",
+    color: "#64748b",
+    fontWeight: 800,
+    fontSize: "13px",
+  },
+  timelineDescription: {
+    margin: "11px 0 0",
+    color: "#475569",
+    lineHeight: 1.5,
+    fontWeight: 600,
+  },
+  checkCircle: {
+    width: "28px",
+    height: "28px",
+    borderRadius: "50%",
+    display: "grid",
+    placeItems: "center",
+    border: "1px solid #cbd5e1",
+    background: "#ffffff",
+    color: "#ffffff",
+    fontSize: "13px",
+    fontWeight: 900,
+    flex: "0 0 auto",
+  },
+  statusGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
+    gap: "10px",
+  },
+  statusButton: {
+    minHeight: "74px",
+    border: "1px solid #e2e8f0",
+    borderRadius: "20px",
+    padding: "12px",
+    background: "#ffffff",
+    color: "#111827",
+    cursor: "pointer",
+    display: "grid",
+    gap: "5px",
+    placeItems: "center",
+    fontWeight: 900,
+    boxShadow: "0 10px 22px rgba(15, 23, 42, 0.06)",
+  },
+  quickActions: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "12px",
+    marginTop: "14px",
+  },
+  messageGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "14px",
+  },
+  messageCard: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "13px",
+    padding: "16px",
+    borderRadius: "22px",
+    background: "rgba(255,255,255,0.78)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    boxShadow: "0 14px 34px rgba(15, 23, 42, 0.08)",
+  },
+  messageIcon: {
     width: "44px",
     height: "44px",
     borderRadius: "16px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.08)",
-    border: "1px solid rgba(255,255,255,0.12)",
-    fontWeight: 900,
-  },
-  timelineIconDone: {
-    background: "rgba(0,212,255,0.15)",
-    borderColor: "rgba(0,212,255,0.36)",
-    color: "#d9fbff",
-  },
-  timelineIconActive: {
-    background: "#00d4ff",
-    borderColor: "#00d4ff",
-    color: "#061224",
-    boxShadow: "0 0 22px rgba(0,212,255,0.45)",
-  },
-  timelineTitle: {
-    margin: "0 0 6px",
-    fontSize: "18px",
-  },
-  timelineText: {
-    margin: "0 0 10px",
-    color: "rgba(255,255,255,0.70)",
-    lineHeight: 1.45,
-    fontSize: "14px",
-  },
-  timelineMessages: {
-    display: "grid",
-    gap: "6px",
-    color: "rgba(255,255,255,0.58)",
-    fontSize: "12px",
-  },
-  timelineMeta: {
-    display: "grid",
-    gap: "8px",
-    justifyItems: "end",
-    textAlign: "right",
-  },
-  statusPill: {
-    padding: "7px 9px",
-    borderRadius: "999px",
-    background: "rgba(255,255,255,0.08)",
-    border: "1px solid rgba(255,255,255,0.10)",
-    color: "rgba(255,255,255,0.72)",
-    fontSize: "12px",
-    fontWeight: 900,
-  },
-  statusPillDone: {
-    background: "rgba(0,212,255,0.12)",
-    borderColor: "rgba(0,212,255,0.24)",
-    color: "#d9fbff",
-  },
-  statusPillActive: {
-    background: "#00d4ff",
-    borderColor: "#00d4ff",
-    color: "#061224",
-  },
-  timestamp: {
-    color: "rgba(255,255,255,0.52)",
-  },
-  statusGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "12px",
-  },
-  statusButton: {
-    border: "1px solid rgba(255,255,255,0.13)",
-    borderRadius: "20px",
-    padding: "14px",
-    background: "rgba(255,255,255,0.07)",
-    color: "inherit",
-    display: "flex",
-    alignItems: "center",
-    gap: "13px",
-    textAlign: "left",
-    cursor: "pointer",
-  },
-  statusButtonSelected: {
-    border: "1px solid rgba(0,212,255,0.85)",
-    background: "rgba(0,212,255,0.12)",
-    boxShadow: "0 14px 30px rgba(0,212,255,0.10)",
-  },
-  statusIcon: {
-    width: "46px",
-    height: "46px",
-    borderRadius: "16px",
-    display: "grid",
-    placeItems: "center",
-    background: "rgba(255,255,255,0.10)",
-    border: "1px solid rgba(255,255,255,0.13)",
-    fontSize: "23px",
+    background: "linear-gradient(135deg, #fef3c7, #dbeafe)",
+    fontSize: "21px",
     flex: "0 0 auto",
   },
-  statusCopy: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
+  messageTitle: {
+    margin: "0 0 7px",
+    color: "#111827",
+    fontSize: "17px",
   },
-  quickActions: {
-    display: "flex",
-    gap: "12px",
-    flexWrap: "wrap",
-    marginTop: "16px",
-  },
-  quickButton: {
-    minWidth: "190px",
+  messageText: {
+    margin: 0,
+    color: "#475569",
+    lineHeight: 1.55,
+    fontSize: "13px",
+    fontWeight: 700,
   },
   sidePanel: {
     position: "sticky",
     top: "18px",
-    border: "1px solid rgba(255,255,255,0.14)",
-    borderRadius: "28px",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "30px",
     padding: "22px",
-    background:
-      "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05))",
-    boxShadow: "0 22px 52px rgba(0,0,0,0.20)",
+    background: "rgba(255,255,255,0.78)",
+    boxShadow: "0 20px 48px rgba(15, 23, 42, 0.10)",
+    backdropFilter: "blur(18px)",
   },
   sideTop: {
     display: "flex",
@@ -1022,14 +1017,13 @@ const styles = {
     borderRadius: "20px",
     display: "grid",
     placeItems: "center",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.90), rgba(0,212,255,0.78))",
-    border: "1px solid rgba(255,255,255,0.18)",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
     fontSize: "28px",
   },
   sideLabel: {
     margin: "0 0 4px",
-    color: "rgba(255,255,255,0.60)",
+    color: "#64748b",
     fontSize: "12px",
     fontWeight: 900,
     textTransform: "uppercase",
@@ -1037,6 +1031,7 @@ const styles = {
   },
   sideTitle: {
     margin: 0,
+    color: "#111827",
     fontSize: "22px",
   },
   summaryList: {
@@ -1046,53 +1041,67 @@ const styles = {
   summaryItem: {
     padding: "12px",
     borderRadius: "16px",
-    background: "rgba(0,0,0,0.16)",
-    border: "1px solid rgba(255,255,255,0.08)",
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
     display: "grid",
     gap: "4px",
+    color: "#111827",
   },
-  notificationCard: {
+  successBox: {
+    marginTop: "14px",
+    padding: "13px",
+    borderRadius: "17px",
+    background: "#ecfeff",
+    border: "1px solid #a5f3fc",
+    color: "#0891b2",
+    fontWeight: 800,
+    lineHeight: 1.5,
+  },
+  nextCard: {
     marginTop: "14px",
     padding: "14px",
     borderRadius: "20px",
-    background: "rgba(0,212,255,0.10)",
-    border: "1px solid rgba(0,212,255,0.22)",
+    background: "#ecfeff",
+    border: "1px solid #a5f3fc",
   },
-  notificationBadge: {
+  nextBadge: {
     display: "inline-flex",
     marginBottom: "8px",
     padding: "5px 8px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.10)",
-    color: "#d9fbff",
+    background: "#ffffff",
+    color: "#0891b2",
     fontSize: "11px",
     fontWeight: 900,
   },
-  notificationTitle: {
+  nextTitle: {
     margin: "0 0 8px",
-    fontSize: "17px",
+    color: "#111827",
+    fontSize: "18px",
   },
-  notificationText: {
+  nextText: {
     margin: 0,
-    color: "rgba(255,255,255,0.72)",
+    color: "#475569",
     lineHeight: 1.5,
     fontSize: "13px",
+    fontWeight: 700,
+  },
+  nextPills: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+    marginTop: "12px",
+    color: "#334155",
+    fontWeight: 800,
   },
   errorBox: {
     marginTop: "16px",
     padding: "13px 15px",
     borderRadius: "16px",
-    background: "rgba(255, 86, 86, 0.16)",
-    border: "1px solid rgba(255, 120, 120, 0.35)",
-    color: "#ffdede",
-  },
-  successBox: {
-    marginTop: "16px",
-    padding: "13px 15px",
-    borderRadius: "16px",
-    background: "rgba(0,212,255,0.10)",
-    border: "1px solid rgba(0,212,255,0.25)",
-    color: "#d9fbff",
+    background: "#fff1f2",
+    border: "1px solid #fecdd3",
+    color: "#be123c",
+    fontWeight: 800,
   },
   finalSummary: {
     display: "flex",
@@ -1101,8 +1110,9 @@ const styles = {
     marginTop: "18px",
     padding: "16px",
     borderRadius: "22px",
-    background: "rgba(0,0,0,0.18)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.78)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    boxShadow: "0 14px 34px rgba(15, 23, 42, 0.08)",
   },
   finalIcon: {
     width: "45px",
@@ -1110,20 +1120,20 @@ const styles = {
     borderRadius: "16px",
     display: "grid",
     placeItems: "center",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.9), rgba(0,212,255,0.8))",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
     fontSize: "22px",
     flex: "0 0 auto",
   },
   finalLabel: {
     margin: "0 0 4px",
-    color: "rgba(255,255,255,0.58)",
+    color: "#64748b",
     fontSize: "12px",
     fontWeight: 900,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
   },
   finalText: {
+    color: "#111827",
     fontSize: "16px",
   },
   footer: {
@@ -1133,7 +1143,47 @@ const styles = {
     marginTop: "22px",
     flexWrap: "wrap",
   },
-  footerButton: {
-    minWidth: "210px",
+  backButton: {
+    minWidth: "170px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "999px",
+    padding: "14px 22px",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
+  },
+  secondaryButton: {
+    minWidth: "220px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "999px",
+    padding: "14px 22px",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
+  },
+  primaryButton: {
+    border: 0,
+    borderRadius: "999px",
+    padding: "14px 22px",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 16px 34px rgba(79, 70, 229, 0.25)",
+  },
+  nextButton: {
+    minWidth: "230px",
+    border: "0",
+    borderRadius: "999px",
+    padding: "14px 24px",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 16px 34px rgba(79, 70, 229, 0.28)",
   },
 };
