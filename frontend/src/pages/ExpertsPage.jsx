@@ -5,88 +5,8 @@ import PageShell from "../components/PageShell";
 import { useFlowStore } from "../store/useFlowStore";
 import { callApi } from "../services/api";
 
-const FALLBACK_EXPERTS = [
-  {
-    id: "expert-1",
-    name: "Urban Tailor Studio",
-    rating: 4.8,
-    location: "Near Me",
-    address: "MG Road, City Center",
-    phone: "+91 98765 43210",
-    portfolio: [
-      "https://images.unsplash.com/photo-1506629905607-d9d297d9aa84?q=80&w=900&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=900&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?q=80&w=900&auto=format&fit=crop",
-    ],
-    priceRange: "₹1,500 - ₹5,000",
-    reviews: 128,
-    deliveryTime: "3 - 7 days",
-    specialization: "Custom Stitching / Casual / Formal",
-    serviceTypes: ["Custom Stitching (Tailor)", "Ready-made + Alteration (Boutique)"],
-    description:
-      "Best for accurate measurements, everyday tailoring, alterations, and clean finishing.",
-  },
-  {
-    id: "expert-2",
-    name: "Regal Designer Boutique",
-    rating: 4.9,
-    location: "Within City",
-    address: "Fashion Street, Main Market",
-    phone: "+91 99887 77665",
-    portfolio: [
-      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=900&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=900&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?q=80&w=900&auto=format&fit=crop",
-    ],
-    priceRange: "₹4,000 - ₹18,000",
-    reviews: 212,
-    deliveryTime: "7 - 15 days",
-    specialization: "Designer Wear / Wedding / Festive",
-    serviceTypes: ["Designer Wear", "Personal Styling"],
-    description:
-      "Best for premium events, festive outfits, portfolio-led designer guidance, and occasion styling.",
-  },
-  {
-    id: "expert-3",
-    name: "QuickFit Alteration Lounge",
-    rating: 4.4,
-    location: "Near Me",
-    address: "Local Market, Sector 12",
-    phone: "+91 91234 56789",
-    portfolio: [
-      "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=900&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=900&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=900&auto=format&fit=crop",
-    ],
-    priceRange: "₹500 - ₹2,500",
-    reviews: 96,
-    deliveryTime: "1 - 4 days",
-    specialization: "Alteration / Ready-made Fit Fix",
-    serviceTypes: ["Ready-made + Alteration (Boutique)", "Custom Stitching (Tailor)"],
-    description:
-      "Best for fast alterations, ready-made outfit fixes, urgent fitting changes, and pickup orders.",
-  },
-  {
-    id: "expert-4",
-    name: "Aura Personal Styling",
-    rating: 4.7,
-    location: "Anywhere (online)",
-    address: "Online Consultation",
-    phone: "+91 90000 11223",
-    portfolio: [
-      "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=900&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1479064555552-3ef4979f8908?q=80&w=900&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1521335629791-ce4aec67dd47?q=80&w=900&auto=format&fit=crop",
-    ],
-    priceRange: "₹999 - ₹4,999",
-    reviews: 154,
-    deliveryTime: "Same day - 3 days",
-    specialization: "Personal Styling / Wardrobe Guidance",
-    serviceTypes: ["Personal Styling", "Designer Wear"],
-    description:
-      "Best for virtual styling, outfit confusion, event looks, wardrobe advice, and online consults.",
-  },
-];
+const EMPTY_PORTFOLIO_IMAGE =
+  "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22900%22%20height%3D%22600%22%20viewBox%3D%220%200%20900%20600%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%22900%22%20height%3D%22600%22%20fill%3D%22%23EEF2FF%22/%3E%3Ccircle%20cx%3D%22450%22%20cy%3D%22245%22%20r%3D%2280%22%20fill%3D%22%23DDD6FE%22/%3E%3Cpath%20d%3D%22M250%20440C310%20355%20370%20320%20450%20320C530%20320%20590%20355%20650%20440H250Z%22%20fill%3D%22%23BAE6FD%22/%3E%3Ctext%20x%3D%22450%22%20y%3D%22520%22%20text-anchor%3D%22middle%22%20font-family%3D%22Arial%22%20font-size%3D%2232%22%20font-weight%3D%22700%22%20fill%3D%22%23334155%22%3EReal%20portfolio%20image%20pending%3C/text%3E%3C/svg%3E";
 
 function getSelectedOutfit(flow) {
   return flow.recommendations?.selectedOutfit || flow.selectedOutfit || null;
@@ -113,30 +33,30 @@ function getPortfolioImages(expert) {
     return expert.portfolioImages;
   }
 
-  return FALLBACK_EXPERTS[0].portfolio;
+  return [EMPTY_PORTFOLIO_IMAGE];
 }
 
 function normalizeExpert(expert, index) {
   return {
     id: expert.id || expert._id || `expert-${index + 1}`,
     name: expert.name || expert.shopName || expert.title || "FitGenie Expert",
-    rating: getRatingNumber(expert.rating || expert.averageRating || 4.2),
-    location: expert.location || expert.area || "Within City",
+    rating: getRatingNumber(expert.rating || expert.averageRating || 0),
+    location: expert.location || expert.area || "Location pending",
     address: expert.address || expert.location || "Address available after selection",
     phone: expert.phone || expert.mobile || "Available after selection",
     portfolio: getPortfolioImages(expert),
     priceRange: expert.priceRange || expert.price || "Price on request",
-    reviews: getReviewCount(expert) || 80 + index * 21,
-    deliveryTime: expert.deliveryTime || expert.timeline || "3 - 7 days",
+    reviews: getReviewCount(expert),
+    deliveryTime: expert.deliveryTime || expert.timeline || "Timeline pending",
     specialization:
-      expert.specialization || expert.category || "Custom Stitching / Styling",
+      expert.specialization || expert.category || "Specialization pending",
     serviceTypes:
       Array.isArray(expert.serviceTypes) && expert.serviceTypes.length > 0
         ? expert.serviceTypes
-        : ["Custom Stitching (Tailor)", "Designer Wear", "Ready-made + Alteration (Boutique)", "Personal Styling"],
+        : [],
     description:
       expert.description ||
-      "Experienced fashion expert matched with your FitGenie preferences.",
+      "Real expert profile loaded from backend. Add description in MongoDB for more detail.",
   };
 }
 
@@ -153,7 +73,13 @@ function serviceMatches(expert, serviceType) {
 
   const serviceText = String(serviceType).toLowerCase();
   const specializationText = String(expert.specialization).toLowerCase();
-  const expertServices = expert.serviceTypes.map((item) => String(item).toLowerCase());
+  const expertServices = Array.isArray(expert.serviceTypes)
+    ? expert.serviceTypes.map((item) => String(item).toLowerCase())
+    : [];
+
+  if (expertServices.length === 0) {
+    return specializationText.includes(serviceText.split(" ")[0]);
+  }
 
   return (
     expertServices.some((item) => item.includes(serviceText) || serviceText.includes(item)) ||
@@ -168,6 +94,7 @@ function locationMatches(expert, locationFilter) {
   const filter = String(locationFilter).toLowerCase();
 
   if (filter.includes("anywhere")) return true;
+
   if (filter.includes("within city")) {
     return (
       location.includes("within city") ||
@@ -211,7 +138,7 @@ export default function ExpertsPage() {
 
   const [experts, setExperts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [loadSource, setLoadSource] = useState("fallback");
+  const [loadSource, setLoadSource] = useState("api");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -251,17 +178,33 @@ export default function ExpertsPage() {
         ? response.data.experts
         : [];
 
-      if (response.ok && apiList.length > 0) {
-        setExperts(apiList.map(normalizeExpert));
-        setLoadSource("api");
+      if (!response.ok) {
+        setExperts([]);
+        setLoadSource("api-error");
+        setError(
+          response?.data?.message ||
+            "Real expert API is unavailable. Please check backend deployment and database."
+        );
         return;
       }
 
-      setExperts(FALLBACK_EXPERTS.map(normalizeExpert));
-      setLoadSource("fallback");
+      if (apiList.length === 0) {
+        setExperts([]);
+        setLoadSource("api-empty");
+        setError(
+          "No real experts found. Add expert records in the MongoDB experts collection."
+        );
+        return;
+      }
+
+      setExperts(apiList.map(normalizeExpert));
+      setLoadSource("api");
     } catch (_error) {
-      setExperts(FALLBACK_EXPERTS.map(normalizeExpert));
-      setLoadSource("fallback");
+      setExperts([]);
+      setLoadSource("api-error");
+      setError(
+        "Real expert API is unavailable. Please check VITE_API_BASE_URL, backend health, and MongoDB."
+      );
     } finally {
       setLoading(false);
     }
@@ -430,7 +373,7 @@ export default function ExpertsPage() {
 
                 <div className="expert-toolbar" style={styles.toolbarActions}>
                   <span style={styles.sourceBadge}>
-                    {loadSource === "api" ? "Live experts" : "Demo experts"}
+                    {loadSource === "api" ? "Live experts" : "Real data required"}
                   </span>
 
                   <button
@@ -447,12 +390,22 @@ export default function ExpertsPage() {
                 </div>
               </section>
 
-              {loadSource === "fallback" ? (
+              {loadSource === "api-empty" ? (
                 <section style={styles.infoBox}>
                   <span style={styles.infoIcon}>ℹ️</span>
                   <p>
-                    Showing polished demo experts because live expert data is not
-                    available right now.
+                    No real experts are available yet. Add expert documents in
+                    MongoDB to show live listings.
+                  </p>
+                </section>
+              ) : null}
+
+              {loadSource === "api-error" ? (
+                <section style={styles.infoBox}>
+                  <span style={styles.infoIcon}>⚠️</span>
+                  <p>
+                    Real expert API is unavailable. The app will not show demo
+                    experts in real mode.
                   </p>
                 </section>
               ) : null}
@@ -476,7 +429,8 @@ export default function ExpertsPage() {
                   <h2 style={styles.emptyTitle}>No experts matched</h2>
                   <p style={styles.emptyText}>
                     Try lowering the rating filter or choosing a wider location
-                    reach from the previous page.
+                    reach from the previous page. In real mode, this screen only
+                    shows experts returned by the backend.
                   </p>
                   <button
                     type="button"
@@ -506,7 +460,7 @@ export default function ExpertsPage() {
                       >
                         <div style={styles.portfolioWrap}>
                           <img
-                            src={portfolio[0]}
+                            src={portfolio[0] || EMPTY_PORTFOLIO_IMAGE}
                             alt={`${expert.name} portfolio`}
                             style={styles.mainPortfolioImage}
                           />
@@ -522,7 +476,7 @@ export default function ExpertsPage() {
                             {portfolio.slice(0, 3).map((image, imageIndex) => (
                               <img
                                 key={`${expert.id}-${imageIndex}`}
-                                src={image}
+                                src={image || EMPTY_PORTFOLIO_IMAGE}
                                 alt={`${expert.name} work ${imageIndex + 1}`}
                                 style={styles.miniPortfolioImage}
                               />
@@ -577,10 +531,12 @@ export default function ExpertsPage() {
                           </div>
 
                           <div style={styles.reviewBox}>
-                            <span style={styles.reviewBadge}>Customer highlight</span>
+                            <span style={styles.reviewBadge}>
+                              Customer highlight
+                            </span>
                             <p style={styles.reviewText}>
-                              “Great communication, clean finishing, and helpful
-                              size guidance.”
+                              Real review highlights will appear here when review
+                              data is connected to this expert.
                             </p>
                           </div>
 
