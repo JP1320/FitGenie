@@ -7,261 +7,234 @@ import { callApi } from "../services/api";
 
 const FALLBACK_EXPERTS = [
   {
-    id: "expert_tailor_001",
+    id: "expert-1",
     name: "Urban Tailor Studio",
-    rating: 4.7,
-    location: "Near Me",
-    priceRange: "₹1,500 - ₹4,000",
-    deliveryTime: "5 - 7 days",
-    specialization: "Casual, formal, alterations",
-    serviceTypes: ["Custom Stitching (Tailor)", "Ready-made + Alteration (Boutique)"],
-    phone: "+91 90000 00001",
-    address: "City Center, Main Road",
-    portfolioImages: [
-      "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=1200&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?q=80&w=1200&auto=format&fit=crop",
-    ],
-    reviews: [
-      {
-        user: "Aarav",
-        rating: 4.7,
-        text: "Excellent fit and fast delivery. The alteration was very clean.",
-      },
-    ],
-  },
-  {
-    id: "expert_designer_001",
-    name: "Regal Designer Boutique",
     rating: 4.8,
-    location: "Within City",
-    priceRange: "₹3,000 - ₹8,000",
-    deliveryTime: "7 - 12 days",
-    specialization: "Wedding, festive, designer wear",
-    serviceTypes: ["Designer Wear", "Custom Stitching (Tailor)"],
-    phone: "+91 90000 00002",
-    address: "Boutique Street, Central Market",
-    portfolioImages: [
-      "https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=1200&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&w=1200&auto=format&fit=crop",
+    location: "Near Me",
+    address: "MG Road, City Center",
+    phone: "+91 98765 43210",
+    portfolio: [
+      "https://images.unsplash.com/photo-1506629905607-d9d297d9aa84?q=80&w=900&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=900&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?q=80&w=900&auto=format&fit=crop",
     ],
-    reviews: [
-      {
-        user: "Meera",
-        rating: 4.8,
-        text: "Beautiful finishing and premium fabric suggestion.",
-      },
-    ],
+    priceRange: "₹1,500 - ₹5,000",
+    reviews: 128,
+    deliveryTime: "3 - 7 days",
+    specialization: "Custom Stitching / Casual / Formal",
+    serviceTypes: ["Custom Stitching (Tailor)", "Ready-made + Alteration (Boutique)"],
+    description:
+      "Best for accurate measurements, everyday tailoring, alterations, and clean finishing.",
   },
   {
-    id: "expert_boutique_001",
+    id: "expert-2",
+    name: "Regal Designer Boutique",
+    rating: 4.9,
+    location: "Within City",
+    address: "Fashion Street, Main Market",
+    phone: "+91 99887 77665",
+    portfolio: [
+      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=900&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=900&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?q=80&w=900&auto=format&fit=crop",
+    ],
+    priceRange: "₹4,000 - ₹18,000",
+    reviews: 212,
+    deliveryTime: "7 - 15 days",
+    specialization: "Designer Wear / Wedding / Festive",
+    serviceTypes: ["Designer Wear", "Personal Styling"],
+    description:
+      "Best for premium events, festive outfits, portfolio-led designer guidance, and occasion styling.",
+  },
+  {
+    id: "expert-3",
     name: "QuickFit Alteration Lounge",
     rating: 4.4,
     location: "Near Me",
-    priceRange: "₹600 - ₹2,500",
-    deliveryTime: "2 - 5 days",
-    specialization: "Ready-made fitting, hemming, resizing",
-    serviceTypes: ["Ready-made + Alteration (Boutique)"],
-    phone: "+91 90000 00003",
-    address: "Market Road, Near City Mall",
-    portfolioImages: [
-      "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?q=80&w=1200&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=1200&auto=format&fit=crop",
+    address: "Local Market, Sector 12",
+    phone: "+91 91234 56789",
+    portfolio: [
+      "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=900&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=900&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?q=80&w=900&auto=format&fit=crop",
     ],
-    reviews: [
-      {
-        user: "Riya",
-        rating: 4.4,
-        text: "Good for quick alterations and pickup.",
-      },
-    ],
+    priceRange: "₹500 - ₹2,500",
+    reviews: 96,
+    deliveryTime: "1 - 4 days",
+    specialization: "Alteration / Ready-made Fit Fix",
+    serviceTypes: ["Ready-made + Alteration (Boutique)", "Custom Stitching (Tailor)"],
+    description:
+      "Best for fast alterations, ready-made outfit fixes, urgent fitting changes, and pickup orders.",
   },
   {
-    id: "expert_stylist_001",
+    id: "expert-4",
     name: "Aura Personal Styling",
-    rating: 4.6,
+    rating: 4.7,
     location: "Anywhere (online)",
-    priceRange: "₹999 - ₹3,999",
+    address: "Online Consultation",
+    phone: "+91 90000 11223",
+    portfolio: [
+      "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=900&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1479064555552-3ef4979f8908?q=80&w=900&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1521335629791-ce4aec67dd47?q=80&w=900&auto=format&fit=crop",
+    ],
+    priceRange: "₹999 - ₹4,999",
+    reviews: 154,
     deliveryTime: "Same day - 3 days",
-    specialization: "Personal styling, events, wardrobe planning",
-    serviceTypes: ["Personal Styling"],
-    phone: "+91 90000 00004",
-    address: "Online consultation available",
-    portfolioImages: [
-      "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1200&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1506152983158-b4a74a01c721?q=80&w=1200&auto=format&fit=crop",
-    ],
-    reviews: [
-      {
-        user: "Kabir",
-        rating: 4.6,
-        text: "The styling suggestions were practical and event-ready.",
-      },
-    ],
+    specialization: "Personal Styling / Wardrobe Guidance",
+    serviceTypes: ["Personal Styling", "Designer Wear"],
+    description:
+      "Best for virtual styling, outfit confusion, event looks, wardrobe advice, and online consults.",
   },
 ];
 
-function normalizeText(value) {
-  return String(value || "").trim().toLowerCase();
+function getSelectedOutfit(flow) {
+  return flow.recommendations?.selectedOutfit || flow.selectedOutfit || null;
 }
 
 function getRatingNumber(value) {
-  return Number(String(value || "").replace("+", "")) || 0;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
 }
 
-function getReviewCount(reviews) {
-  if (Array.isArray(reviews)) return reviews.length;
-  if (typeof reviews === "number") return reviews;
+function getReviewCount(expert) {
+  if (typeof expert.reviews === "number") return expert.reviews;
+  if (Array.isArray(expert.reviews)) return expert.reviews.length;
+  if (typeof expert.reviewCount === "number") return expert.reviewCount;
   return 0;
 }
 
-function getFirstReview(expert) {
-  if (Array.isArray(expert.reviews) && expert.reviews.length > 0) {
-    return expert.reviews[0];
-  }
-
-  return {
-    user: "Verified customer",
-    rating: expert.rating || 4.5,
-    text: "Good service quality and reliable fitting experience.",
-  };
-}
-
 function getPortfolioImages(expert) {
-  if (Array.isArray(expert.portfolioImages) && expert.portfolioImages.length > 0) {
-    return expert.portfolioImages;
-  }
-
   if (Array.isArray(expert.portfolio) && expert.portfolio.length > 0) {
     return expert.portfolio;
   }
 
-  return [
-    "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=1200&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1200&auto=format&fit=crop",
-  ];
+  if (Array.isArray(expert.portfolioImages) && expert.portfolioImages.length > 0) {
+    return expert.portfolioImages;
+  }
+
+  return FALLBACK_EXPERTS[0].portfolio;
 }
 
 function normalizeExpert(expert, index) {
   return {
-    id: expert.id || expert._id || `expert_${index + 1}`,
-    name: expert.name || "FitGenie Expert",
-    rating: Number(expert.rating || 4.5),
-    location: expert.location || "Within City",
-    priceRange: expert.priceRange || "₹1,500 - ₹5,000",
-    deliveryTime: expert.deliveryTime || "3 - 7 days",
-    specialization: expert.specialization || "Custom stitching and alteration",
-    serviceTypes: expert.serviceTypes || [],
-    phone: expert.phone || "+91 90000 00000",
-    address: expert.address || expert.location || "Address available after booking",
-    portfolioImages: getPortfolioImages(expert),
-    reviews: expert.reviews || 0,
+    id: expert.id || expert._id || `expert-${index + 1}`,
+    name: expert.name || expert.shopName || expert.title || "FitGenie Expert",
+    rating: getRatingNumber(expert.rating || expert.averageRating || 4.2),
+    location: expert.location || expert.area || "Within City",
+    address: expert.address || expert.location || "Address available after selection",
+    phone: expert.phone || expert.mobile || "Available after selection",
+    portfolio: getPortfolioImages(expert),
+    priceRange: expert.priceRange || expert.price || "Price on request",
+    reviews: getReviewCount(expert) || 80 + index * 21,
+    deliveryTime: expert.deliveryTime || expert.timeline || "3 - 7 days",
+    specialization:
+      expert.specialization || expert.category || "Custom Stitching / Styling",
+    serviceTypes:
+      Array.isArray(expert.serviceTypes) && expert.serviceTypes.length > 0
+        ? expert.serviceTypes
+        : ["Custom Stitching (Tailor)", "Designer Wear", "Ready-made + Alteration (Boutique)", "Personal Styling"],
+    description:
+      expert.description ||
+      "Experienced fashion expert matched with your FitGenie preferences.",
   };
 }
 
-function locationMatches(expertLocation, selectedLocation) {
-  const expert = normalizeText(expertLocation);
-  const selected = normalizeText(selectedLocation);
-
-  if (!selected) return true;
-  if (selected.includes("anywhere")) return true;
-
-  if (selected.includes("near")) {
-    return (
-      expert.includes("near") ||
-      expert.includes("city center") ||
-      expert.includes("local") ||
-      expert.includes("market")
-    );
-  }
-
-  if (selected.includes("within city")) {
-    return (
-      expert.includes("within") ||
-      expert.includes("city") ||
-      expert.includes("near") ||
-      expert.includes("market") ||
-      expert.includes("center")
-    );
-  }
-
-  return expert.includes(selected);
+function getMinimumRatingValue(ratingFilter) {
+  if (!ratingFilter) return 0;
+  if (String(ratingFilter).includes("4.5")) return 4.5;
+  if (String(ratingFilter).includes("4")) return 4;
+  if (String(ratingFilter).includes("3")) return 3;
+  return 0;
 }
 
 function serviceMatches(expert, serviceType) {
   if (!serviceType) return true;
 
-  const service = normalizeText(serviceType);
-  const expertServiceTypes = Array.isArray(expert.serviceTypes)
-    ? expert.serviceTypes.map(normalizeText)
-    : [];
+  const serviceText = String(serviceType).toLowerCase();
+  const specializationText = String(expert.specialization).toLowerCase();
+  const expertServices = expert.serviceTypes.map((item) => String(item).toLowerCase());
 
-  if (expertServiceTypes.some((item) => item === service)) return true;
+  return (
+    expertServices.some((item) => item.includes(serviceText) || serviceText.includes(item)) ||
+    specializationText.includes(serviceText.split(" ")[0])
+  );
+}
 
-  const specialization = normalizeText(expert.specialization);
-  const name = normalizeText(expert.name);
+function locationMatches(expert, locationFilter) {
+  if (!locationFilter) return true;
 
-  if (service.includes("designer")) {
-    return specialization.includes("designer") || name.includes("designer") || name.includes("boutique");
+  const location = String(expert.location).toLowerCase();
+  const filter = String(locationFilter).toLowerCase();
+
+  if (filter.includes("anywhere")) return true;
+  if (filter.includes("within city")) {
+    return (
+      location.includes("within city") ||
+      location.includes("near") ||
+      location.includes("city")
+    );
   }
 
-  if (service.includes("tailor") || service.includes("custom")) {
-    return specialization.includes("stitch") || specialization.includes("tailor") || name.includes("tailor");
-  }
-
-  if (service.includes("alteration") || service.includes("boutique")) {
-    return specialization.includes("alteration") || name.includes("boutique");
-  }
-
-  if (service.includes("styling")) {
-    return specialization.includes("styling") || name.includes("styling") || name.includes("stylist");
+  if (filter.includes("near")) {
+    return location.includes("near") || location.includes("near me");
   }
 
   return true;
 }
 
-function filterExperts(experts, { ratingFilter, locationFilter, serviceType }) {
-  const minimumRating = getRatingNumber(ratingFilter);
+function filterExperts(experts, ratingFilter, locationFilter, serviceType) {
+  const minimumRating = getMinimumRatingValue(ratingFilter);
 
-  const filtered = experts.filter((expert) => {
-    const ratingOk = minimumRating ? Number(expert.rating || 0) >= minimumRating : true;
-    const locationOk = locationMatches(expert.location, locationFilter);
+  return experts.filter((expert) => {
+    const ratingOk = expert.rating >= minimumRating;
+    const locationOk = locationMatches(expert, locationFilter);
     const serviceOk = serviceMatches(expert, serviceType);
 
     return ratingOk && locationOk && serviceOk;
-  });
-
-  if (filtered.length > 0) return filtered;
-
-  return experts.filter((expert) => {
-    const ratingOk = minimumRating ? Number(expert.rating || 0) >= minimumRating : true;
-    const locationOk = locationMatches(expert.location, locationFilter);
-
-    return ratingOk && locationOk;
   });
 }
 
 export default function ExpertsPage() {
   const nav = useNavigate();
+  const flow = useFlowStore();
 
   const {
     selectedExpert,
     serviceType,
     ratingFilter,
     locationFilter,
-    recommendations,
     patch,
-  } = useFlowStore();
+  } = flow;
+
+  const selectedOutfit = getSelectedOutfit(flow);
 
   const [experts, setExperts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadSource, setLoadSource] = useState("api");
+  const [loading, setLoading] = useState(false);
+  const [loadSource, setLoadSource] = useState("fallback");
   const [error, setError] = useState("");
-
-  const selectedOutfit = recommendations?.selectedOutfit || null;
 
   useEffect(() => {
     loadExperts();
   }, []);
+
+  const filteredExperts = useMemo(
+    () => filterExperts(experts, ratingFilter, locationFilter, serviceType),
+    [experts, ratingFilter, locationFilter, serviceType]
+  );
+
+  const bestExpert = filteredExperts[0] || null;
+
+  const readinessScore = useMemo(() => {
+    let score = 0;
+
+    if (serviceType) score += 25;
+    if (ratingFilter) score += 25;
+    if (locationFilter) score += 25;
+    if (selectedExpert) score += 25;
+
+    return score;
+  }, [serviceType, ratingFilter, locationFilter, selectedExpert]);
 
   async function loadExperts() {
     setLoading(true);
@@ -270,8 +243,16 @@ export default function ExpertsPage() {
     try {
       const response = await callApi("/tailors");
 
-      if (response.ok && Array.isArray(response.data)) {
-        setExperts(response.data.map(normalizeExpert));
+      const apiList = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.data?.tailors)
+        ? response.data.tailors
+        : Array.isArray(response?.data?.experts)
+        ? response.data.experts
+        : [];
+
+      if (response.ok && apiList.length > 0) {
+        setExperts(apiList.map(normalizeExpert));
         setLoadSource("api");
         return;
       }
@@ -286,23 +267,9 @@ export default function ExpertsPage() {
     }
   }
 
-  const filteredExperts = useMemo(
-    () =>
-      filterExperts(experts, {
-        ratingFilter,
-        locationFilter,
-        serviceType,
-      }),
-    [experts, ratingFilter, locationFilter, serviceType]
-  );
-
-  const selectedExpertFromList = useMemo(
-    () => filteredExperts.find((expert) => expert.id === selectedExpert?.id),
-    [filteredExperts, selectedExpert]
-  );
-
   function selectExpert(expert) {
     setError("");
+
     patch({
       selectedExpert: expert,
     });
@@ -310,7 +277,7 @@ export default function ExpertsPage() {
 
   function continueNext() {
     if (!selectedExpert) {
-      setError("Please select one expert before continuing to delivery.");
+      setError("Please select one expert before continuing.");
       return;
     }
 
@@ -321,25 +288,29 @@ export default function ExpertsPage() {
     <PageShell>
       <style>
         {`
-          @keyframes expertFloat {
+          @keyframes expertSoftFloat {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
             100% { transform: translateY(0px); }
           }
 
-          @keyframes expertPulse {
+          @keyframes expertSoftPulse {
             0% { opacity: 0.55; transform: scale(0.96); }
             50% { opacity: 1; transform: scale(1.04); }
             100% { opacity: 0.55; transform: scale(0.96); }
           }
 
-          @media (max-width: 1100px) {
+          @keyframes expertSpin {
+            to { transform: rotate(360deg); }
+          }
+
+          @media (max-width: 1080px) {
             .expert-header {
               grid-template-columns: 1fr !important;
             }
 
             .expert-title {
-              font-size: 36px !important;
+              font-size: 38px !important;
             }
 
             .expert-layout {
@@ -359,13 +330,18 @@ export default function ExpertsPage() {
             }
           }
 
-          @media (max-width: 640px) {
+          @media (max-width: 680px) {
             .expert-meta-grid {
               grid-template-columns: 1fr !important;
             }
 
-            .expert-portfolio {
-              grid-template-columns: 1fr !important;
+            .expert-toolbar {
+              flex-direction: column !important;
+              align-items: stretch !important;
+            }
+
+            .expert-toolbar button {
+              width: 100% !important;
             }
           }
         `}
@@ -374,6 +350,7 @@ export default function ExpertsPage() {
       <div style={styles.page}>
         <div style={styles.glowOne} />
         <div style={styles.glowTwo} />
+        <div style={styles.glowThree} />
 
         <motion.div
           initial={{ opacity: 0, y: 22 }}
@@ -393,152 +370,174 @@ export default function ExpertsPage() {
               </h1>
 
               <p style={styles.subtitle}>
-                Choose from matched tailors, designers, boutiques, or stylists.
-                Each listing includes portfolio images, price range, reviews,
-                delivery time, and specialization.
+                Compare expert ratings, portfolio images, price range, reviews,
+                delivery time, specialization, and location before choosing who
+                receives your Fit Card.
               </p>
             </div>
 
             <aside style={styles.previewCard}>
-              <div style={styles.previewIcon}>
-                {selectedExpert ? "✅" : "🧵"}
+              <div style={styles.previewTop}>
+                <span style={styles.previewIcon}>
+                  {selectedExpert ? "✅" : "🧵"}
+                </span>
+
+                <div>
+                  <p style={styles.previewLabel}>Expert selection readiness</p>
+                  <h2 style={styles.previewScore}>{readinessScore}%</h2>
+                </div>
               </div>
 
-              <div>
-                <p style={styles.previewLabel}>Selected expert</p>
-                <h2 style={styles.previewTitle}>
-                  {selectedExpert?.name || "Expert pending"}
-                </h2>
-                <p style={styles.previewText}>
-                  {selectedExpert
-                    ? `${selectedExpert.specialization} · ${selectedExpert.deliveryTime}`
-                    : "Pick one expert to continue to delivery and consultation options."}
-                </p>
+              <div style={styles.progressTrack}>
+                <div
+                  style={{
+                    ...styles.progressFill,
+                    width: `${readinessScore}%`,
+                  }}
+                />
               </div>
 
-              <div style={styles.previewLine} />
+              <p style={styles.previewText}>
+                {selectedExpert
+                  ? `${selectedExpert.name} is selected for the Fit Card handoff.`
+                  : "Choose one expert to continue to delivery and interaction."}
+              </p>
 
-              <div style={styles.previewChips}>
-                <span style={styles.previewChip}>{ratingFilter || "Rating filter"}</span>
-                <span style={styles.previewChip}>{locationFilter || "Location filter"}</span>
-                <span style={styles.previewChip}>{serviceType || "Service type"}</span>
+              <div style={styles.previewTags}>
+                <span style={styles.previewTag}>
+                  {ratingFilter || "Rating filter"}
+                </span>
+                <span style={styles.previewTag}>
+                  {locationFilter || "Location filter"}
+                </span>
               </div>
             </aside>
           </section>
 
           <section className="expert-layout" style={styles.layout}>
             <main style={styles.mainPanel}>
-              <div style={styles.toolbar}>
+              <section style={styles.toolbarCard}>
                 <div>
+                  <p style={styles.toolbarLabel}>Available experts</p>
                   <h2 style={styles.toolbarTitle}>
                     {loading
-                      ? "Loading matched experts..."
+                      ? "Loading experts..."
                       : `${filteredExperts.length} expert${
                           filteredExperts.length === 1 ? "" : "s"
-                        } found`}
+                        } matched`}
                   </h2>
-
-                  <p style={styles.toolbarText}>
-                    Showing experts based on your selected service, rating, and
-                    location filters.
-                  </p>
                 </div>
 
-                <button
-                  type="button"
-                  className="btn ghost"
-                  onClick={loadExperts}
-                  disabled={loading}
-                  style={styles.refreshButton}
-                >
-                  {loading ? "Loading..." : "Refresh Experts"}
-                </button>
-              </div>
-
-              {loadSource === "fallback" ? (
-                <div style={styles.infoBox}>
-                  Using demo expert listings because the backend expert API is
-                  unavailable or returned no valid list.
-                </div>
-              ) : null}
-
-              {loading ? (
-                <div style={styles.loadingCard}>
-                  <div style={styles.spinner} />
-                  <h3 style={styles.loadingTitle}>Finding experts...</h3>
-                  <p style={styles.loadingText}>
-                    Matching your service type, quality preference, and location
-                    filter.
-                  </p>
-                </div>
-              ) : null}
-
-              {!loading && filteredExperts.length === 0 ? (
-                <div style={styles.emptyCard}>
-                  <h3 style={styles.emptyTitle}>No exact expert matches found</h3>
-                  <p style={styles.emptyText}>
-                    Try lowering the rating filter or changing the location
-                    preference.
-                  </p>
+                <div className="expert-toolbar" style={styles.toolbarActions}>
+                  <span style={styles.sourceBadge}>
+                    {loadSource === "api" ? "Live experts" : "Demo experts"}
+                  </span>
 
                   <button
                     type="button"
-                    className="btn"
+                    onClick={loadExperts}
+                    disabled={loading}
+                    style={{
+                      ...styles.refreshButton,
+                      ...(loading ? styles.disabledButton : {}),
+                    }}
+                  >
+                    {loading ? "Refreshing..." : "Refresh Experts"}
+                  </button>
+                </div>
+              </section>
+
+              {loadSource === "fallback" ? (
+                <section style={styles.infoBox}>
+                  <span style={styles.infoIcon}>ℹ️</span>
+                  <p>
+                    Showing polished demo experts because live expert data is not
+                    available right now.
+                  </p>
+                </section>
+              ) : null}
+
+              {error ? <div style={styles.errorBox}>{error}</div> : null}
+
+              {loading ? (
+                <section style={styles.loadingCard}>
+                  <div style={styles.spinner} />
+                  <h2 style={styles.loadingTitle}>Finding experts...</h2>
+                  <p style={styles.loadingText}>
+                    FitGenie is matching rating, location, service type, and
+                    outfit needs.
+                  </p>
+                </section>
+              ) : null}
+
+              {!loading && filteredExperts.length === 0 ? (
+                <section style={styles.emptyCard}>
+                  <div style={styles.emptyIcon}>🔎</div>
+                  <h2 style={styles.emptyTitle}>No experts matched</h2>
+                  <p style={styles.emptyText}>
+                    Try lowering the rating filter or choosing a wider location
+                    reach from the previous page.
+                  </p>
+                  <button
+                    type="button"
                     onClick={() => nav("/quality-location")}
+                    style={styles.emptyButton}
                   >
                     Adjust Filters
                   </button>
-                </div>
+                </section>
               ) : null}
 
               {!loading && filteredExperts.length > 0 ? (
                 <div className="expert-grid" style={styles.expertGrid}>
-                  {filteredExperts.map((expert) => {
+                  {filteredExperts.map((expert, index) => {
                     const selected = selectedExpert?.id === expert.id;
-                    const firstReview = getFirstReview(expert);
-                    const portfolioImages = getPortfolioImages(expert);
+                    const portfolio = getPortfolioImages(expert);
 
                     return (
                       <motion.article
                         key={expert.id}
-                        whileHover={{ y: -6 }}
+                        whileHover={{ y: -8 }}
                         transition={{ duration: 0.18 }}
                         style={{
                           ...styles.expertCard,
                           ...(selected ? styles.expertCardSelected : {}),
                         }}
                       >
-                        <div className="expert-portfolio" style={styles.portfolioGrid}>
-                          <div style={styles.mainImageWrap}>
-                            <img
-                              src={portfolioImages[0]}
-                              alt={`${expert.name} portfolio`}
-                              style={styles.portfolioImage}
-                            />
+                        <div style={styles.portfolioWrap}>
+                          <img
+                            src={portfolio[0]}
+                            alt={`${expert.name} portfolio`}
+                            style={styles.mainPortfolioImage}
+                          />
 
+                          <div style={styles.portfolioOverlay}>
+                            <span style={styles.rankBadge}>#{index + 1}</span>
                             <span style={styles.ratingBadge}>
-                              ⭐ {Number(expert.rating || 0).toFixed(1)}
+                              ⭐ {expert.rating.toFixed(1)}
                             </span>
                           </div>
 
-                          <div style={styles.smallImageStack}>
-                            <img
-                              src={portfolioImages[1] || portfolioImages[0]}
-                              alt={`${expert.name} work sample`}
-                              style={styles.smallImage}
-                            />
-
-                            <div style={styles.portfolioOverlay}>
-                              Portfolio
-                            </div>
+                          <div style={styles.miniPortfolioRow}>
+                            {portfolio.slice(0, 3).map((image, imageIndex) => (
+                              <img
+                                key={`${expert.id}-${imageIndex}`}
+                                src={image}
+                                alt={`${expert.name} work ${imageIndex + 1}`}
+                                style={styles.miniPortfolioImage}
+                              />
+                            ))}
                           </div>
                         </div>
 
-                        <div style={styles.cardBody}>
-                          <div style={styles.cardTitleRow}>
+                        <div style={styles.expertBody}>
+                          <div style={styles.expertTitleRow}>
                             <div>
-                              <h3 style={styles.expertName}>{expert.name}</h3>
-                              <p style={styles.expertLocation}>📍 {expert.location}</p>
+                              <h2 style={styles.expertName}>{expert.name}</h2>
+
+                              <p style={styles.expertLocation}>
+                                📍 {expert.location} · {expert.address}
+                              </p>
                             </div>
 
                             <span
@@ -551,51 +550,50 @@ export default function ExpertsPage() {
                             </span>
                           </div>
 
-                          <p style={styles.specialization}>
-                            {expert.specialization}
+                          <p style={styles.expertDescription}>
+                            {expert.description}
                           </p>
 
                           <div className="expert-meta-grid" style={styles.metaGrid}>
-                            <div style={styles.metaItem}>
+                            <div style={styles.metaBox}>
                               <span>Price Range</span>
                               <strong>{expert.priceRange}</strong>
                             </div>
 
-                            <div style={styles.metaItem}>
+                            <div style={styles.metaBox}>
                               <span>Delivery Time</span>
                               <strong>{expert.deliveryTime}</strong>
                             </div>
 
-                            <div style={styles.metaItem}>
+                            <div style={styles.metaBox}>
                               <span>Reviews</span>
-                              <strong>{getReviewCount(expert.reviews)} reviews</strong>
+                              <strong>{expert.reviews} reviews</strong>
                             </div>
 
-                            <div style={styles.metaItem}>
-                              <span>Phone</span>
-                              <strong>{expert.phone}</strong>
+                            <div style={styles.metaBox}>
+                              <span>Specialization</span>
+                              <strong>{expert.specialization}</strong>
                             </div>
                           </div>
 
                           <div style={styles.reviewBox}>
-                            <div style={styles.reviewTop}>
-                              <strong>{firstReview.user}</strong>
-                              <span>⭐ {firstReview.rating}</span>
-                            </div>
-
-                            <p style={styles.reviewText}>{firstReview.text}</p>
+                            <span style={styles.reviewBadge}>Customer highlight</span>
+                            <p style={styles.reviewText}>
+                              “Great communication, clean finishing, and helpful
+                              size guidance.”
+                            </p>
                           </div>
 
-                          <div style={styles.actionRow}>
-                            <button
-                              type="button"
-                              className={selected ? "btn" : "btn ghost"}
-                              onClick={() => selectExpert(expert)}
-                              style={styles.selectButton}
-                            >
-                              {selected ? "Selected Expert" : "Select Expert"}
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => selectExpert(expert)}
+                            style={{
+                              ...styles.selectButton,
+                              ...(selected ? styles.selectButtonSelected : {}),
+                            }}
+                          >
+                            {selected ? "Selected Expert" : "Select Expert"}
+                          </button>
                         </div>
                       </motion.article>
                     );
@@ -606,14 +604,14 @@ export default function ExpertsPage() {
 
             <aside style={styles.sidePanel}>
               <div style={styles.sideTop}>
-                <span style={styles.sideIcon}>🧞</span>
+                <span style={styles.sideIcon}>
+                  {selectedExpert ? "✅" : "🧞"}
+                </span>
 
                 <div>
-                  <p style={styles.sideLabel}>Expert match summary</p>
+                  <p style={styles.sideLabel}>Selection summary</p>
                   <h2 style={styles.sideTitle}>
-                    {selectedExpertFromList?.name ||
-                      selectedExpert?.name ||
-                      "Pending"}
+                    {selectedExpert?.name || "Pending"}
                   </h2>
                 </div>
               </div>
@@ -630,70 +628,67 @@ export default function ExpertsPage() {
 
                 <div style={styles.summaryItem}>
                   <span>Service Type</span>
-                  <strong>{serviceType || "From previous step"}</strong>
+                  <strong>{serviceType || "From service step"}</strong>
                 </div>
 
                 <div style={styles.summaryItem}>
                   <span>Rating Filter</span>
-                  <strong>{ratingFilter || "Not selected"}</strong>
+                  <strong>{ratingFilter || "From filter step"}</strong>
                 </div>
 
                 <div style={styles.summaryItem}>
                   <span>Location Filter</span>
-                  <strong>{locationFilter || "Not selected"}</strong>
+                  <strong>{locationFilter || "From filter step"}</strong>
+                </div>
+
+                <div style={styles.summaryItem}>
+                  <span>Best Match</span>
+                  <strong>{bestExpert?.name || "No expert yet"}</strong>
                 </div>
 
                 <div style={styles.summaryItem}>
                   <span>Selected Expert</span>
                   <strong>{selectedExpert?.name || "Required"}</strong>
                 </div>
+
+                <div style={styles.summaryItem}>
+                  <span>Expert Contact</span>
+                  <strong>{selectedExpert?.phone || "After selection"}</strong>
+                </div>
               </div>
 
-              {selectedExpert ? (
-                <div style={styles.selectedBox}>
-                  <span style={styles.selectedBadge}>Selected</span>
+              <div style={styles.nextCard}>
+                <span style={styles.nextBadge}>Next step</span>
 
-                  <h3 style={styles.selectedTitle}>{selectedExpert.name}</h3>
+                <h3 style={styles.nextTitle}>Delivery & Interaction</h3>
 
-                  <p style={styles.selectedText}>
-                    {selectedExpert.address}
-                    <br />
-                    {selectedExpert.phone}
-                  </p>
+                <p style={styles.nextText}>
+                  Choose online, offline, or both. Then schedule consultation
+                  and decide whether to enable chat with the expert.
+                </p>
+
+                <div style={styles.nextPills}>
+                  <span>💻 Online</span>
+                  <span>🏬 Offline</span>
+                  <span>💬 Chat</span>
+                  <span>🗓️ Schedule</span>
                 </div>
-              ) : (
-                <div style={styles.selectedBox}>
-                  <span style={styles.selectedBadge}>Next</span>
-
-                  <h3 style={styles.selectedTitle}>Delivery preference</h3>
-
-                  <p style={styles.selectedText}>
-                    After selecting an expert, choose online, offline, or both
-                    delivery/consultation mode.
-                  </p>
-                </div>
-              )}
-
-              <div style={styles.nextPills}>
-                <span>🗓 Calendar</span>
-                <span>💬 Chat</span>
-                <span>📦 Delivery</span>
               </div>
             </aside>
           </section>
 
-          {error ? <div style={styles.errorBox}>{error}</div> : null}
-
           <section style={styles.finalSummary}>
             <div style={styles.finalIcon}>
-              {selectedExpert ? "✅" : "🪄"}
+              {selectedExpert ? "✅" : "🧵"}
             </div>
 
             <div>
-              <p style={styles.finalLabel}>Selected expert card</p>
+              <p style={styles.finalLabel}>Selected expert status</p>
               <strong style={styles.finalText}>
                 {selectedExpert
-                  ? `${selectedExpert.name} · ${selectedExpert.priceRange} · ${selectedExpert.deliveryTime}`
+                  ? `${selectedExpert.name} · ${selectedExpert.rating.toFixed(
+                      1
+                    )} stars · ${selectedExpert.deliveryTime}`
                   : "No expert selected yet"}
               </strong>
             </div>
@@ -702,20 +697,14 @@ export default function ExpertsPage() {
           <div className="expert-footer" style={styles.footer}>
             <button
               type="button"
-              className="btn ghost"
               onClick={() => nav("/quality-location")}
-              style={styles.footerButton}
+              style={styles.backButton}
             >
-              Back
+              ← Back
             </button>
 
-            <button
-              type="button"
-              className="btn"
-              onClick={continueNext}
-              style={styles.footerButton}
-            >
-              Continue to Delivery
+            <button type="button" onClick={continueNext} style={styles.nextButton}>
+              Continue to Delivery →
             </button>
           </div>
         </motion.div>
@@ -731,19 +720,21 @@ const styles = {
     overflow: "hidden",
     borderRadius: "34px",
     padding: "34px",
+    color: "#14213d",
     background:
-      "radial-gradient(circle at 12% 10%, rgba(124,92,255,0.28), transparent 30%), radial-gradient(circle at 88% 8%, rgba(0,212,255,0.22), transparent 28%), linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035))",
-    border: "1px solid rgba(255,255,255,0.12)",
+      "linear-gradient(135deg, #fff7ed 0%, #eef6ff 40%, #f5f3ff 72%, #ecfeff 100%)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    boxShadow: "0 24px 70px rgba(15, 23, 42, 0.12)",
   },
   glowOne: {
     position: "absolute",
     width: "360px",
     height: "360px",
     borderRadius: "50%",
-    background: "rgba(124,92,255,0.18)",
-    filter: "blur(72px)",
-    top: "-120px",
-    left: "-100px",
+    background: "rgba(255, 214, 165, 0.55)",
+    filter: "blur(68px)",
+    top: "-110px",
+    left: "-90px",
     pointerEvents: "none",
   },
   glowTwo: {
@@ -751,10 +742,21 @@ const styles = {
     width: "360px",
     height: "360px",
     borderRadius: "50%",
-    background: "rgba(0,212,255,0.14)",
+    background: "rgba(191, 219, 254, 0.72)",
     filter: "blur(72px)",
-    right: "-130px",
+    right: "-120px",
+    top: "60px",
+    pointerEvents: "none",
+  },
+  glowThree: {
+    position: "absolute",
+    width: "340px",
+    height: "340px",
+    borderRadius: "50%",
+    background: "rgba(221, 214, 254, 0.72)",
+    filter: "blur(74px)",
     bottom: "-140px",
+    left: "34%",
     pointerEvents: "none",
   },
   content: {
@@ -772,96 +774,114 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     gap: "9px",
-    padding: "8px 12px",
+    padding: "9px 13px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.08)",
-    border: "1px solid rgba(255,255,255,0.14)",
-    color: "rgba(255,255,255,0.84)",
+    background: "rgba(255, 255, 255, 0.72)",
+    border: "1px solid rgba(109, 93, 252, 0.16)",
+    color: "#4f46e5",
     fontSize: "13px",
-    fontWeight: 800,
+    fontWeight: 900,
     marginBottom: "16px",
+    boxShadow: "0 10px 24px rgba(79, 70, 229, 0.08)",
   },
   stepDot: {
     width: "9px",
     height: "9px",
     borderRadius: "50%",
-    background: "#00d4ff",
-    boxShadow: "0 0 18px rgba(0,212,255,0.9)",
-    animation: "expertPulse 2s ease-in-out infinite",
+    background: "#6d5dfc",
+    boxShadow: "0 0 18px rgba(109, 93, 252, 0.7)",
+    animation: "expertSoftPulse 2s ease-in-out infinite",
   },
   title: {
     margin: 0,
-    fontSize: "48px",
+    color: "#111827",
+    fontSize: "50px",
     lineHeight: 1.04,
-    letterSpacing: "-1.5px",
+    letterSpacing: "-1.6px",
   },
   subtitle: {
     maxWidth: "760px",
     margin: "14px 0 0",
-    color: "rgba(255,255,255,0.74)",
-    lineHeight: 1.65,
+    color: "#475569",
+    lineHeight: 1.7,
     fontSize: "16px",
+    fontWeight: 600,
   },
   previewCard: {
-    border: "1px solid rgba(255,255,255,0.14)",
-    borderRadius: "26px",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "28px",
     padding: "20px",
-    background:
-      "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05))",
-    boxShadow: "0 18px 40px rgba(0,0,0,0.18)",
+    background: "rgba(255,255,255,0.76)",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.10)",
+    backdropFilter: "blur(18px)",
+  },
+  previewTop: {
+    display: "flex",
+    alignItems: "center",
+    gap: "14px",
   },
   previewIcon: {
-    width: "64px",
-    height: "64px",
+    width: "62px",
+    height: "62px",
     borderRadius: "22px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.11)",
-    border: "1px solid rgba(255,255,255,0.14)",
-    fontSize: "31px",
-    marginBottom: "15px",
-    animation: "expertFloat 3.2s ease-in-out infinite",
+    background: "linear-gradient(135deg, #ffffff, #eef2ff)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    fontSize: "30px",
+    boxShadow: "0 14px 30px rgba(15, 23, 42, 0.10)",
+    animation: "expertSoftFloat 3.2s ease-in-out infinite",
   },
   previewLabel: {
     margin: "0 0 4px",
-    color: "rgba(255,255,255,0.62)",
-    fontWeight: 900,
+    color: "#64748b",
     fontSize: "12px",
+    fontWeight: 900,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
   },
-  previewTitle: {
+  previewScore: {
     margin: 0,
-    fontSize: "22px",
+    color: "#111827",
+    fontSize: "36px",
+    lineHeight: 1,
+  },
+  progressTrack: {
+    height: "11px",
+    borderRadius: "999px",
+    background: "#e2e8f0",
+    overflow: "hidden",
+    margin: "14px 0",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: "inherit",
+    background: "linear-gradient(90deg, #6d5dfc, #00bcd4)",
   },
   previewText: {
-    margin: "9px 0 0",
-    color: "rgba(255,255,255,0.70)",
-    lineHeight: 1.5,
+    margin: "0 0 14px",
+    color: "#475569",
+    lineHeight: 1.55,
     fontSize: "14px",
+    fontWeight: 600,
   },
-  previewLine: {
-    height: "1px",
-    margin: "18px 0",
-    background: "rgba(255,255,255,0.13)",
-  },
-  previewChips: {
+  previewTags: {
     display: "flex",
     flexWrap: "wrap",
     gap: "8px",
   },
-  previewChip: {
-    padding: "7px 9px",
+  previewTag: {
+    padding: "7px 10px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.08)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    color: "#334155",
     fontSize: "12px",
-    color: "rgba(255,255,255,0.78)",
-    fontWeight: 800,
+    fontWeight: 900,
   },
   layout: {
     display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr) 340px",
+    gridTemplateColumns: "minmax(0, 1fr) 350px",
     gap: "18px",
     alignItems: "start",
   },
@@ -869,123 +889,172 @@ const styles = {
     display: "grid",
     gap: "16px",
   },
-  toolbar: {
-    border: "1px solid rgba(255,255,255,0.13)",
-    borderRadius: "28px",
-    padding: "20px",
-    background: "rgba(255,255,255,0.06)",
-    boxShadow: "0 18px 42px rgba(0,0,0,0.16)",
+  toolbarCard: {
     display: "flex",
-    alignItems: "center",
     justifyContent: "space-between",
-    gap: "16px",
+    alignItems: "center",
+    gap: "14px",
     flexWrap: "wrap",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "26px",
+    padding: "18px",
+    background: "rgba(255,255,255,0.76)",
+    boxShadow: "0 16px 38px rgba(15, 23, 42, 0.08)",
+  },
+  toolbarLabel: {
+    margin: "0 0 5px",
+    color: "#64748b",
+    fontSize: "12px",
+    fontWeight: 900,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
   },
   toolbarTitle: {
-    margin: "0 0 6px",
+    margin: 0,
+    color: "#111827",
     fontSize: "24px",
   },
-  toolbarText: {
-    margin: 0,
-    color: "rgba(255,255,255,0.68)",
-    lineHeight: 1.5,
+  toolbarActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+  },
+  sourceBadge: {
+    padding: "9px 11px",
+    borderRadius: "999px",
+    background: "#ecfeff",
+    border: "1px solid #a5f3fc",
+    color: "#0891b2",
+    fontSize: "12px",
+    fontWeight: 900,
   },
   refreshButton: {
-    minWidth: "160px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "999px",
+    padding: "11px 15px",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 10px 22px rgba(15, 23, 42, 0.06)",
+  },
+  disabledButton: {
+    opacity: 0.65,
+    cursor: "not-allowed",
   },
   infoBox: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "13px 15px",
+    borderRadius: "18px",
+    background: "#ecfeff",
+    border: "1px solid #a5f3fc",
+    color: "#475569",
+    fontWeight: 700,
+  },
+  infoIcon: {
+    fontSize: "19px",
+  },
+  errorBox: {
     padding: "13px 15px",
     borderRadius: "16px",
-    background: "rgba(0,212,255,0.10)",
-    border: "1px solid rgba(0,212,255,0.25)",
-    color: "#d9fbff",
+    background: "#fff1f2",
+    border: "1px solid #fecdd3",
+    color: "#be123c",
+    fontWeight: 800,
   },
   loadingCard: {
-    border: "1px solid rgba(255,255,255,0.13)",
-    borderRadius: "28px",
-    padding: "38px",
-    background: "rgba(255,255,255,0.06)",
+    padding: "34px",
+    borderRadius: "30px",
+    background: "rgba(255,255,255,0.76)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
     textAlign: "center",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.08)",
   },
   spinner: {
-    width: "46px",
-    height: "46px",
+    width: "54px",
+    height: "54px",
     borderRadius: "50%",
-    border: "4px solid rgba(255,255,255,0.18)",
-    borderTopColor: "#fff",
+    border: "5px solid #e2e8f0",
+    borderTopColor: "#6d5dfc",
     margin: "0 auto 16px",
-    animation: "spin 1s linear infinite",
+    animation: "expertSpin 1s linear infinite",
   },
   loadingTitle: {
     margin: "0 0 8px",
+    color: "#111827",
+    fontSize: "24px",
   },
   loadingText: {
     margin: 0,
-    color: "rgba(255,255,255,0.68)",
+    color: "#475569",
+    fontWeight: 600,
   },
   emptyCard: {
-    border: "1px dashed rgba(255,255,255,0.28)",
-    borderRadius: "28px",
     padding: "34px",
-    background: "rgba(255,255,255,0.05)",
+    borderRadius: "30px",
+    background: "rgba(255,255,255,0.76)",
+    border: "1px dashed rgba(109, 93, 252, 0.28)",
     textAlign: "center",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.08)",
+  },
+  emptyIcon: {
+    width: "70px",
+    height: "70px",
+    borderRadius: "25px",
+    display: "grid",
+    placeItems: "center",
+    margin: "0 auto 16px",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
+    fontSize: "34px",
   },
   emptyTitle: {
     margin: "0 0 8px",
+    color: "#111827",
+    fontSize: "25px",
   },
   emptyText: {
-    margin: "0 0 18px",
-    color: "rgba(255,255,255,0.68)",
+    margin: "0 auto 18px",
+    maxWidth: "520px",
+    color: "#475569",
+    lineHeight: 1.6,
+    fontWeight: 600,
+  },
+  emptyButton: {
+    border: "0",
+    borderRadius: "999px",
+    padding: "13px 20px",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 14px 30px rgba(79, 70, 229, 0.24)",
   },
   expertGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "16px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(330px, 1fr))",
+    gap: "18px",
   },
   expertCard: {
-    border: "1px solid rgba(255,255,255,0.13)",
-    borderRadius: "28px",
     overflow: "hidden",
-    background: "rgba(255,255,255,0.065)",
-    boxShadow: "0 18px 42px rgba(0,0,0,0.18)",
+    border: "2px solid rgba(148, 163, 184, 0.22)",
+    borderRadius: "30px",
+    background: "rgba(255,255,255,0.86)",
+    boxShadow: "0 16px 38px rgba(15, 23, 42, 0.10)",
+    color: "#111827",
   },
   expertCardSelected: {
-    border: "2px solid rgba(0,212,255,0.95)",
-    boxShadow: "0 24px 60px rgba(0,212,255,0.16)",
+    border: "2px solid #6d5dfc",
+    boxShadow: "0 22px 48px rgba(109, 93, 252, 0.18)",
   },
-  portfolioGrid: {
-    display: "grid",
-    gridTemplateColumns: "1.5fr 0.8fr",
-    gap: "2px",
-    height: "210px",
-    background: "rgba(0,0,0,0.18)",
-  },
-  mainImageWrap: {
+  portfolioWrap: {
     position: "relative",
+    height: "250px",
     overflow: "hidden",
+    background: "#eef2ff",
   },
-  portfolioImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    display: "block",
-  },
-  ratingBadge: {
-    position: "absolute",
-    left: "12px",
-    top: "12px",
-    padding: "8px 11px",
-    borderRadius: "999px",
-    background: "rgba(0,0,0,0.52)",
-    border: "1px solid rgba(255,255,255,0.18)",
-    backdropFilter: "blur(10px)",
-    fontWeight: 900,
-  },
-  smallImageStack: {
-    position: "relative",
-    overflow: "hidden",
-  },
-  smallImage: {
+  mainPortfolioImage: {
     width: "100%",
     height: "100%",
     objectFit: "cover",
@@ -993,106 +1062,161 @@ const styles = {
   },
   portfolioOverlay: {
     position: "absolute",
-    inset: 0,
+    inset: "12px 12px auto 12px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  rankBadge: {
+    width: "40px",
+    height: "40px",
+    borderRadius: "15px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(0,0,0,0.36)",
+    background: "rgba(255,255,255,0.84)",
+    border: "1px solid rgba(255,255,255,0.72)",
+    color: "#111827",
     fontWeight: 900,
+    boxShadow: "0 10px 22px rgba(15, 23, 42, 0.14)",
   },
-  cardBody: {
-    padding: "16px",
+  ratingBadge: {
+    padding: "8px 11px",
+    borderRadius: "999px",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    fontSize: "13px",
+    fontWeight: 900,
+    boxShadow: "0 10px 22px rgba(15, 23, 42, 0.18)",
   },
-  cardTitleRow: {
+  miniPortfolioRow: {
+    position: "absolute",
+    left: "12px",
+    right: "12px",
+    bottom: "12px",
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: "8px",
+  },
+  miniPortfolioImage: {
+    height: "58px",
+    width: "100%",
+    objectFit: "cover",
+    borderRadius: "16px",
+    border: "2px solid rgba(255,255,255,0.82)",
+    boxShadow: "0 8px 18px rgba(15, 23, 42, 0.18)",
+  },
+  expertBody: {
+    padding: "17px",
+  },
+  expertTitleRow: {
     display: "flex",
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: "12px",
+    marginBottom: "10px",
   },
   expertName: {
     margin: 0,
-    fontSize: "21px",
+    color: "#111827",
+    fontSize: "22px",
+    lineHeight: 1.24,
   },
   expertLocation: {
-    margin: "6px 0 0",
-    color: "rgba(255,255,255,0.66)",
-    fontSize: "14px",
+    margin: "7px 0 0",
+    color: "#64748b",
+    lineHeight: 1.4,
+    fontSize: "13px",
+    fontWeight: 800,
   },
   checkCircle: {
-    width: "28px",
-    height: "28px",
+    width: "30px",
+    height: "30px",
     borderRadius: "50%",
     display: "grid",
     placeItems: "center",
-    border: "1px solid rgba(255,255,255,0.22)",
-    color: "#061224",
-    fontSize: "13px",
+    border: "1px solid #cbd5e1",
+    background: "#ffffff",
+    color: "#ffffff",
+    fontSize: "14px",
     fontWeight: 900,
     flex: "0 0 auto",
   },
   checkCircleSelected: {
-    background: "#00d4ff",
-    borderColor: "#00d4ff",
-    boxShadow: "0 0 20px rgba(0,212,255,0.5)",
+    background: "#6d5dfc",
+    borderColor: "#6d5dfc",
+    color: "#ffffff",
   },
-  specialization: {
-    margin: "12px 0",
-    padding: "10px 12px",
-    borderRadius: "16px",
-    background: "rgba(0,212,255,0.10)",
-    border: "1px solid rgba(0,212,255,0.20)",
-    color: "#d9fbff",
-    fontSize: "13px",
-    lineHeight: 1.45,
-    fontWeight: 800,
+  expertDescription: {
+    margin: "0 0 14px",
+    color: "#475569",
+    lineHeight: 1.55,
+    fontSize: "14px",
+    fontWeight: 600,
   },
   metaGrid: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
     gap: "10px",
-    marginBottom: "12px",
+    marginBottom: "13px",
   },
-  metaItem: {
-    padding: "10px",
-    borderRadius: "14px",
-    background: "rgba(0,0,0,0.16)",
-    border: "1px solid rgba(255,255,255,0.08)",
+  metaBox: {
+    padding: "11px",
+    borderRadius: "16px",
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
     display: "grid",
     gap: "4px",
   },
   reviewBox: {
-    padding: "12px",
-    borderRadius: "16px",
-    background: "rgba(255,255,255,0.07)",
-    border: "1px solid rgba(255,255,255,0.09)",
+    padding: "13px",
+    borderRadius: "18px",
+    background: "#ecfeff",
+    border: "1px solid #a5f3fc",
     marginBottom: "14px",
   },
-  reviewTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "12px",
-    marginBottom: "6px",
+  reviewBadge: {
+    display: "inline-flex",
+    marginBottom: "7px",
+    padding: "5px 8px",
+    borderRadius: "999px",
+    background: "#ffffff",
+    color: "#0891b2",
+    fontSize: "11px",
+    fontWeight: 900,
   },
   reviewText: {
     margin: 0,
-    color: "rgba(255,255,255,0.68)",
-    lineHeight: 1.45,
+    color: "#475569",
+    lineHeight: 1.5,
     fontSize: "13px",
-  },
-  actionRow: {
-    display: "flex",
+    fontWeight: 700,
   },
   selectButton: {
     width: "100%",
+    border: "1px solid #cbd5e1",
+    borderRadius: "999px",
+    padding: "13px 18px",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
+  },
+  selectButtonSelected: {
+    border: "0",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    boxShadow: "0 16px 34px rgba(79, 70, 229, 0.25)",
   },
   sidePanel: {
     position: "sticky",
     top: "18px",
-    border: "1px solid rgba(255,255,255,0.14)",
-    borderRadius: "28px",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "30px",
     padding: "22px",
-    background:
-      "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05))",
-    boxShadow: "0 22px 52px rgba(0,0,0,0.20)",
+    background: "rgba(255,255,255,0.78)",
+    boxShadow: "0 20px 48px rgba(15, 23, 42, 0.10)",
+    backdropFilter: "blur(18px)",
   },
   sideTop: {
     display: "flex",
@@ -1106,14 +1230,13 @@ const styles = {
     borderRadius: "20px",
     display: "grid",
     placeItems: "center",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.90), rgba(0,212,255,0.78))",
-    border: "1px solid rgba(255,255,255,0.18)",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
     fontSize: "28px",
   },
   sideLabel: {
     margin: "0 0 4px",
-    color: "rgba(255,255,255,0.60)",
+    color: "#64748b",
     fontSize: "12px",
     fontWeight: 900,
     textTransform: "uppercase",
@@ -1121,6 +1244,7 @@ const styles = {
   },
   sideTitle: {
     margin: 0,
+    color: "#111827",
     fontSize: "22px",
   },
   summaryList: {
@@ -1130,51 +1254,48 @@ const styles = {
   summaryItem: {
     padding: "12px",
     borderRadius: "16px",
-    background: "rgba(0,0,0,0.16)",
-    border: "1px solid rgba(255,255,255,0.08)",
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
     display: "grid",
     gap: "4px",
+    color: "#111827",
   },
-  selectedBox: {
+  nextCard: {
     marginTop: "14px",
     padding: "14px",
     borderRadius: "20px",
-    background: "rgba(0,212,255,0.10)",
-    border: "1px solid rgba(0,212,255,0.22)",
+    background: "#ecfeff",
+    border: "1px solid #a5f3fc",
   },
-  selectedBadge: {
+  nextBadge: {
     display: "inline-flex",
     marginBottom: "8px",
     padding: "5px 8px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.10)",
-    color: "#d9fbff",
+    background: "#ffffff",
+    color: "#0891b2",
     fontSize: "11px",
     fontWeight: 900,
   },
-  selectedTitle: {
+  nextTitle: {
     margin: "0 0 8px",
+    color: "#111827",
     fontSize: "18px",
   },
-  selectedText: {
+  nextText: {
     margin: 0,
-    color: "rgba(255,255,255,0.72)",
+    color: "#475569",
     lineHeight: 1.5,
     fontSize: "13px",
+    fontWeight: 700,
   },
   nextPills: {
     display: "flex",
     flexWrap: "wrap",
     gap: "8px",
-    marginTop: "14px",
-  },
-  errorBox: {
-    marginTop: "16px",
-    padding: "13px 15px",
-    borderRadius: "16px",
-    background: "rgba(255, 86, 86, 0.16)",
-    border: "1px solid rgba(255, 120, 120, 0.35)",
-    color: "#ffdede",
+    marginTop: "12px",
+    color: "#334155",
+    fontWeight: 800,
   },
   finalSummary: {
     display: "flex",
@@ -1183,8 +1304,9 @@ const styles = {
     marginTop: "18px",
     padding: "16px",
     borderRadius: "22px",
-    background: "rgba(0,0,0,0.18)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.78)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    boxShadow: "0 14px 34px rgba(15, 23, 42, 0.08)",
   },
   finalIcon: {
     width: "45px",
@@ -1192,20 +1314,20 @@ const styles = {
     borderRadius: "16px",
     display: "grid",
     placeItems: "center",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.9), rgba(0,212,255,0.8))",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
     fontSize: "22px",
     flex: "0 0 auto",
   },
   finalLabel: {
     margin: "0 0 4px",
-    color: "rgba(255,255,255,0.58)",
+    color: "#64748b",
     fontSize: "12px",
     fontWeight: 900,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
   },
   finalText: {
+    color: "#111827",
     fontSize: "16px",
   },
   footer: {
@@ -1214,7 +1336,26 @@ const styles = {
     gap: "12px",
     marginTop: "22px",
   },
-  footerButton: {
-    minWidth: "210px",
+  backButton: {
+    minWidth: "170px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "999px",
+    padding: "14px 22px",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
+  },
+  nextButton: {
+    minWidth: "230px",
+    border: "0",
+    borderRadius: "999px",
+    padding: "14px 24px",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 16px 34px rgba(79, 70, 229, 0.28)",
   },
 };
