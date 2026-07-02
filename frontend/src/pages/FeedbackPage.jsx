@@ -8,8 +8,10 @@ const RATING_CATEGORIES = [
   {
     key: "fit",
     title: "Fit Accuracy",
-    subtitle: "How well did the outfit fit compared to the FitGenie recommendation?",
+    subtitle: "How accurate was the recommended size and final outfit fit?",
     icon: "📏",
+    gradient: "linear-gradient(135deg, #dbeafe, #ede9fe, #fce7f3)",
+    accent: "#6d5dfc",
     lowLabel: "Poor fit",
     highLabel: "Perfect fit",
   },
@@ -18,14 +20,18 @@ const RATING_CATEGORIES = [
     title: "Service Quality",
     subtitle: "How was the tailor, designer, boutique, or stylist experience?",
     icon: "🧵",
+    gradient: "linear-gradient(135deg, #fce7f3, #ffe4e6, #fed7aa)",
+    accent: "#db2777",
     lowLabel: "Not good",
     highLabel: "Excellent",
   },
   {
     key: "delivery",
     title: "Delivery Experience",
-    subtitle: "How smooth was the delivery, pickup, or consultation process?",
+    subtitle: "How smooth was delivery, pickup, or consultation scheduling?",
     icon: "📦",
+    gradient: "linear-gradient(135deg, #dcfce7, #cffafe, #e0e7ff)",
+    accent: "#059669",
     lowLabel: "Delayed",
     highLabel: "Smooth",
   },
@@ -43,14 +49,6 @@ const FEEDBACK_TAGS = [
   "Communication issue",
 ];
 
-function getSafeValue(value, fallback = "Not available") {
-  if (value === undefined || value === null || value === "") {
-    return fallback;
-  }
-
-  return value;
-}
-
 function getSelectedOutfit(state) {
   return state.recommendations?.selectedOutfit || state.selectedOutfit || null;
 }
@@ -63,9 +61,17 @@ function getOrderId(state) {
   return (
     state.order?.bookingId ||
     state.order?.orderId ||
-    state.bookingId ||
-    "FitGenie order"
+    state.fitCard?.fitCardId ||
+    "ORD-PREVIEW"
   );
+}
+
+function getSafeValue(value, fallback = "Not available") {
+  if (value === undefined || value === null || value === "") {
+    return fallback;
+  }
+
+  return value;
 }
 
 function getAverageRating(feedback) {
@@ -89,7 +95,7 @@ function getExperienceLabel(score) {
   return "Waiting for rating";
 }
 
-function StarRating({ value, onChange }) {
+function StarRating({ value, accent, onChange }) {
   return (
     <div style={styles.starRow}>
       {[1, 2, 3, 4, 5].map((number) => {
@@ -99,12 +105,19 @@ function StarRating({ value, onChange }) {
           <motion.button
             key={number}
             type="button"
-            whileHover={{ y: -3, scale: 1.04 }}
+            whileHover={{ y: -3, scale: 1.05 }}
             whileTap={{ scale: 0.94 }}
             onClick={() => onChange(number)}
             style={{
               ...styles.starButton,
-              ...(active ? styles.starButtonActive : {}),
+              ...(active
+                ? {
+                    color: "#ffffff",
+                    background: accent,
+                    borderColor: accent,
+                    boxShadow: `0 12px 24px ${accent}30`,
+                  }
+                : {}),
             }}
             aria-label={`Rate ${number} star${number === 1 ? "" : "s"}`}
           >
@@ -131,10 +144,7 @@ export default function FeedbackPage() {
   const [submitted, setSubmitted] = useState(Boolean(feedback.submittedAt));
   const [error, setError] = useState("");
 
-  const averageRating = useMemo(
-    () => getAverageRating(feedback),
-    [feedback]
-  );
+  const averageRating = useMemo(() => getAverageRating(feedback), [feedback]);
 
   const completionScore = useMemo(() => {
     let score = 0;
@@ -245,13 +255,13 @@ export default function FeedbackPage() {
     <PageShell>
       <style>
         {`
-          @keyframes feedbackFloat {
+          @keyframes feedbackSoftFloat {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
             100% { transform: translateY(0px); }
           }
 
-          @keyframes feedbackPulse {
+          @keyframes feedbackSoftPulse {
             0% { opacity: 0.55; transform: scale(0.96); }
             50% { opacity: 1; transform: scale(1.04); }
             100% { opacity: 0.55; transform: scale(0.96); }
@@ -263,7 +273,7 @@ export default function FeedbackPage() {
             }
 
             .feedback-title {
-              font-size: 36px !important;
+              font-size: 38px !important;
             }
 
             .feedback-layout {
@@ -288,6 +298,7 @@ export default function FeedbackPage() {
       <div style={styles.page}>
         <div style={styles.glowOne} />
         <div style={styles.glowTwo} />
+        <div style={styles.glowThree} />
 
         <motion.div
           initial={{ opacity: 0, y: 22 }}
@@ -307,20 +318,20 @@ export default function FeedbackPage() {
               </h1>
 
               <p style={styles.subtitle}>
-                Rate the fit accuracy, expert service, and delivery experience.
-                Your feedback helps improve future outfit matching and expert
-                recommendations.
+                Rate fit accuracy, service quality, and delivery experience.
+                Your feedback helps improve outfit matching, expert selection,
+                size confidence, and future FitGenie recommendations.
               </p>
             </div>
 
             <aside style={styles.previewCard}>
-              <div style={styles.previewIcon}>
-                {submitted ? "🎉" : "⭐"}
-              </div>
+              <div style={styles.previewTop}>
+                <span style={styles.previewIcon}>{submitted ? "🎉" : "⭐"}</span>
 
-              <div>
-                <p style={styles.previewLabel}>Feedback completion</p>
-                <h2 style={styles.previewScore}>{completionScore}%</h2>
+                <div>
+                  <p style={styles.previewLabel}>Feedback completion</p>
+                  <h2 style={styles.previewScore}>{completionScore}%</h2>
+                </div>
               </div>
 
               <div style={styles.progressTrack}>
@@ -334,26 +345,34 @@ export default function FeedbackPage() {
 
               <p style={styles.previewText}>
                 {submitted
-                  ? "Thank you. Your feedback has been submitted successfully."
+                  ? "Thank you. Your feedback has been saved successfully."
                   : completionScore < 75
                   ? "Rate all three categories to submit your feedback."
-                  : "Almost ready. Add comments or submit your feedback."}
+                  : "Almost ready. Add optional details or submit feedback."}
               </p>
+
+              <div style={styles.previewTags}>
+                <span style={styles.previewTag}>
+                  {averageRating ? `${averageRating} / 5` : "Rating pending"}
+                </span>
+                <span style={styles.previewTag}>
+                  {submitted ? "Submitted" : "Pending"}
+                </span>
+              </div>
             </aside>
           </section>
 
           <section className="feedback-layout" style={styles.layout}>
             <main style={styles.mainPanel}>
-              <section style={styles.thankYouCard}>
+              <section style={styles.heroCard}>
                 <div>
-                  <p style={styles.thankYouLabel}>Delivery confirmed</p>
-                  <h2 style={styles.thankYouTitle}>
-                    {submitted ? "Thank you for your feedback!" : "Final step before completion"}
+                  <p style={styles.heroLabel}>Delivery confirmed</p>
+                  <h2 style={styles.heroTitle}>
+                    {submitted ? "Feedback submitted successfully" : "Final step before completion"}
                   </h2>
-
-                  <p style={styles.thankYouText}>
+                  <p style={styles.heroText}>
                     {submitted
-                      ? "Your ratings are saved to the order and can be used to improve future expert matching."
+                      ? "Your rating is now connected to this order and expert experience."
                       : "Share how accurate the fit was and how smooth the expert service felt."}
                   </p>
                 </div>
@@ -364,14 +383,14 @@ export default function FeedbackPage() {
                 </div>
               </section>
 
-              <section style={styles.ratingBlock}>
+              <section style={styles.block}>
                 <div style={styles.blockHeader}>
                   <span style={styles.blockIcon}>⭐</span>
 
                   <div>
                     <h2 style={styles.blockTitle}>Rate your experience</h2>
                     <p style={styles.blockText}>
-                      These ratings are required before submitting feedback.
+                      These three ratings are required before submitting feedback.
                     </p>
                   </div>
                 </div>
@@ -380,40 +399,55 @@ export default function FeedbackPage() {
                   {RATING_CATEGORIES.map((category) => (
                     <motion.div
                       key={category.key}
-                      whileHover={{ y: -5 }}
+                      whileHover={{ y: -6, scale: 1.01 }}
                       style={styles.ratingCard}
                     >
-                      <div style={styles.ratingTop}>
+                      <div
+                        style={{
+                          ...styles.ratingVisual,
+                          background: category.gradient,
+                        }}
+                      >
                         <span style={styles.ratingIcon}>{category.icon}</span>
 
-                        <div>
-                          <h3 style={styles.ratingTitle}>{category.title}</h3>
-                          <p style={styles.ratingSubtitle}>
-                            {category.subtitle}
-                          </p>
-                        </div>
-                      </div>
-
-                      <StarRating
-                        value={feedback[category.key]}
-                        onChange={(value) => updateRating(category.key, value)}
-                      />
-
-                      <div style={styles.ratingLabels}>
-                        <span>{category.lowLabel}</span>
-                        <strong>
+                        <span
+                          style={{
+                            ...styles.ratingBadge,
+                            color: category.accent,
+                          }}
+                        >
                           {feedback[category.key]
                             ? `${feedback[category.key]} / 5`
-                            : "Not rated"}
-                        </strong>
-                        <span>{category.highLabel}</span>
+                            : "Rate"}
+                        </span>
+                      </div>
+
+                      <div style={styles.ratingBody}>
+                        <h3 style={styles.ratingTitle}>{category.title}</h3>
+                        <p style={styles.ratingText}>{category.subtitle}</p>
+
+                        <StarRating
+                          value={feedback[category.key]}
+                          accent={category.accent}
+                          onChange={(value) => updateRating(category.key, value)}
+                        />
+
+                        <div style={styles.ratingLabels}>
+                          <span>{category.lowLabel}</span>
+                          <strong>
+                            {feedback[category.key]
+                              ? `${feedback[category.key]} stars`
+                              : "Not rated"}
+                          </strong>
+                          <span>{category.highLabel}</span>
+                        </div>
                       </div>
                     </motion.div>
                   ))}
                 </div>
               </section>
 
-              <section style={styles.ratingBlock}>
+              <section style={styles.block}>
                 <div style={styles.blockHeader}>
                   <span style={styles.blockIcon}>🏷️</span>
 
@@ -423,7 +457,7 @@ export default function FeedbackPage() {
                       <span style={styles.optionalText}>(optional)</span>
                     </h2>
                     <p style={styles.blockText}>
-                      Select tags that describe your experience.
+                      Select tags that best describe your experience.
                     </p>
                   </div>
                 </div>
@@ -452,7 +486,7 @@ export default function FeedbackPage() {
                 </div>
               </section>
 
-              <section style={styles.ratingBlock}>
+              <section style={styles.block}>
                 <div style={styles.blockHeader}>
                   <span style={styles.blockIcon}>📝</span>
 
@@ -474,7 +508,7 @@ export default function FeedbackPage() {
                     <textarea
                       value={comment}
                       onChange={(event) => updateComment(event.target.value)}
-                      placeholder="Example: The fit was accurate and the tailor delivered on time."
+                      placeholder="Example: The fit was accurate, the expert was helpful, and delivery was smooth."
                       style={styles.textarea}
                     />
                   </div>
@@ -485,7 +519,7 @@ export default function FeedbackPage() {
                     <input
                       value={photoUrl}
                       onChange={(event) => updatePhotoUrl(event.target.value)}
-                      placeholder="Paste image URL for optional photo proof"
+                      placeholder="Paste image URL for optional outfit photo"
                       style={styles.input}
                     />
 
@@ -493,7 +527,7 @@ export default function FeedbackPage() {
                       <div style={styles.photoPreview}>
                         <img
                           src={photoUrl}
-                          alt="Feedback upload preview"
+                          alt="Feedback preview"
                           style={styles.photoImage}
                         />
                       </div>
@@ -509,7 +543,7 @@ export default function FeedbackPage() {
 
             <aside style={styles.sidePanel}>
               <div style={styles.sideTop}>
-                <span style={styles.sideIcon}>🧞</span>
+                <span style={styles.sideIcon}>{submitted ? "🎉" : "🧞"}</span>
 
                 <div>
                   <p style={styles.sideLabel}>Feedback summary</p>
@@ -567,17 +601,17 @@ export default function FeedbackPage() {
                 </div>
               </div>
 
-              <div style={styles.socialCard}>
-                <span style={styles.socialBadge}>Social proof</span>
+              <div style={styles.nextCard}>
+                <span style={styles.nextBadge}>Social proof</span>
 
-                <h3 style={styles.socialTitle}>Optional photo feedback</h3>
+                <h3 style={styles.nextTitle}>Optional photo feedback</h3>
 
-                <p style={styles.socialText}>
-                  Later, this can support real upload, fit accuracy stories, and
-                  customer reviews on expert profiles.
+                <p style={styles.nextText}>
+                  Later, this can support real uploads, customer fit stories,
+                  and expert profile reviews.
                 </p>
 
-                <div style={styles.socialPills}>
+                <div style={styles.nextPills}>
                   <span>📸 Photo</span>
                   <span>⭐ Rating</span>
                   <span>💬 Review</span>
@@ -596,9 +630,7 @@ export default function FeedbackPage() {
           {error ? <div style={styles.errorBox}>{error}</div> : null}
 
           <section style={styles.finalSummary}>
-            <div style={styles.finalIcon}>
-              {submitted ? "🎉" : "⭐"}
-            </div>
+            <div style={styles.finalIcon}>{submitted ? "🎉" : "⭐"}</div>
 
             <div>
               <p style={styles.finalLabel}>Final feedback status</p>
@@ -615,27 +647,24 @@ export default function FeedbackPage() {
           <div className="feedback-footer" style={styles.footer}>
             <button
               type="button"
-              className="btn ghost"
               onClick={() => nav("/tracking")}
-              style={styles.footerButton}
+              style={styles.backButton}
             >
-              Back
+              ← Back
             </button>
 
             <button
               type="button"
-              className="btn"
               onClick={submitFeedback}
-              style={styles.footerButton}
+              style={styles.nextButton}
             >
               Submit Feedback
             </button>
 
             <button
               type="button"
-              className="btn ghost"
               onClick={startNewJourney}
-              style={styles.footerButton}
+              style={styles.secondaryButton}
             >
               Start New Journey
             </button>
@@ -653,19 +682,21 @@ const styles = {
     overflow: "hidden",
     borderRadius: "34px",
     padding: "34px",
+    color: "#14213d",
     background:
-      "radial-gradient(circle at 12% 10%, rgba(124,92,255,0.28), transparent 30%), radial-gradient(circle at 88% 8%, rgba(0,212,255,0.22), transparent 28%), linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035))",
-    border: "1px solid rgba(255,255,255,0.12)",
+      "linear-gradient(135deg, #fff7ed 0%, #eef6ff 40%, #f5f3ff 72%, #ecfeff 100%)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    boxShadow: "0 24px 70px rgba(15, 23, 42, 0.12)",
   },
   glowOne: {
     position: "absolute",
     width: "360px",
     height: "360px",
     borderRadius: "50%",
-    background: "rgba(124,92,255,0.18)",
-    filter: "blur(72px)",
-    top: "-120px",
-    left: "-100px",
+    background: "rgba(255, 214, 165, 0.55)",
+    filter: "blur(68px)",
+    top: "-110px",
+    left: "-90px",
     pointerEvents: "none",
   },
   glowTwo: {
@@ -673,10 +704,21 @@ const styles = {
     width: "360px",
     height: "360px",
     borderRadius: "50%",
-    background: "rgba(0,212,255,0.14)",
+    background: "rgba(191, 219, 254, 0.72)",
     filter: "blur(72px)",
-    right: "-130px",
+    right: "-120px",
+    top: "60px",
+    pointerEvents: "none",
+  },
+  glowThree: {
+    position: "absolute",
+    width: "340px",
+    height: "340px",
+    borderRadius: "50%",
+    background: "rgba(221, 214, 254, 0.72)",
+    filter: "blur(74px)",
     bottom: "-140px",
+    left: "34%",
     pointerEvents: "none",
   },
   content: {
@@ -694,86 +736,110 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     gap: "9px",
-    padding: "8px 12px",
+    padding: "9px 13px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.08)",
-    border: "1px solid rgba(255,255,255,0.14)",
-    color: "rgba(255,255,255,0.84)",
+    background: "rgba(255, 255, 255, 0.72)",
+    border: "1px solid rgba(109, 93, 252, 0.16)",
+    color: "#4f46e5",
     fontSize: "13px",
-    fontWeight: 800,
+    fontWeight: 900,
     marginBottom: "16px",
+    boxShadow: "0 10px 24px rgba(79, 70, 229, 0.08)",
   },
   stepDot: {
     width: "9px",
     height: "9px",
     borderRadius: "50%",
-    background: "#00d4ff",
-    boxShadow: "0 0 18px rgba(0,212,255,0.9)",
-    animation: "feedbackPulse 2s ease-in-out infinite",
+    background: "#6d5dfc",
+    boxShadow: "0 0 18px rgba(109, 93, 252, 0.7)",
+    animation: "feedbackSoftPulse 2s ease-in-out infinite",
   },
   title: {
     margin: 0,
-    fontSize: "48px",
+    color: "#111827",
+    fontSize: "50px",
     lineHeight: 1.04,
-    letterSpacing: "-1.5px",
+    letterSpacing: "-1.6px",
   },
   subtitle: {
     maxWidth: "760px",
     margin: "14px 0 0",
-    color: "rgba(255,255,255,0.74)",
-    lineHeight: 1.65,
+    color: "#475569",
+    lineHeight: 1.7,
     fontSize: "16px",
+    fontWeight: 600,
   },
   previewCard: {
-    border: "1px solid rgba(255,255,255,0.14)",
-    borderRadius: "26px",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "28px",
     padding: "20px",
-    background:
-      "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05))",
-    boxShadow: "0 18px 40px rgba(0,0,0,0.18)",
+    background: "rgba(255,255,255,0.76)",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.10)",
+    backdropFilter: "blur(18px)",
+  },
+  previewTop: {
+    display: "flex",
+    alignItems: "center",
+    gap: "14px",
   },
   previewIcon: {
-    width: "64px",
-    height: "64px",
+    width: "62px",
+    height: "62px",
     borderRadius: "22px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.11)",
-    border: "1px solid rgba(255,255,255,0.14)",
-    fontSize: "31px",
-    marginBottom: "15px",
-    animation: "feedbackFloat 3.2s ease-in-out infinite",
+    background: "linear-gradient(135deg, #ffffff, #eef2ff)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    fontSize: "30px",
+    boxShadow: "0 14px 30px rgba(15, 23, 42, 0.10)",
+    animation: "feedbackSoftFloat 3.2s ease-in-out infinite",
   },
   previewLabel: {
     margin: "0 0 4px",
-    color: "rgba(255,255,255,0.62)",
-    fontWeight: 900,
+    color: "#64748b",
     fontSize: "12px",
+    fontWeight: 900,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
   },
   previewScore: {
     margin: 0,
+    color: "#111827",
     fontSize: "36px",
     lineHeight: 1,
   },
   progressTrack: {
     height: "11px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.12)",
+    background: "#e2e8f0",
     overflow: "hidden",
     margin: "14px 0",
   },
   progressFill: {
     height: "100%",
     borderRadius: "inherit",
-    background: "linear-gradient(90deg,#7c5cff,#00d4ff)",
+    background: "linear-gradient(90deg, #6d5dfc, #00bcd4)",
   },
   previewText: {
-    margin: 0,
-    color: "rgba(255,255,255,0.70)",
-    lineHeight: 1.5,
+    margin: "0 0 14px",
+    color: "#475569",
+    lineHeight: 1.55,
     fontSize: "14px",
+    fontWeight: 600,
+  },
+  previewTags: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+  },
+  previewTag: {
+    padding: "7px 10px",
+    borderRadius: "999px",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    color: "#334155",
+    fontSize: "12px",
+    fontWeight: 900,
   },
   layout: {
     display: "grid",
@@ -785,54 +851,57 @@ const styles = {
     display: "grid",
     gap: "18px",
   },
-  thankYouCard: {
-    border: "1px solid rgba(255,255,255,0.13)",
-    borderRadius: "30px",
-    padding: "24px",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.24), rgba(0,212,255,0.10))",
-    boxShadow: "0 22px 52px rgba(0,0,0,0.20)",
+  heroCard: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     gap: "18px",
     flexWrap: "wrap",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "30px",
+    padding: "24px",
+    background:
+      "linear-gradient(135deg, rgba(255,255,255,0.88), rgba(236,254,255,0.86))",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.09)",
   },
-  thankYouLabel: {
+  heroLabel: {
     margin: "0 0 6px",
-    color: "rgba(255,255,255,0.62)",
-    fontWeight: 900,
+    color: "#64748b",
     fontSize: "12px",
+    fontWeight: 900,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
   },
-  thankYouTitle: {
+  heroTitle: {
     margin: 0,
-    fontSize: "30px",
+    color: "#111827",
+    fontSize: "32px",
   },
-  thankYouText: {
+  heroText: {
+    maxWidth: "680px",
     margin: "8px 0 0",
-    color: "rgba(255,255,255,0.72)",
-    lineHeight: 1.5,
-    maxWidth: "620px",
+    color: "#475569",
+    fontWeight: 700,
+    lineHeight: 1.6,
   },
   scoreBubble: {
-    width: "132px",
-    height: "132px",
+    width: "138px",
+    height: "138px",
     borderRadius: "34px",
     display: "grid",
     placeItems: "center",
     textAlign: "center",
-    padding: "15px",
-    background: "rgba(255,255,255,0.12)",
-    border: "1px solid rgba(255,255,255,0.18)",
+    padding: "14px",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    color: "#111827",
   },
-  ratingBlock: {
-    border: "1px solid rgba(255,255,255,0.13)",
-    borderRadius: "28px",
+  block: {
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "30px",
     padding: "22px",
-    background: "rgba(255,255,255,0.06)",
-    boxShadow: "0 18px 42px rgba(0,0,0,0.16)",
+    background: "rgba(255,255,255,0.76)",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.09)",
   },
   blockHeader: {
     display: "flex",
@@ -841,25 +910,26 @@ const styles = {
     marginBottom: "18px",
   },
   blockIcon: {
-    width: "46px",
-    height: "46px",
-    borderRadius: "16px",
+    width: "48px",
+    height: "48px",
+    borderRadius: "17px",
     display: "grid",
     placeItems: "center",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.90), rgba(0,212,255,0.78))",
-    border: "1px solid rgba(255,255,255,0.18)",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
     fontSize: "22px",
     flex: "0 0 auto",
   },
   blockTitle: {
     margin: "0 0 6px",
+    color: "#111827",
     fontSize: "25px",
   },
   blockText: {
     margin: 0,
-    color: "rgba(255,255,255,0.68)",
-    lineHeight: 1.55,
+    color: "#475569",
+    lineHeight: 1.6,
+    fontWeight: 600,
   },
   ratingGrid: {
     display: "grid",
@@ -867,38 +937,54 @@ const styles = {
     gap: "14px",
   },
   ratingCard: {
-    border: "1px solid rgba(255,255,255,0.13)",
-    borderRadius: "24px",
-    padding: "16px",
-    background: "rgba(255,255,255,0.065)",
-    boxShadow: "0 16px 36px rgba(0,0,0,0.18)",
+    overflow: "hidden",
+    border: "2px solid rgba(148, 163, 184, 0.22)",
+    borderRadius: "26px",
+    background: "rgba(255,255,255,0.86)",
+    boxShadow: "0 12px 28px rgba(15, 23, 42, 0.07)",
+    color: "#111827",
   },
-  ratingTop: {
+  ratingVisual: {
+    height: "102px",
     display: "flex",
-    alignItems: "flex-start",
-    gap: "13px",
-    marginBottom: "14px",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "18px",
   },
   ratingIcon: {
-    width: "48px",
-    height: "48px",
-    borderRadius: "17px",
+    width: "62px",
+    height: "62px",
+    borderRadius: "23px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.10)",
-    border: "1px solid rgba(255,255,255,0.13)",
-    fontSize: "24px",
-    flex: "0 0 auto",
+    background: "rgba(255,255,255,0.68)",
+    border: "1px solid rgba(255,255,255,0.72)",
+    fontSize: "33px",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
+  },
+  ratingBadge: {
+    padding: "8px 11px",
+    borderRadius: "999px",
+    background: "rgba(255,255,255,0.75)",
+    border: "1px solid rgba(255,255,255,0.72)",
+    fontSize: "12px",
+    fontWeight: 900,
+  },
+  ratingBody: {
+    padding: "16px",
   },
   ratingTitle: {
     margin: 0,
-    fontSize: "19px",
+    color: "#111827",
+    fontSize: "20px",
   },
-  ratingSubtitle: {
-    margin: "6px 0 0",
-    color: "rgba(255,255,255,0.68)",
-    fontSize: "13px",
-    lineHeight: 1.45,
+  ratingText: {
+    minHeight: "58px",
+    margin: "8px 0 12px",
+    color: "#475569",
+    lineHeight: 1.5,
+    fontSize: "14px",
+    fontWeight: 600,
   },
   starRow: {
     display: "flex",
@@ -907,31 +993,28 @@ const styles = {
     flexWrap: "wrap",
   },
   starButton: {
-    width: "44px",
-    height: "44px",
+    width: "43px",
+    height: "43px",
     borderRadius: "16px",
-    border: "1px solid rgba(255,255,255,0.13)",
-    background: "rgba(255,255,255,0.07)",
-    color: "rgba(255,255,255,0.34)",
+    border: "1px solid #e2e8f0",
+    background: "#ffffff",
+    color: "#cbd5e1",
     cursor: "pointer",
-    fontSize: "23px",
-  },
-  starButtonActive: {
-    background: "rgba(255,211,107,0.18)",
-    borderColor: "rgba(255,211,107,0.45)",
-    color: "#ffd36b",
-    boxShadow: "0 10px 24px rgba(255,211,107,0.08)",
+    fontSize: "22px",
+    fontWeight: 900,
+    boxShadow: "0 10px 22px rgba(15, 23, 42, 0.05)",
   },
   ratingLabels: {
     display: "flex",
     justifyContent: "space-between",
     gap: "8px",
-    color: "rgba(255,255,255,0.58)",
+    color: "#64748b",
     fontSize: "12px",
+    fontWeight: 800,
   },
   optionalText: {
-    color: "rgba(255,255,255,0.55)",
-    fontSize: "15px",
+    color: "#64748b",
+    fontSize: "14px",
   },
   tagGrid: {
     display: "flex",
@@ -939,18 +1022,20 @@ const styles = {
     gap: "10px",
   },
   tagButton: {
-    border: "1px solid rgba(255,255,255,0.13)",
+    border: "1px solid #e2e8f0",
     borderRadius: "999px",
     padding: "11px 13px",
-    background: "rgba(255,255,255,0.07)",
-    color: "inherit",
+    background: "#ffffff",
+    color: "#334155",
     cursor: "pointer",
     fontWeight: 900,
+    boxShadow: "0 10px 22px rgba(15, 23, 42, 0.05)",
   },
   tagButtonSelected: {
-    border: "1px solid rgba(0,212,255,0.85)",
-    background: "rgba(0,212,255,0.12)",
-    color: "#d9fbff",
+    border: "1px solid rgba(109, 93, 252, 0.58)",
+    background: "#f5f3ff",
+    color: "#4f46e5",
+    boxShadow: "0 14px 30px rgba(109, 93, 252, 0.12)",
   },
   inputGrid: {
     display: "grid",
@@ -961,6 +1046,7 @@ const styles = {
     gap: "8px",
   },
   inputLabel: {
+    color: "#111827",
     fontWeight: 900,
     fontSize: "14px",
   },
@@ -968,31 +1054,34 @@ const styles = {
     width: "100%",
     minHeight: "120px",
     resize: "vertical",
-    border: "1px solid rgba(255,255,255,0.15)",
+    border: "1px solid #dbe4ee",
     borderRadius: "18px",
     padding: "14px",
-    background: "rgba(255,255,255,0.08)",
-    color: "inherit",
+    background: "#ffffff",
+    color: "#111827",
     outline: "none",
     lineHeight: 1.5,
     fontFamily: "inherit",
+    fontWeight: 700,
+    boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
   },
   input: {
     width: "100%",
-    border: "1px solid rgba(255,255,255,0.15)",
+    border: "1px solid #dbe4ee",
     borderRadius: "18px",
     padding: "14px",
-    background: "rgba(255,255,255,0.08)",
-    color: "inherit",
+    background: "#ffffff",
+    color: "#111827",
     outline: "none",
     fontWeight: 800,
+    boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
   },
   photoPreview: {
     height: "190px",
     overflow: "hidden",
     borderRadius: "22px",
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(0,0,0,0.18)",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
   },
   photoImage: {
     width: "100%",
@@ -1005,21 +1094,22 @@ const styles = {
     display: "grid",
     placeItems: "center",
     borderRadius: "22px",
-    border: "1px dashed rgba(255,255,255,0.22)",
-    background: "rgba(0,0,0,0.12)",
-    color: "rgba(255,255,255,0.58)",
+    border: "1px dashed #cbd5e1",
+    background: "#f8fafc",
+    color: "#64748b",
     textAlign: "center",
     padding: "16px",
+    fontWeight: 800,
   },
   sidePanel: {
     position: "sticky",
     top: "18px",
-    border: "1px solid rgba(255,255,255,0.14)",
-    borderRadius: "28px",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "30px",
     padding: "22px",
-    background:
-      "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05))",
-    boxShadow: "0 22px 52px rgba(0,0,0,0.20)",
+    background: "rgba(255,255,255,0.78)",
+    boxShadow: "0 20px 48px rgba(15, 23, 42, 0.10)",
+    backdropFilter: "blur(18px)",
   },
   sideTop: {
     display: "flex",
@@ -1033,14 +1123,13 @@ const styles = {
     borderRadius: "20px",
     display: "grid",
     placeItems: "center",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.90), rgba(0,212,255,0.78))",
-    border: "1px solid rgba(255,255,255,0.18)",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
     fontSize: "28px",
   },
   sideLabel: {
     margin: "0 0 4px",
-    color: "rgba(255,255,255,0.60)",
+    color: "#64748b",
     fontSize: "12px",
     fontWeight: 900,
     textTransform: "uppercase",
@@ -1048,6 +1137,7 @@ const styles = {
   },
   sideTitle: {
     margin: 0,
+    color: "#111827",
     fontSize: "22px",
   },
   summaryList: {
@@ -1057,60 +1147,67 @@ const styles = {
   summaryItem: {
     padding: "12px",
     borderRadius: "16px",
-    background: "rgba(0,0,0,0.16)",
-    border: "1px solid rgba(255,255,255,0.08)",
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
     display: "grid",
     gap: "4px",
+    color: "#111827",
   },
-  socialCard: {
+  nextCard: {
     marginTop: "14px",
     padding: "14px",
     borderRadius: "20px",
-    background: "rgba(0,212,255,0.10)",
-    border: "1px solid rgba(0,212,255,0.22)",
+    background: "#ecfeff",
+    border: "1px solid #a5f3fc",
   },
-  socialBadge: {
+  nextBadge: {
     display: "inline-flex",
     marginBottom: "8px",
     padding: "5px 8px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.10)",
-    color: "#d9fbff",
+    background: "#ffffff",
+    color: "#0891b2",
     fontSize: "11px",
     fontWeight: 900,
   },
-  socialTitle: {
+  nextTitle: {
     margin: "0 0 8px",
+    color: "#111827",
     fontSize: "18px",
   },
-  socialText: {
+  nextText: {
     margin: 0,
-    color: "rgba(255,255,255,0.72)",
+    color: "#475569",
     lineHeight: 1.5,
     fontSize: "13px",
+    fontWeight: 700,
   },
-  socialPills: {
+  nextPills: {
     display: "flex",
     flexWrap: "wrap",
     gap: "8px",
     marginTop: "12px",
+    color: "#334155",
+    fontWeight: 800,
   },
   successBox: {
     marginTop: "14px",
-    padding: "13px 15px",
-    borderRadius: "16px",
-    background: "rgba(0,212,255,0.10)",
-    border: "1px solid rgba(0,212,255,0.25)",
-    color: "#d9fbff",
-    lineHeight: 1.45,
+    padding: "13px",
+    borderRadius: "17px",
+    background: "#ecfeff",
+    border: "1px solid #a5f3fc",
+    color: "#0891b2",
+    fontWeight: 800,
+    lineHeight: 1.5,
   },
   errorBox: {
     marginTop: "16px",
     padding: "13px 15px",
     borderRadius: "16px",
-    background: "rgba(255, 86, 86, 0.16)",
-    border: "1px solid rgba(255, 120, 120, 0.35)",
-    color: "#ffdede",
+    background: "#fff1f2",
+    border: "1px solid #fecdd3",
+    color: "#be123c",
+    fontWeight: 800,
   },
   finalSummary: {
     display: "flex",
@@ -1119,8 +1216,9 @@ const styles = {
     marginTop: "18px",
     padding: "16px",
     borderRadius: "22px",
-    background: "rgba(0,0,0,0.18)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.78)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    boxShadow: "0 14px 34px rgba(15, 23, 42, 0.08)",
   },
   finalIcon: {
     width: "45px",
@@ -1128,20 +1226,20 @@ const styles = {
     borderRadius: "16px",
     display: "grid",
     placeItems: "center",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.9), rgba(0,212,255,0.8))",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
     fontSize: "22px",
     flex: "0 0 auto",
   },
   finalLabel: {
     margin: "0 0 4px",
-    color: "rgba(255,255,255,0.58)",
+    color: "#64748b",
     fontSize: "12px",
     fontWeight: 900,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
   },
   finalText: {
+    color: "#111827",
     fontSize: "16px",
   },
   footer: {
@@ -1151,7 +1249,37 @@ const styles = {
     marginTop: "22px",
     flexWrap: "wrap",
   },
-  footerButton: {
-    minWidth: "210px",
+  backButton: {
+    minWidth: "170px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "999px",
+    padding: "14px 22px",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
+  },
+  secondaryButton: {
+    minWidth: "220px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "999px",
+    padding: "14px 22px",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
+  },
+  nextButton: {
+    minWidth: "220px",
+    border: "0",
+    borderRadius: "999px",
+    padding: "14px 24px",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 16px 34px rgba(79, 70, 229, 0.28)",
   },
 };
