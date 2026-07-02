@@ -8,25 +8,31 @@ const MAIN_OPTIONS = [
   {
     key: "myself",
     title: "For Myself",
-    subtitle: "Create your own fit profile and get personalized recommendations.",
+    subtitle:
+      "Build your own fit profile and get personalized outfit recommendations.",
     icon: "🪞",
-    gradient: "linear-gradient(135deg, rgba(124,92,255,0.95), rgba(0,212,255,0.85))",
-    preview: ["Personal size", "Style match", "Fit card"],
+    gradient: "linear-gradient(135deg, #dbeafe, #ede9fe, #fce7f3)",
+    accent: "#6d5dfc",
+    preview: ["My size", "My style", "My fit card"],
   },
   {
     key: "someone",
     title: "For Someone Else",
-    subtitle: "Shop for a partner, friend, child, or family member with guided inputs.",
+    subtitle:
+      "Shop for a partner, friend, child, or family member with guided inputs.",
     icon: "🎁",
-    gradient: "linear-gradient(135deg, rgba(255,122,162,0.95), rgba(255,170,91,0.85))",
-    preview: ["Relationship", "Body inputs", "Expert notes"],
+    gradient: "linear-gradient(135deg, #ffe4e6, #fed7aa, #fef3c7)",
+    accent: "#f97316",
+    preview: ["Relation", "Gift fit", "Expert notes"],
   },
   {
     key: "gift",
     title: "Gift / Occasion",
-    subtitle: "Find the right outfit for birthdays, weddings, festivals, and more.",
+    subtitle:
+      "Find the right outfit for birthdays, weddings, festivals, and events.",
     icon: "✨",
-    gradient: "linear-gradient(135deg, rgba(30,215,166,0.95), rgba(0,212,255,0.82))",
+    gradient: "linear-gradient(135deg, #dcfce7, #cffafe, #e0e7ff)",
+    accent: "#059669",
     preview: ["Occasion", "Budget", "Delivery"],
   },
 ];
@@ -35,7 +41,7 @@ const SOMEONE_OPTIONS = [
   {
     label: "Partner",
     icon: "💙",
-    description: "Thoughtful styling for your special person.",
+    description: "Thoughtful styling for someone special.",
   },
   {
     label: "Family Member",
@@ -45,12 +51,12 @@ const SOMEONE_OPTIONS = [
   {
     label: "Friend",
     icon: "🤝",
-    description: "Trendy picks based on personality and use case.",
+    description: "Trendy picks based on use and personality.",
   },
   {
     label: "Child",
     icon: "🧸",
-    description: "Age-appropriate sizing and comfortable fits.",
+    description: "Age-friendly and comfort-first fit guidance.",
   },
 ];
 
@@ -58,48 +64,68 @@ const GIFT_OPTIONS = [
   {
     label: "Birthday",
     icon: "🎂",
-    description: "Personalized outfits for celebration moments.",
+    description: "Stylish looks for celebration moments.",
   },
   {
     label: "Wedding",
     icon: "💍",
-    description: "Elegant looks for ceremonies and events.",
+    description: "Elegant outfits for ceremonies and events.",
   },
   {
     label: "Festival",
     icon: "🪔",
-    description: "Ethnic and festive-ready recommendations.",
+    description: "Festive outfits with ethnic and fusion styling.",
   },
 ];
 
+function getIntentValue(intent) {
+  if (typeof intent === "string") return intent;
+  return intent?.type || "";
+}
+
+function getIntentSubValue(intent) {
+  if (typeof intent === "object" && intent !== null) {
+    return intent.subType || "";
+  }
+
+  return "";
+}
+
 export default function IntentPage() {
   const nav = useNavigate();
-  const { forWhom, relation, occasion, patch } = useFlowStore();
+  const flow = useFlowStore();
+  const {
+    intent,
+    intentSubType,
+    forWhom,
+    relation,
+    occasion,
+    patch,
+  } = flow;
 
   const [error, setError] = useState("");
 
+  const selectedMain = forWhom || getIntentValue(intent);
+  const selectedSub =
+    selectedMain === "someone"
+      ? relation || intentSubType || getIntentSubValue(intent)
+      : selectedMain === "gift"
+      ? occasion || intentSubType || getIntentSubValue(intent)
+      : "";
+
   const selectedMainOption = useMemo(
-    () => MAIN_OPTIONS.find((option) => option.key === forWhom),
-    [forWhom]
+    () => MAIN_OPTIONS.find((option) => option.key === selectedMain),
+    [selectedMain]
   );
 
-  const subOptions = forWhom === "someone" ? SOMEONE_OPTIONS : GIFT_OPTIONS;
-
-  const selectedSubType = forWhom === "someone" ? relation : occasion;
+  const subOptions = selectedMain === "someone" ? SOMEONE_OPTIONS : GIFT_OPTIONS;
 
   function selectMainOption(optionKey) {
     setError("");
 
-    if (optionKey === "myself") {
-      patch({
-        forWhom: "myself",
-        relation: "",
-        occasion: "",
-      });
-      return;
-    }
-
     patch({
+      intent: optionKey,
+      intentSubType: "",
       forWhom: optionKey,
       relation: "",
       occasion: "",
@@ -109,16 +135,22 @@ export default function IntentPage() {
   function selectSubOption(value) {
     setError("");
 
-    if (forWhom === "someone") {
+    if (selectedMain === "someone") {
       patch({
+        intent: "someone",
+        intentSubType: value,
+        forWhom: "someone",
         relation: value,
         occasion: "",
       });
       return;
     }
 
-    if (forWhom === "gift") {
+    if (selectedMain === "gift") {
       patch({
+        intent: "gift",
+        intentSubType: value,
+        forWhom: "gift",
         occasion: value,
         relation: "",
       });
@@ -126,17 +158,17 @@ export default function IntentPage() {
   }
 
   function continueNext() {
-    if (!forWhom) {
+    if (!selectedMain) {
       setError("Please choose one option to continue.");
       return;
     }
 
-    if (forWhom === "someone" && !relation) {
+    if (selectedMain === "someone" && !selectedSub) {
       setError("Please select who you are purchasing for.");
       return;
     }
 
-    if (forWhom === "gift" && !occasion) {
+    if (selectedMain === "gift" && !selectedSub) {
       setError("Please select the occasion.");
       return;
     }
@@ -148,25 +180,25 @@ export default function IntentPage() {
     <PageShell>
       <style>
         {`
-          @keyframes intentFloat {
+          @keyframes intentSoftFloat {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
             100% { transform: translateY(0px); }
           }
 
-          @keyframes intentGlow {
+          @keyframes intentSoftPulse {
             0% { opacity: 0.55; transform: scale(0.96); }
             50% { opacity: 1; transform: scale(1.04); }
             100% { opacity: 0.55; transform: scale(0.96); }
           }
 
-          @media (max-width: 860px) {
+          @media (max-width: 900px) {
             .intent-header {
               grid-template-columns: 1fr !important;
             }
 
             .intent-title {
-              font-size: 36px !important;
+              font-size: 38px !important;
             }
 
             .intent-main-grid {
@@ -191,6 +223,7 @@ export default function IntentPage() {
       <div style={styles.page}>
         <div style={styles.glowOne} />
         <div style={styles.glowTwo} />
+        <div style={styles.glowThree} />
 
         <motion.div
           initial={{ opacity: 0, y: 22 }}
@@ -210,12 +243,13 @@ export default function IntentPage() {
               </h1>
 
               <p style={styles.subtitle}>
-                FitGenie will personalize the size journey, outfit suggestions,
-                expert matching, and fit card based on this choice.
+                Choose the shopping journey first. FitGenie will personalize the
+                next questions, outfit recommendations, expert matching, and fit
+                card based on this choice.
               </p>
             </div>
 
-            <div style={styles.sidePreview}>
+            <aside style={styles.previewCard}>
               <div style={styles.previewTop}>
                 <span style={styles.previewIcon}>
                   {selectedMainOption?.icon || "🧵"}
@@ -223,31 +257,34 @@ export default function IntentPage() {
 
                 <div>
                   <p style={styles.previewLabel}>Current path</p>
-                  <strong style={styles.previewTitle}>
+                  <h2 style={styles.previewTitle}>
                     {selectedMainOption?.title || "Choose an option"}
-                  </strong>
+                  </h2>
                 </div>
               </div>
 
-              <div style={styles.previewLine} />
+              <p style={styles.previewText}>
+                {selectedMainOption?.subtitle ||
+                  "Your selection helps us guide the perfect fit journey."}
+              </p>
 
               <div style={styles.previewTags}>
                 {(selectedMainOption?.preview || [
                   "Intent",
                   "Profile",
-                  "Recommendations",
+                  "Recommendation",
                 ]).map((tag) => (
                   <span key={tag} style={styles.previewTag}>
                     {tag}
                   </span>
                 ))}
               </div>
-            </div>
+            </aside>
           </section>
 
           <section className="intent-main-grid" style={styles.mainGrid}>
             {MAIN_OPTIONS.map((option) => {
-              const selected = forWhom === option.key;
+              const selected = selectedMain === option.key;
 
               return (
                 <motion.button
@@ -258,25 +295,45 @@ export default function IntentPage() {
                   onClick={() => selectMainOption(option.key)}
                   style={{
                     ...styles.mainCard,
-                    ...(selected ? styles.mainCardSelected : {}),
+                    ...(selected
+                      ? {
+                          borderColor: option.accent,
+                          boxShadow: `0 22px 45px ${option.accent}26`,
+                        }
+                      : {}),
                   }}
                 >
                   <div
                     style={{
-                      ...styles.cardIconWrap,
+                      ...styles.cardVisual,
                       background: option.gradient,
                     }}
                   >
                     <span style={styles.cardIcon}>{option.icon}</span>
+                    <span
+                      style={{
+                        ...styles.cardBadge,
+                        color: option.accent,
+                      }}
+                    >
+                      {selected ? "Selected" : "Choose"}
+                    </span>
                   </div>
 
                   <div style={styles.cardBody}>
                     <div style={styles.cardTitleRow}>
                       <h2 style={styles.cardTitle}>{option.title}</h2>
+
                       <span
                         style={{
-                          ...styles.radioCircle,
-                          ...(selected ? styles.radioCircleSelected : {}),
+                          ...styles.checkCircle,
+                          ...(selected
+                            ? {
+                                background: option.accent,
+                                borderColor: option.accent,
+                                color: "#ffffff",
+                              }
+                            : {}),
                         }}
                       >
                         {selected ? "✓" : ""}
@@ -299,9 +356,9 @@ export default function IntentPage() {
           </section>
 
           <AnimatePresence mode="wait">
-            {(forWhom === "someone" || forWhom === "gift") && (
+            {(selectedMain === "someone" || selectedMain === "gift") && (
               <motion.section
-                key={forWhom}
+                key={selectedMain}
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
@@ -309,24 +366,22 @@ export default function IntentPage() {
                 style={styles.subSection}
               >
                 <div style={styles.subHeader}>
-                  <div>
-                    <h2 style={styles.subTitle}>
-                      {forWhom === "someone"
-                        ? "Who are you shopping for?"
-                        : "What is the occasion?"}
-                    </h2>
+                  <h2 style={styles.subTitle}>
+                    {selectedMain === "someone"
+                      ? "Who are you shopping for?"
+                      : "What is the occasion?"}
+                  </h2>
 
-                    <p style={styles.subText}>
-                      {forWhom === "someone"
-                        ? "This helps us tune the recommendation tone, age flow, and fit-card notes."
-                        : "This helps us recommend outfits that match the mood, styling, and delivery urgency."}
-                    </p>
-                  </div>
+                  <p style={styles.subText}>
+                    {selectedMain === "someone"
+                      ? "This helps us tune the recommendation tone, profile details, and expert notes."
+                      : "This helps us recommend outfits that match the mood, budget, and delivery timing."}
+                  </p>
                 </div>
 
                 <div className="intent-sub-grid" style={styles.subGrid}>
                   {subOptions.map((option) => {
-                    const selected = selectedSubType === option.label;
+                    const selected = selectedSub === option.label;
 
                     return (
                       <motion.button
@@ -365,21 +420,21 @@ export default function IntentPage() {
 
           {error ? <div style={styles.errorBox}>{error}</div> : null}
 
-          <section style={styles.selectionSummary}>
+          <section style={styles.summaryCard}>
             <div style={styles.summaryIcon}>🪄</div>
 
             <div>
-              <p style={styles.summaryLabel}>Your selected journey</p>
+              <p style={styles.summaryLabel}>Selected journey</p>
               <strong style={styles.summaryText}>
-                {!forWhom
+                {!selectedMain
                   ? "No option selected yet"
-                  : forWhom === "myself"
+                  : selectedMain === "myself"
                   ? "Purchasing for myself"
-                  : forWhom === "someone"
+                  : selectedMain === "someone"
                   ? `Purchasing for someone else${
-                      relation ? ` · ${relation}` : ""
+                      selectedSub ? ` · ${selectedSub}` : ""
                     }`
-                  : `Gift / occasion${occasion ? ` · ${occasion}` : ""}`}
+                  : `Gift / occasion${selectedSub ? ` · ${selectedSub}` : ""}`}
               </strong>
             </div>
           </section>
@@ -387,20 +442,14 @@ export default function IntentPage() {
           <div className="intent-footer" style={styles.footer}>
             <button
               type="button"
-              className="btn ghost"
               onClick={() => nav("/welcome")}
-              style={styles.footerButton}
+              style={styles.backButton}
             >
-              Back
+              ← Back
             </button>
 
-            <button
-              type="button"
-              className="btn"
-              onClick={continueNext}
-              style={styles.footerButton}
-            >
-              Continue to Basic Profile
+            <button type="button" onClick={continueNext} style={styles.nextButton}>
+              Continue to Basic Profile →
             </button>
           </div>
         </motion.div>
@@ -416,19 +465,21 @@ const styles = {
     overflow: "hidden",
     borderRadius: "34px",
     padding: "34px",
+    color: "#14213d",
     background:
-      "radial-gradient(circle at 12% 10%, rgba(124,92,255,0.28), transparent 30%), radial-gradient(circle at 88% 8%, rgba(0,212,255,0.24), transparent 28%), linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035))",
-    border: "1px solid rgba(255,255,255,0.12)",
+      "linear-gradient(135deg, #fff7ed 0%, #eef6ff 42%, #f5f3ff 72%, #ecfeff 100%)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    boxShadow: "0 24px 70px rgba(15, 23, 42, 0.12)",
   },
   glowOne: {
     position: "absolute",
     width: "360px",
     height: "360px",
     borderRadius: "50%",
-    background: "rgba(124,92,255,0.18)",
-    filter: "blur(72px)",
-    top: "-120px",
-    left: "-100px",
+    background: "rgba(255, 214, 165, 0.55)",
+    filter: "blur(68px)",
+    top: "-110px",
+    left: "-90px",
     pointerEvents: "none",
   },
   glowTwo: {
@@ -436,10 +487,21 @@ const styles = {
     width: "360px",
     height: "360px",
     borderRadius: "50%",
-    background: "rgba(0,212,255,0.14)",
+    background: "rgba(191, 219, 254, 0.72)",
     filter: "blur(72px)",
-    right: "-130px",
+    right: "-120px",
+    top: "60px",
+    pointerEvents: "none",
+  },
+  glowThree: {
+    position: "absolute",
+    width: "340px",
+    height: "340px",
+    borderRadius: "50%",
+    background: "rgba(221, 214, 254, 0.72)",
+    filter: "blur(74px)",
     bottom: "-140px",
+    left: "34%",
     pointerEvents: "none",
   },
   content: {
@@ -448,7 +510,7 @@ const styles = {
   },
   header: {
     display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr) 330px",
+    gridTemplateColumns: "minmax(0, 1fr) 340px",
     gap: "22px",
     alignItems: "stretch",
     marginBottom: "24px",
@@ -457,73 +519,83 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     gap: "9px",
-    padding: "8px 12px",
+    padding: "9px 13px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.08)",
-    border: "1px solid rgba(255,255,255,0.14)",
-    color: "rgba(255,255,255,0.84)",
+    background: "rgba(255, 255, 255, 0.72)",
+    border: "1px solid rgba(109, 93, 252, 0.16)",
+    color: "#4f46e5",
     fontSize: "13px",
-    fontWeight: 800,
+    fontWeight: 900,
     marginBottom: "16px",
+    boxShadow: "0 10px 24px rgba(79, 70, 229, 0.08)",
   },
   stepDot: {
     width: "9px",
     height: "9px",
     borderRadius: "50%",
-    background: "#00d4ff",
-    boxShadow: "0 0 18px rgba(0,212,255,0.9)",
-    animation: "intentGlow 2s ease-in-out infinite",
+    background: "#6d5dfc",
+    boxShadow: "0 0 18px rgba(109, 93, 252, 0.7)",
+    animation: "intentSoftPulse 2s ease-in-out infinite",
   },
   title: {
     margin: 0,
-    fontSize: "48px",
+    color: "#111827",
+    fontSize: "50px",
     lineHeight: 1.04,
-    letterSpacing: "-1.5px",
+    letterSpacing: "-1.6px",
   },
   subtitle: {
     maxWidth: "760px",
     margin: "14px 0 0",
-    color: "rgba(255,255,255,0.74)",
-    lineHeight: 1.65,
+    color: "#475569",
+    lineHeight: 1.7,
     fontSize: "16px",
+    fontWeight: 600,
   },
-  sidePreview: {
-    border: "1px solid rgba(255,255,255,0.14)",
-    borderRadius: "26px",
+  previewCard: {
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "28px",
     padding: "20px",
-    background:
-      "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05))",
-    boxShadow: "0 18px 40px rgba(0,0,0,0.18)",
+    background: "rgba(255,255,255,0.76)",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.10)",
+    backdropFilter: "blur(18px)",
   },
   previewTop: {
     display: "flex",
-    gap: "14px",
     alignItems: "center",
+    gap: "14px",
   },
   previewIcon: {
-    width: "58px",
-    height: "58px",
-    borderRadius: "20px",
+    width: "62px",
+    height: "62px",
+    borderRadius: "22px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.11)",
-    border: "1px solid rgba(255,255,255,0.14)",
-    fontSize: "28px",
-    animation: "intentFloat 3.2s ease-in-out infinite",
+    background: "linear-gradient(135deg, #ffffff, #eef2ff)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    fontSize: "30px",
+    boxShadow: "0 14px 30px rgba(15, 23, 42, 0.10)",
+    animation: "intentSoftFloat 3.2s ease-in-out infinite",
   },
   previewLabel: {
     margin: "0 0 4px",
+    color: "#64748b",
     fontSize: "12px",
-    color: "rgba(255,255,255,0.62)",
-    fontWeight: 800,
+    fontWeight: 900,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
   },
   previewTitle: {
-    fontSize: "17px",
+    margin: 0,
+    color: "#111827",
+    fontSize: "20px",
   },
-  previewLine: {
-    height: "1px",
-    margin: "18px 0",
-    background: "rgba(255,255,255,0.13)",
+  previewText: {
+    margin: "14px 0",
+    color: "#475569",
+    lineHeight: 1.55,
+    fontSize: "14px",
+    fontWeight: 600,
   },
   previewTags: {
     display: "flex",
@@ -531,13 +603,13 @@ const styles = {
     gap: "8px",
   },
   previewTag: {
-    padding: "7px 9px",
+    padding: "7px 10px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.08)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    color: "#334155",
     fontSize: "12px",
-    color: "rgba(255,255,255,0.78)",
-    fontWeight: 800,
+    fontWeight: 900,
   },
   mainGrid: {
     display: "grid",
@@ -545,38 +617,42 @@ const styles = {
     gap: "16px",
   },
   mainCard: {
-    minHeight: "260px",
-    border: "1px solid rgba(255,255,255,0.13)",
-    borderRadius: "28px",
+    minHeight: "270px",
+    border: "2px solid rgba(148, 163, 184, 0.22)",
+    borderRadius: "30px",
     padding: "0",
     overflow: "hidden",
-    background: "rgba(255,255,255,0.065)",
-    color: "inherit",
+    background: "rgba(255,255,255,0.82)",
+    color: "#111827",
     textAlign: "left",
     cursor: "pointer",
-    boxShadow: "0 18px 42px rgba(0,0,0,0.20)",
+    boxShadow: "0 18px 44px rgba(15, 23, 42, 0.10)",
   },
-  mainCardSelected: {
-    border: "2px solid rgba(0,212,255,0.95)",
-    boxShadow: "0 24px 60px rgba(0,212,255,0.16)",
-  },
-  cardIconWrap: {
-    height: "112px",
+  cardVisual: {
+    height: "116px",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
+    justifyContent: "space-between",
+    padding: "22px",
   },
   cardIcon: {
-    width: "74px",
-    height: "74px",
+    width: "70px",
+    height: "70px",
     borderRadius: "26px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.22)",
-    border: "1px solid rgba(255,255,255,0.24)",
-    fontSize: "38px",
-    boxShadow: "0 16px 32px rgba(0,0,0,0.24)",
+    background: "rgba(255,255,255,0.62)",
+    border: "1px solid rgba(255,255,255,0.72)",
+    fontSize: "36px",
+    boxShadow: "0 14px 30px rgba(15, 23, 42, 0.10)",
+  },
+  cardBadge: {
+    padding: "8px 11px",
+    borderRadius: "999px",
+    background: "rgba(255,255,255,0.75)",
+    border: "1px solid rgba(255,255,255,0.72)",
+    fontSize: "12px",
+    fontWeight: 900,
   },
   cardBody: {
     padding: "18px",
@@ -589,32 +665,30 @@ const styles = {
   },
   cardTitle: {
     margin: 0,
+    color: "#111827",
     fontSize: "21px",
-    lineHeight: 1.2,
+    lineHeight: 1.25,
   },
-  radioCircle: {
-    width: "27px",
-    height: "27px",
+  checkCircle: {
+    width: "28px",
+    height: "28px",
     borderRadius: "50%",
     display: "grid",
     placeItems: "center",
-    border: "1px solid rgba(255,255,255,0.22)",
-    color: "#061224",
+    border: "1px solid #cbd5e1",
+    background: "#ffffff",
+    color: "#ffffff",
     fontSize: "14px",
     fontWeight: 900,
     flex: "0 0 auto",
   },
-  radioCircleSelected: {
-    background: "#00d4ff",
-    borderColor: "#00d4ff",
-    boxShadow: "0 0 20px rgba(0,212,255,0.5)",
-  },
   cardSubtitle: {
-    minHeight: "66px",
+    minHeight: "70px",
     margin: "10px 0 14px",
-    color: "rgba(255,255,255,0.72)",
-    lineHeight: 1.5,
+    color: "#475569",
+    lineHeight: 1.55,
     fontSize: "14px",
+    fontWeight: 600,
   },
   cardTags: {
     display: "flex",
@@ -624,30 +698,33 @@ const styles = {
   cardTag: {
     padding: "6px 8px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.08)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    color: "#334155",
     fontSize: "11px",
-    color: "rgba(255,255,255,0.78)",
-    fontWeight: 800,
+    fontWeight: 900,
   },
   subSection: {
     marginTop: "20px",
-    border: "1px solid rgba(255,255,255,0.13)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
     borderRadius: "28px",
     padding: "22px",
-    background: "rgba(255,255,255,0.06)",
+    background: "rgba(255,255,255,0.74)",
+    boxShadow: "0 16px 38px rgba(15, 23, 42, 0.08)",
   },
   subHeader: {
     marginBottom: "16px",
   },
   subTitle: {
     margin: "0 0 7px",
+    color: "#111827",
     fontSize: "25px",
   },
   subText: {
     margin: 0,
-    color: "rgba(255,255,255,0.68)",
-    lineHeight: 1.55,
+    color: "#475569",
+    lineHeight: 1.6,
+    fontWeight: 600,
   },
   subGrid: {
     display: "grid",
@@ -655,21 +732,22 @@ const styles = {
     gap: "12px",
   },
   subCard: {
-    border: "1px solid rgba(255,255,255,0.13)",
+    border: "1px solid #e2e8f0",
     borderRadius: "20px",
     padding: "14px",
-    background: "rgba(255,255,255,0.07)",
-    color: "inherit",
+    background: "#ffffff",
+    color: "#111827",
     display: "flex",
     alignItems: "center",
     gap: "13px",
     textAlign: "left",
     cursor: "pointer",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.06)",
   },
   subCardSelected: {
-    border: "1px solid rgba(0,212,255,0.8)",
-    background: "rgba(0,212,255,0.10)",
-    boxShadow: "0 14px 30px rgba(0,212,255,0.10)",
+    border: "1px solid rgba(109, 93, 252, 0.58)",
+    background: "#f5f3ff",
+    boxShadow: "0 14px 30px rgba(109, 93, 252, 0.12)",
   },
   subIcon: {
     width: "46px",
@@ -677,8 +755,8 @@ const styles = {
     borderRadius: "16px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.10)",
-    border: "1px solid rgba(255,255,255,0.13)",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
     fontSize: "24px",
     flex: "0 0 auto",
   },
@@ -687,6 +765,7 @@ const styles = {
     flexDirection: "column",
     gap: "4px",
     flex: 1,
+    color: "#111827",
   },
   smallCheck: {
     width: "24px",
@@ -694,25 +773,27 @@ const styles = {
     borderRadius: "50%",
     display: "grid",
     placeItems: "center",
-    border: "1px solid rgba(255,255,255,0.20)",
+    border: "1px solid #cbd5e1",
+    color: "#ffffff",
     fontSize: "12px",
     fontWeight: 900,
     flex: "0 0 auto",
   },
   smallCheckSelected: {
-    background: "#00d4ff",
-    color: "#061224",
-    borderColor: "#00d4ff",
+    background: "#6d5dfc",
+    borderColor: "#6d5dfc",
+    color: "#ffffff",
   },
-  selectionSummary: {
+  summaryCard: {
     display: "flex",
     alignItems: "center",
     gap: "13px",
     marginTop: "18px",
     padding: "16px",
     borderRadius: "22px",
-    background: "rgba(0,0,0,0.18)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.78)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    boxShadow: "0 14px 34px rgba(15, 23, 42, 0.08)",
   },
   summaryIcon: {
     width: "45px",
@@ -720,28 +801,30 @@ const styles = {
     borderRadius: "16px",
     display: "grid",
     placeItems: "center",
-    background: "linear-gradient(135deg, rgba(124,92,255,0.9), rgba(0,212,255,0.8))",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
     fontSize: "22px",
     flex: "0 0 auto",
   },
   summaryLabel: {
     margin: "0 0 4px",
-    color: "rgba(255,255,255,0.58)",
+    color: "#64748b",
     fontSize: "12px",
     fontWeight: 900,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
   },
   summaryText: {
+    color: "#111827",
     fontSize: "16px",
   },
   errorBox: {
     marginTop: "16px",
     padding: "13px 15px",
     borderRadius: "16px",
-    background: "rgba(255, 86, 86, 0.16)",
-    border: "1px solid rgba(255, 120, 120, 0.35)",
-    color: "#ffdede",
+    background: "#fff1f2",
+    border: "1px solid #fecdd3",
+    color: "#be123c",
+    fontWeight: 800,
   },
   footer: {
     display: "flex",
@@ -749,7 +832,26 @@ const styles = {
     gap: "12px",
     marginTop: "22px",
   },
-  footerButton: {
-    minWidth: "180px",
+  backButton: {
+    minWidth: "170px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "999px",
+    padding: "14px 22px",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
+  },
+  nextButton: {
+    minWidth: "240px",
+    border: "0",
+    borderRadius: "999px",
+    padding: "14px 24px",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 16px 34px rgba(79, 70, 229, 0.28)",
   },
 };
