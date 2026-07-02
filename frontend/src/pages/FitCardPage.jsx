@@ -5,16 +5,6 @@ import PageShell from "../components/PageShell";
 import { useFlowStore } from "../store/useFlowStore";
 import { callApi } from "../services/api";
 
-function getNowText() {
-  return new Date().toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 function getSafeValue(value, fallback = "Not provided") {
   if (value === undefined || value === null || value === "") {
     return fallback;
@@ -24,28 +14,34 @@ function getSafeValue(value, fallback = "Not provided") {
     return value.length > 0 ? value.join(", ") : fallback;
   }
 
+  if (typeof value === "object") {
+    return Object.keys(value).length > 0 ? value : fallback;
+  }
+
   return value;
 }
 
+function getNowText() {
+  return new Date().toLocaleString("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
 function getSelectedOutfit(state) {
-  return state.recommendations?.selectedOutfit || state.selectedOutfit || null;
+  return state.recommendations?.selectedOutfit || state.selectedOutfit || {};
 }
 
 function getSelectedExpert(state) {
-  return state.selectedExpert || state.marketplace?.selectedExpert || null;
-}
-
-function getDeliveryMode(state) {
-  return state.deliveryMode || state.delivery?.mode || "Not selected";
+  return state.selectedExpert || state.marketplace?.selectedExpert || {};
 }
 
 function getDeliverySchedule(state) {
-  return (
-    state.deliverySchedule ||
-    state.schedule ||
-    state.delivery?.schedule ||
-    "Not selected"
-  );
+  return state.deliverySchedule || state.schedule || state.delivery?.schedule || "";
+}
+
+function getDeliveryMode(state) {
+  return state.deliveryMode || state.delivery?.mode || "";
 }
 
 function getBodyType(state) {
@@ -53,7 +49,7 @@ function getBodyType(state) {
     state.bodyType ||
     state.body?.bodyType ||
     state.scanResult?.bodyType ||
-    state.body?.scanResult?.bodyType ||
+    state.scanResult?.bodyProportion ||
     "Not provided"
   );
 }
@@ -63,173 +59,116 @@ function getRecommendedSize(state) {
     state.size ||
     state.body?.size ||
     state.scanResult?.recommendedSize ||
-    state.body?.scanResult?.recommendedSize ||
     "Not provided"
   );
 }
 
 function getHeight(state) {
-  const exactHeight =
-    state.heightCm ||
-    state.body?.heightCm ||
-    state.scanResult?.detectedHeightCm ||
-    state.scanResult?.height ||
-    state.body?.scanResult?.detectedHeightCm ||
-    state.body?.scanResult?.height;
-
-  if (exactHeight) {
-    return `${exactHeight} cm`;
+  if (state.heightCm) return `${state.heightCm} cm`;
+  if (state.body?.heightCm) return `${state.body.heightCm} cm`;
+  if (state.scanResult?.detectedHeightCm) {
+    return `${state.scanResult.detectedHeightCm} cm`;
   }
+  if (state.heightRange) return state.heightRange;
+  if (state.body?.heightRange) return state.body.heightRange;
 
-  return state.heightRange || state.body?.heightRange || "Not provided";
+  return "Not provided";
 }
 
 function buildFitCard(state) {
   const selectedOutfit = getSelectedOutfit(state);
   const selectedExpert = getSelectedExpert(state);
-
   const deliveryMode = getDeliveryMode(state);
   const deliverySchedule = getDeliverySchedule(state);
 
   return {
-    fitCardId: `FC-${Date.now()}`,
+    fitCardId: state.fitCard?.fitCardId || `FIT-${Date.now()}`,
     generatedAt: getNowText(),
 
-    userIntent: {
-      purchaseFor:
-        state.forWhom ||
-        state.intent?.type ||
-        "Not provided",
-      relation:
-        state.relation ||
-        state.intent?.subType ||
-        "Not provided",
-      occasion:
-        state.occasion ||
-        state.intent?.subType ||
-        "Not provided",
-    },
-
     basicProfile: {
-      ageRange:
-        state.ageRange ||
-        state.age ||
-        state.profile?.ageRange ||
-        "Not provided",
-      gender:
-        state.gender ||
-        state.profile?.gender ||
-        "Not provided",
+      ageRange: getSafeValue(state.ageRange || state.age || state.profile?.ageRange),
+      gender: getSafeValue(state.gender || state.profile?.gender),
+      forWhom: getSafeValue(state.forWhom || state.intent),
+      relation: getSafeValue(state.relation || state.intentSubType, "Not applicable"),
+      occasion: getSafeValue(state.occasion || state.intentSubType, "Not applicable"),
     },
 
     measurements: {
       bodyType: getBodyType(state),
-      size: getRecommendedSize(state),
+      recommendedSize: getRecommendedSize(state),
       height: getHeight(state),
-      scanConfidence:
-        state.scanResult?.confidence ||
-        state.body?.scanResult?.confidence ||
-        "Manual / Not scanned",
-      fitType:
-        state.scanResult?.fitType ||
-        state.body?.scanResult?.fitType ||
-        state.fitDetails?.fit ||
-        state.preferences?.fit ||
-        "Not provided",
+      source: state.scanResult ? "AI scanner + manual inputs" : "Manual inputs",
     },
 
     stylePreferences: {
-      style:
-        state.style ||
-        state.preferences?.style ||
-        "Not provided",
-      budget:
-        state.budget ||
-        state.preferences?.budget ||
-        "Not provided",
-      fabric:
-        state.fabric ||
-        state.preferences?.fabric ||
-        [],
-      sleeve:
-        state.fitDetails?.sleeve ||
-        state.preferences?.sleeve ||
-        "Not provided",
-      length:
-        state.fitDetails?.length ||
-        state.preferences?.length ||
-        "Not provided",
-      fit:
-        state.fitDetails?.fit ||
-        state.preferences?.fit ||
-        "Not provided",
+      style: getSafeValue(state.style || state.preferences?.style),
+      budget: getSafeValue(state.budget || state.preferences?.budget),
+      fabric: getSafeValue(state.fabric || state.preferences?.fabric),
+      sleeve: getSafeValue(state.fitDetails?.sleeve || state.preferences?.fitDetails?.sleeve),
+      length: getSafeValue(state.fitDetails?.length || state.preferences?.fitDetails?.length),
+      fit: getSafeValue(state.fitDetails?.fit || state.preferences?.fitDetails?.fit),
     },
 
-    selectedOutfit: selectedOutfit
-      ? {
-          title: selectedOutfit.title || selectedOutfit.name || "Selected outfit",
-          recommendedSize:
-            selectedOutfit.recommendedSize || getRecommendedSize(state),
-          fitType:
-            selectedOutfit.fitType ||
-            state.fitDetails?.fit ||
-            state.preferences?.fit ||
-            "Regular",
-          priceRange:
-            selectedOutfit.priceRange ||
-            selectedOutfit.price ||
-            "Price on request",
-          matchScore:
-            selectedOutfit.matchScore ||
-            selectedOutfit.fitScore ||
-            "Not provided",
-          sizeConfidence:
-            selectedOutfit.sizeConfidence ||
-            state.recommendations?.confidenceScore ||
-            "Not provided",
-          whyThisSuitsYou:
-            selectedOutfit.whyThisSuitsYou ||
-            selectedOutfit.reason ||
-            "Selected from FitGenie recommendations.",
-        }
-      : null,
+    selectedOutfit: {
+      title: getSafeValue(selectedOutfit.title || selectedOutfit.name),
+      category: getSafeValue(selectedOutfit.category),
+      priceRange: getSafeValue(selectedOutfit.priceRange || selectedOutfit.price),
+      recommendedSize: getSafeValue(selectedOutfit.recommendedSize || getRecommendedSize(state)),
+      fitType: getSafeValue(selectedOutfit.fitType || state.fitDetails?.fit),
+      sizeConfidence: getSafeValue(selectedOutfit.sizeConfidence, "Pending"),
+      reason: getSafeValue(
+        selectedOutfit.whyThisSuitsYou || selectedOutfit.reason,
+        "Matched using profile, style, budget, size, and fit preferences."
+      ),
+    },
 
-    selectedService:
-      state.serviceType ||
-      state.marketplace?.serviceType ||
-      "Not provided",
+    service: {
+      type: getSafeValue(state.serviceType),
+    },
 
-    selectedExpert: selectedExpert
-      ? {
-          name: selectedExpert.name || "Selected expert",
-          phone: selectedExpert.phone || "Not provided",
-          address: selectedExpert.address || selectedExpert.location || "Not provided",
-          rating: selectedExpert.rating || "Not provided",
-          priceRange: selectedExpert.priceRange || "Not provided",
-          deliveryTime: selectedExpert.deliveryTime || "Not provided",
-          specialization: selectedExpert.specialization || "Not provided",
-        }
-      : null,
+    selectedExpert: {
+      name: getSafeValue(selectedExpert.name),
+      rating: getSafeValue(selectedExpert.rating),
+      phone: getSafeValue(selectedExpert.phone),
+      address: getSafeValue(selectedExpert.address),
+      priceRange: getSafeValue(selectedExpert.priceRange),
+      deliveryTime: getSafeValue(selectedExpert.deliveryTime),
+      specialization: getSafeValue(selectedExpert.specialization),
+    },
 
     delivery: {
-      mode: deliveryMode,
-      schedule: deliverySchedule,
-      chatEnabled:
-        state.chatEnabled ||
-        state.delivery?.chatEnabled ||
-        false,
-      notes:
-        state.deliveryNotes ||
-        "No additional delivery notes added.",
+      mode: getSafeValue(deliveryMode),
+      schedule: getSafeValue(deliverySchedule),
+      chatEnabled: Boolean(state.chatEnabled),
+      notes: getSafeValue(state.deliveryNotes, "No extra notes added."),
     },
 
-    tailorNotes: [
-      "Use the measurement and body type details before cutting or alteration.",
-      "Confirm final size and fit type with the user before stitching.",
-      "Use style, fabric, sleeve, length, and budget preferences while suggesting final options.",
-      "If online delivery is selected, send regular updates for accepted, in progress, stitching, ready, and shipped/pickup stages.",
-    ],
+    tailorNotes:
+      "Use this Fit Card for measurement confirmation, outfit planning, service discussion, and delivery coordination.",
   };
+}
+
+function SectionCard({ icon, title, children }) {
+  return (
+    <section style={styles.sectionCard}>
+      <div style={styles.sectionHeader}>
+        <span style={styles.sectionIcon}>{icon}</span>
+
+        <h2 style={styles.sectionTitle}>{title}</h2>
+      </div>
+
+      <div style={styles.sectionBody}>{children}</div>
+    </section>
+  );
+}
+
+function InfoRow({ label, value }) {
+  return (
+    <div style={styles.infoRow}>
+      <span>{label}</span>
+      <strong>{typeof value === "object" ? JSON.stringify(value) : value}</strong>
+    </div>
+  );
 }
 
 export default function FitCardPage() {
@@ -237,86 +176,84 @@ export default function FitCardPage() {
   const state = useFlowStore();
   const { patch } = state;
 
-  const [loading, setLoading] = useState(false);
-  const [sentStatus, setSentStatus] = useState("");
+  const [shareStatus, setShareStatus] = useState("");
   const [error, setError] = useState("");
 
-  const currentFitCard = state.fitCard || buildFitCard(state);
+  const fitCard = useMemo(() => {
+    return state.fitCard || buildFitCard(state);
+  }, [state]);
 
-  const selectedOutfit = getSelectedOutfit(state);
   const selectedExpert = getSelectedExpert(state);
+  const selectedOutfit = getSelectedOutfit(state);
 
-  const fitCardStats = useMemo(() => {
-    let completed = 0;
-    const total = 6;
+  const completionScore = useMemo(() => {
+    let score = 0;
 
-    if (currentFitCard.userIntent.purchaseFor !== "Not provided") completed += 1;
-    if (currentFitCard.basicProfile.ageRange !== "Not provided") completed += 1;
-    if (currentFitCard.measurements.size !== "Not provided") completed += 1;
-    if (currentFitCard.stylePreferences.style !== "Not provided") completed += 1;
-    if (currentFitCard.selectedOutfit) completed += 1;
-    if (currentFitCard.selectedExpert) completed += 1;
+    if (fitCard.basicProfile.ageRange !== "Not provided") score += 15;
+    if (fitCard.basicProfile.gender !== "Not provided") score += 15;
+    if (fitCard.measurements.recommendedSize !== "Not provided") score += 15;
+    if (fitCard.stylePreferences.style !== "Not provided") score += 15;
+    if (fitCard.selectedOutfit.title !== "Not provided") score += 15;
+    if (fitCard.selectedExpert.name !== "Not provided") score += 15;
+    if (fitCard.delivery.mode !== "Not provided") score += 10;
 
-    return {
-      completed,
-      total,
-      score: Math.round((completed / total) * 100),
-    };
-  }, [currentFitCard]);
+    return score;
+  }, [fitCard]);
 
   function generateFitCard() {
-    setError("");
-    setSentStatus("");
-
     const card = buildFitCard(state);
 
     patch({
       fitCard: card,
     });
 
-    setSentStatus("Fit Card generated and refreshed successfully.");
+    setShareStatus("Fit Card refreshed successfully.");
+    setError("");
   }
 
-  async function sendFitCard() {
-    setLoading(true);
-    setError("");
-    setSentStatus("");
-
+  async function shareFitCard() {
     const card = state.fitCard || buildFitCard(state);
 
     patch({
       fitCard: card,
     });
 
+    setError("");
+    setShareStatus("Sharing Fit Card...");
+
     try {
       const response = await callApi("/fit-card", "POST", {
-        userId: state.userId || "guest_user",
-        measurements: card.measurements,
-        selectedOutfit: card.selectedOutfit,
-        selectedExpert: card.selectedExpert,
-        delivery: card.delivery,
-        stylePreferences: card.stylePreferences,
-        notes: card.tailorNotes.join(" "),
+        fitCard: card,
+        expert: selectedExpert,
+        outfit: selectedOutfit,
       });
 
       if (!response.ok) {
-        setError(
-          response.data?.message ||
-            "Fit Card was generated, but sharing could not be confirmed."
+        setShareStatus(
+          "Fit Card saved locally. Backend sharing is not available right now."
         );
         return;
       }
 
-      setSentStatus(
-        "Fit Card shared with the selected expert and saved to the user dashboard."
-      );
+      patch({
+        fitCard: {
+          ...card,
+          shared: true,
+          sharedAt: getNowText(),
+          shareResponse: response.data,
+        },
+      });
+
+      setShareStatus("Fit Card shared with user dashboard and selected expert.");
     } catch (_error) {
-      setSentStatus(
-        "Fit Card generated locally. Backend sharing is unavailable right now."
+      setShareStatus(
+        "Fit Card saved locally. Backend sharing is not available right now."
       );
-    } finally {
-      setLoading(false);
     }
+  }
+
+  function printFitCard() {
+    window.print();
   }
 
   function continueToTracking() {
@@ -325,7 +262,8 @@ export default function FitCardPage() {
     patch({
       fitCard: card,
       order: {
-        bookingId: `ORD-${Date.now()}`,
+        ...(state.order || {}),
+        bookingId: state.order?.bookingId || `ORD-${Date.now()}`,
         status: "Accepted",
         timeline: [
           "Accepted",
@@ -336,6 +274,7 @@ export default function FitCardPage() {
             ? "Ready for Pickup"
             : "Shipped / Ready for Pickup",
         ],
+        createdAt: new Date().toISOString(),
       },
     });
 
@@ -346,16 +285,34 @@ export default function FitCardPage() {
     <PageShell>
       <style>
         {`
-          @keyframes fitCardFloat {
+          @keyframes fitCardSoftFloat {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
             100% { transform: translateY(0px); }
           }
 
-          @keyframes fitCardPulse {
+          @keyframes fitCardSoftPulse {
             0% { opacity: 0.55; transform: scale(0.96); }
             50% { opacity: 1; transform: scale(1.04); }
             100% { opacity: 0.55; transform: scale(0.96); }
+          }
+
+          @media print {
+            body * {
+              visibility: hidden;
+            }
+
+            .print-fit-card,
+            .print-fit-card * {
+              visibility: visible;
+            }
+
+            .print-fit-card {
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
+            }
           }
 
           @media (max-width: 1080px) {
@@ -364,7 +321,7 @@ export default function FitCardPage() {
             }
 
             .fit-card-title {
-              font-size: 36px !important;
+              font-size: 38px !important;
             }
 
             .fit-card-layout {
@@ -383,24 +340,13 @@ export default function FitCardPage() {
               width: 100% !important;
             }
           }
-
-          @media print {
-            body {
-              background: #ffffff !important;
-            }
-
-            .fit-card-actions,
-            .fit-card-footer,
-            .fit-card-hide-print {
-              display: none !important;
-            }
-          }
         `}
       </style>
 
       <div style={styles.page}>
         <div style={styles.glowOne} />
         <div style={styles.glowTwo} />
+        <div style={styles.glowThree} />
 
         <motion.div
           initial={{ opacity: 0, y: 22 }}
@@ -420,414 +366,271 @@ export default function FitCardPage() {
               </h1>
 
               <p style={styles.subtitle}>
-                FitGenie creates a shareable card with measurements, body type,
-                style preferences, selected outfit, expert details, delivery
-                schedule, and tailor notes.
+                FitGenie created a shareable card with basic profile, size
+                inputs, body type, style preferences, selected outfit, expert
+                details, delivery mode, schedule, and notes.
               </p>
             </div>
 
             <aside style={styles.previewCard}>
-              <div style={styles.previewIcon}>📇</div>
+              <div style={styles.previewTop}>
+                <span style={styles.previewIcon}>🪄</span>
 
-              <div>
-                <p style={styles.previewLabel}>Fit Card completeness</p>
-                <h2 style={styles.previewScore}>{fitCardStats.score}%</h2>
+                <div>
+                  <p style={styles.previewLabel}>Fit Card completion</p>
+                  <h2 style={styles.previewScore}>{completionScore}%</h2>
+                </div>
               </div>
 
               <div style={styles.progressTrack}>
                 <div
                   style={{
                     ...styles.progressFill,
-                    width: `${fitCardStats.score}%`,
+                    width: `${completionScore}%`,
                   }}
                 />
               </div>
 
               <p style={styles.previewText}>
-                {fitCardStats.score >= 85
-                  ? "Great. This card is ready to share with the expert."
-                  : "Some details are missing, but the card can still be generated."}
+                Fit Card ID: <strong>{fitCard.fitCardId}</strong>
               </p>
+
+              <div style={styles.previewTags}>
+                <span style={styles.previewTag}>
+                  {fitCard.selectedExpert.name}
+                </span>
+                <span style={styles.previewTag}>
+                  {fitCard.delivery.mode}
+                </span>
+              </div>
             </aside>
           </section>
 
           <section className="fit-card-layout" style={styles.layout}>
-            <main style={styles.mainPanel}>
-              <section style={styles.cardShell}>
-                <div style={styles.cardTopBand}>
+            <main className="print-fit-card" style={styles.mainPanel}>
+              <section style={styles.heroCard}>
+                <div>
+                  <p style={styles.heroLabel}>Generated Fit Card</p>
+                  <h2 style={styles.heroTitle}>{fitCard.fitCardId}</h2>
+                  <p style={styles.heroText}>
+                    Generated on {fitCard.generatedAt}
+                  </p>
+                </div>
+
+                <div style={styles.statusBubble}>
+                  <strong>{completionScore}%</strong>
+                  <span>Ready for expert handoff</span>
+                </div>
+              </section>
+
+              <div className="fit-card-grid" style={styles.cardGrid}>
+                <SectionCard icon="👤" title="Basic Profile">
+                  <InfoRow label="For Whom" value={fitCard.basicProfile.forWhom} />
+                  <InfoRow label="Age Range" value={fitCard.basicProfile.ageRange} />
+                  <InfoRow label="Gender" value={fitCard.basicProfile.gender} />
+                  <InfoRow label="Relation" value={fitCard.basicProfile.relation} />
+                  <InfoRow label="Occasion" value={fitCard.basicProfile.occasion} />
+                </SectionCard>
+
+                <SectionCard icon="📏" title="Measurements">
+                  <InfoRow label="Body Type" value={fitCard.measurements.bodyType} />
+                  <InfoRow
+                    label="Recommended Size"
+                    value={fitCard.measurements.recommendedSize}
+                  />
+                  <InfoRow label="Height" value={fitCard.measurements.height} />
+                  <InfoRow label="Input Source" value={fitCard.measurements.source} />
+                </SectionCard>
+
+                <SectionCard icon="🎨" title="Style Preferences">
+                  <InfoRow label="Style" value={fitCard.stylePreferences.style} />
+                  <InfoRow label="Budget" value={fitCard.stylePreferences.budget} />
+                  <InfoRow label="Fabric" value={fitCard.stylePreferences.fabric} />
+                  <InfoRow label="Sleeve" value={fitCard.stylePreferences.sleeve} />
+                  <InfoRow label="Length" value={fitCard.stylePreferences.length} />
+                  <InfoRow label="Fit" value={fitCard.stylePreferences.fit} />
+                </SectionCard>
+
+                <SectionCard icon="👗" title="Selected Outfit">
+                  <InfoRow label="Outfit" value={fitCard.selectedOutfit.title} />
+                  <InfoRow label="Category" value={fitCard.selectedOutfit.category} />
+                  <InfoRow
+                    label="Price Range"
+                    value={fitCard.selectedOutfit.priceRange}
+                  />
+                  <InfoRow
+                    label="Recommended Size"
+                    value={fitCard.selectedOutfit.recommendedSize}
+                  />
+                  <InfoRow label="Fit Type" value={fitCard.selectedOutfit.fitType} />
+                  <InfoRow
+                    label="Size Confidence"
+                    value={fitCard.selectedOutfit.sizeConfidence}
+                  />
+                </SectionCard>
+
+                <SectionCard icon="🧵" title="Selected Expert">
+                  <InfoRow label="Name" value={fitCard.selectedExpert.name} />
+                  <InfoRow label="Rating" value={fitCard.selectedExpert.rating} />
+                  <InfoRow label="Phone" value={fitCard.selectedExpert.phone} />
+                  <InfoRow label="Address" value={fitCard.selectedExpert.address} />
+                  <InfoRow
+                    label="Specialization"
+                    value={fitCard.selectedExpert.specialization}
+                  />
+                  <InfoRow
+                    label="Delivery Time"
+                    value={fitCard.selectedExpert.deliveryTime}
+                  />
+                </SectionCard>
+
+                <SectionCard icon="📦" title="Delivery & Interaction">
+                  <InfoRow label="Mode" value={fitCard.delivery.mode} />
+                  <InfoRow label="Schedule" value={fitCard.delivery.schedule} />
+                  <InfoRow
+                    label="Chat"
+                    value={fitCard.delivery.chatEnabled ? "Enabled" : "Disabled"}
+                  />
+                  <InfoRow label="Notes" value={fitCard.delivery.notes} />
+                </SectionCard>
+              </div>
+
+              <section style={styles.reasonCard}>
+                <span style={styles.reasonBadge}>Why this suits you</span>
+
+                <p style={styles.reasonText}>{fitCard.selectedOutfit.reason}</p>
+              </section>
+
+              <section style={styles.messageGrid}>
+                <div style={styles.messageCard}>
+                  <span style={styles.messageIcon}>📲</span>
+
                   <div>
-                    <p style={styles.cardLabel}>FitGenie Fit Card</p>
-                    <h2 style={styles.cardTitle}>
-                      {currentFitCard.fitCardId || "Auto-generated card"}
-                    </h2>
-                    <p style={styles.cardGenerated}>
-                      Generated: {currentFitCard.generatedAt}
+                    <h3 style={styles.messageTitle}>User dashboard message</h3>
+
+                    <p style={styles.messageText}>
+                      Your Fit Card is ready with outfit details, expert contact,
+                      shop address, delivery mode, and schedule.
                     </p>
                   </div>
-
-                  <div style={styles.cardLogo}>FG</div>
                 </div>
 
-                <div className="fit-card-grid" style={styles.cardGrid}>
-                  <section style={styles.sectionCard}>
-                    <h3 style={styles.sectionTitle}>Basic Profile</h3>
+                <div style={styles.messageCard}>
+                  <span style={styles.messageIcon}>🧵</span>
 
-                    <div style={styles.dataList}>
-                      <div style={styles.dataRow}>
-                        <span>Purchase For</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.userIntent.purchaseFor)}
-                        </strong>
-                      </div>
+                  <div>
+                    <h3 style={styles.messageTitle}>Expert handoff message</h3>
 
-                      <div style={styles.dataRow}>
-                        <span>Relation / Occasion</span>
-                        <strong>
-                          {currentFitCard.userIntent.purchaseFor === "gift"
-                            ? getSafeValue(currentFitCard.userIntent.occasion)
-                            : getSafeValue(currentFitCard.userIntent.relation)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Age Range</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.basicProfile.ageRange)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Gender</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.basicProfile.gender)}
-                        </strong>
-                      </div>
-                    </div>
-                  </section>
-
-                  <section style={styles.sectionCard}>
-                    <h3 style={styles.sectionTitle}>Measurements</h3>
-
-                    <div style={styles.dataList}>
-                      <div style={styles.dataRow}>
-                        <span>Body Type</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.measurements.bodyType)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Recommended Size</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.measurements.size)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Height</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.measurements.height)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Fit Type</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.measurements.fitType)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Scan Confidence</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.measurements.scanConfidence)}
-                        </strong>
-                      </div>
-                    </div>
-                  </section>
-
-                  <section style={styles.sectionCard}>
-                    <h3 style={styles.sectionTitle}>Style Preferences</h3>
-
-                    <div style={styles.dataList}>
-                      <div style={styles.dataRow}>
-                        <span>Style</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.stylePreferences.style)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Budget</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.stylePreferences.budget)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Fabric</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.stylePreferences.fabric)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Sleeve</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.stylePreferences.sleeve)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Length</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.stylePreferences.length)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Fit</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.stylePreferences.fit)}
-                        </strong>
-                      </div>
-                    </div>
-                  </section>
-
-                  <section style={styles.sectionCard}>
-                    <h3 style={styles.sectionTitle}>Selected Outfit</h3>
-
-                    {currentFitCard.selectedOutfit ? (
-                      <div style={styles.dataList}>
-                        <div style={styles.dataRow}>
-                          <span>Outfit</span>
-                          <strong>{currentFitCard.selectedOutfit.title}</strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Recommended Size</span>
-                          <strong>
-                            {currentFitCard.selectedOutfit.recommendedSize}
-                          </strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Fit Type</span>
-                          <strong>{currentFitCard.selectedOutfit.fitType}</strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Price Range</span>
-                          <strong>{currentFitCard.selectedOutfit.priceRange}</strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Match Score</span>
-                          <strong>{currentFitCard.selectedOutfit.matchScore}</strong>
-                        </div>
-
-                        <div style={styles.reasonBox}>
-                          {currentFitCard.selectedOutfit.whyThisSuitsYou}
-                        </div>
-                      </div>
-                    ) : (
-                      <p style={styles.emptyText}>No outfit selected.</p>
-                    )}
-                  </section>
-
-                  <section style={styles.sectionCard}>
-                    <h3 style={styles.sectionTitle}>Selected Expert</h3>
-
-                    {currentFitCard.selectedExpert ? (
-                      <div style={styles.dataList}>
-                        <div style={styles.dataRow}>
-                          <span>Name</span>
-                          <strong>{currentFitCard.selectedExpert.name}</strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Mobile</span>
-                          <strong>{currentFitCard.selectedExpert.phone}</strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Address</span>
-                          <strong>{currentFitCard.selectedExpert.address}</strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Rating</span>
-                          <strong>⭐ {currentFitCard.selectedExpert.rating}</strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Price Range</span>
-                          <strong>{currentFitCard.selectedExpert.priceRange}</strong>
-                        </div>
-
-                        <div style={styles.dataRow}>
-                          <span>Delivery Time</span>
-                          <strong>{currentFitCard.selectedExpert.deliveryTime}</strong>
-                        </div>
-
-                        <div style={styles.reasonBox}>
-                          Specialization:{" "}
-                          {currentFitCard.selectedExpert.specialization}
-                        </div>
-                      </div>
-                    ) : (
-                      <p style={styles.emptyText}>No expert selected.</p>
-                    )}
-                  </section>
-
-                  <section style={styles.sectionCard}>
-                    <h3 style={styles.sectionTitle}>Delivery & Interaction</h3>
-
-                    <div style={styles.dataList}>
-                      <div style={styles.dataRow}>
-                        <span>Mode</span>
-                        <strong>{getSafeValue(currentFitCard.delivery.mode)}</strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Schedule</span>
-                        <strong>
-                          {getSafeValue(currentFitCard.delivery.schedule)}
-                        </strong>
-                      </div>
-
-                      <div style={styles.dataRow}>
-                        <span>Chat</span>
-                        <strong>
-                          {currentFitCard.delivery.chatEnabled
-                            ? "Enabled"
-                            : "Disabled"}
-                        </strong>
-                      </div>
-
-                      <div style={styles.reasonBox}>
-                        Notes: {currentFitCard.delivery.notes}
-                      </div>
-                    </div>
-                  </section>
-                </div>
-
-                <section style={styles.notesCard}>
-                  <h3 style={styles.sectionTitle}>Notes for Tailor / Designer</h3>
-
-                  <div style={styles.noteList}>
-                    {currentFitCard.tailorNotes.map((note) => (
-                      <div key={note} style={styles.noteItem}>
-                        <span style={styles.noteCheck}>✓</span>
-                        <span>{note}</span>
-                      </div>
-                    ))}
+                    <p style={styles.messageText}>
+                      The selected expert receives measurements, style
+                      preferences, selected outfit, delivery choice, and notes.
+                    </p>
                   </div>
-                </section>
+                </div>
               </section>
             </main>
 
             <aside style={styles.sidePanel}>
               <div style={styles.sideTop}>
-                <span style={styles.sideIcon}>📤</span>
+                <span style={styles.sideIcon}>🧞</span>
 
                 <div>
-                  <p style={styles.sideLabel}>Share status</p>
-                  <h2 style={styles.sideTitle}>
-                    {sentStatus ? "Ready" : "Not sent yet"}
-                  </h2>
+                  <p style={styles.sideLabel}>Fit Card actions</p>
+                  <h2 style={styles.sideTitle}>Ready</h2>
                 </div>
               </div>
 
-              <div className="fit-card-actions" style={styles.actions}>
+              <div style={styles.summaryList}>
+                <div style={styles.summaryItem}>
+                  <span>Card ID</span>
+                  <strong>{fitCard.fitCardId}</strong>
+                </div>
+
+                <div style={styles.summaryItem}>
+                  <span>Expert</span>
+                  <strong>{fitCard.selectedExpert.name}</strong>
+                </div>
+
+                <div style={styles.summaryItem}>
+                  <span>Outfit</span>
+                  <strong>{fitCard.selectedOutfit.title}</strong>
+                </div>
+
+                <div style={styles.summaryItem}>
+                  <span>Service</span>
+                  <strong>{fitCard.service.type}</strong>
+                </div>
+
+                <div style={styles.summaryItem}>
+                  <span>Delivery</span>
+                  <strong>{fitCard.delivery.mode}</strong>
+                </div>
+
+                <div style={styles.summaryItem}>
+                  <span>Schedule</span>
+                  <strong>{fitCard.delivery.schedule}</strong>
+                </div>
+              </div>
+
+              <div style={styles.actionStack}>
                 <button
                   type="button"
-                  className="btn"
                   onClick={generateFitCard}
-                  style={styles.actionButton}
+                  style={styles.secondaryButton}
                 >
                   Generate / Refresh Fit Card
                 </button>
 
                 <button
                   type="button"
-                  className="btn ghost"
-                  onClick={sendFitCard}
-                  disabled={loading}
-                  style={styles.actionButton}
+                  onClick={shareFitCard}
+                  style={styles.primaryButton}
                 >
-                  {loading ? "Sharing..." : "Share with Expert & User"}
+                  Share with Expert & User
                 </button>
 
                 <button
                   type="button"
-                  className="btn ghost"
-                  onClick={() => window.print()}
-                  style={styles.actionButton}
+                  onClick={printFitCard}
+                  style={styles.secondaryButton}
                 >
                   Print / Save Card
                 </button>
               </div>
 
-              {error ? <div style={styles.errorBox}>{error}</div> : null}
-              {sentStatus ? <div style={styles.successBox}>{sentStatus}</div> : null}
+              {shareStatus ? (
+                <div style={styles.successBox}>{shareStatus}</div>
+              ) : null}
 
-              <div style={styles.messagePreview}>
-                <span style={styles.messageBadge}>User message</span>
+              <div style={styles.nextCard}>
+                <span style={styles.nextBadge}>Next step</span>
 
-                <p style={styles.messageText}>
-                  Your Fit Card has been generated. Expert{" "}
-                  <strong>{selectedExpert?.name || "selected expert"}</strong>{" "}
-                  will receive your size, style, outfit and schedule details.
+                <h3 style={styles.nextTitle}>Order Tracking</h3>
+
+                <p style={styles.nextText}>
+                  After Fit Card handoff, track order stages from Accepted to
+                  In Progress, Stitching, Ready, and Delivery or Pickup.
                 </p>
-              </div>
 
-              <div style={styles.messagePreview}>
-                <span style={styles.messageBadge}>Expert message</span>
-
-                <p style={styles.messageText}>
-                  New FitGenie request received for{" "}
-                  <strong>
-                    {selectedOutfit?.title || selectedOutfit?.name || "selected outfit"}
-                  </strong>
-                  . Please review measurements, style preferences and notes before
-                  accepting.
-                </p>
-              </div>
-
-              <div style={styles.summaryList}>
-                <div style={styles.summaryItem}>
-                  <span>Expert</span>
-                  <strong>{selectedExpert?.name || "Not selected"}</strong>
-                </div>
-
-                <div style={styles.summaryItem}>
-                  <span>User receives</span>
-                  <strong>Fit Card + shop/contact details</strong>
-                </div>
-
-                <div style={styles.summaryItem}>
-                  <span>Expert receives</span>
-                  <strong>Measurements + style notes</strong>
-                </div>
-
-                <div style={styles.summaryItem}>
-                  <span>Next page</span>
-                  <strong>Order Tracking</strong>
+                <div style={styles.nextPills}>
+                  <span>✅ Accepted</span>
+                  <span>🧵 Stitching</span>
+                  <span>📦 Delivery</span>
                 </div>
               </div>
             </aside>
           </section>
 
+          {error ? <div style={styles.errorBox}>{error}</div> : null}
+
           <section style={styles.finalSummary}>
-            <div style={styles.finalIcon}>📇</div>
+            <div style={styles.finalIcon}>✅</div>
 
             <div>
-              <p style={styles.finalLabel}>Fit Card handoff summary</p>
+              <p style={styles.finalLabel}>Fit Card status</p>
               <strong style={styles.finalText}>
-                {currentFitCard.selectedExpert
-                  ? `Fit Card prepared for ${currentFitCard.selectedExpert.name}`
-                  : "Fit Card prepared, expert details missing"}
+                Ready to share with {fitCard.selectedExpert.name} and the user
+                dashboard.
               </strong>
             </div>
           </section>
@@ -835,20 +638,18 @@ export default function FitCardPage() {
           <div className="fit-card-footer" style={styles.footer}>
             <button
               type="button"
-              className="btn ghost"
               onClick={() => nav("/delivery")}
-              style={styles.footerButton}
+              style={styles.backButton}
             >
-              Back
+              ← Back
             </button>
 
             <button
               type="button"
-              className="btn"
               onClick={continueToTracking}
-              style={styles.footerButton}
+              style={styles.nextButton}
             >
-              Continue to Order Tracking
+              Track Order →
             </button>
           </div>
         </motion.div>
@@ -864,19 +665,21 @@ const styles = {
     overflow: "hidden",
     borderRadius: "34px",
     padding: "34px",
+    color: "#14213d",
     background:
-      "radial-gradient(circle at 12% 10%, rgba(124,92,255,0.28), transparent 30%), radial-gradient(circle at 88% 8%, rgba(0,212,255,0.22), transparent 28%), linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035))",
-    border: "1px solid rgba(255,255,255,0.12)",
+      "linear-gradient(135deg, #fff7ed 0%, #eef6ff 40%, #f5f3ff 72%, #ecfeff 100%)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    boxShadow: "0 24px 70px rgba(15, 23, 42, 0.12)",
   },
   glowOne: {
     position: "absolute",
     width: "360px",
     height: "360px",
     borderRadius: "50%",
-    background: "rgba(124,92,255,0.18)",
-    filter: "blur(72px)",
-    top: "-120px",
-    left: "-100px",
+    background: "rgba(255, 214, 165, 0.55)",
+    filter: "blur(68px)",
+    top: "-110px",
+    left: "-90px",
     pointerEvents: "none",
   },
   glowTwo: {
@@ -884,10 +687,21 @@ const styles = {
     width: "360px",
     height: "360px",
     borderRadius: "50%",
-    background: "rgba(0,212,255,0.14)",
+    background: "rgba(191, 219, 254, 0.72)",
     filter: "blur(72px)",
-    right: "-130px",
+    right: "-120px",
+    top: "60px",
+    pointerEvents: "none",
+  },
+  glowThree: {
+    position: "absolute",
+    width: "340px",
+    height: "340px",
+    borderRadius: "50%",
+    background: "rgba(221, 214, 254, 0.72)",
+    filter: "blur(74px)",
     bottom: "-140px",
+    left: "34%",
     pointerEvents: "none",
   },
   content: {
@@ -905,86 +719,110 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     gap: "9px",
-    padding: "8px 12px",
+    padding: "9px 13px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.08)",
-    border: "1px solid rgba(255,255,255,0.14)",
-    color: "rgba(255,255,255,0.84)",
+    background: "rgba(255, 255, 255, 0.72)",
+    border: "1px solid rgba(109, 93, 252, 0.16)",
+    color: "#4f46e5",
     fontSize: "13px",
-    fontWeight: 800,
+    fontWeight: 900,
     marginBottom: "16px",
+    boxShadow: "0 10px 24px rgba(79, 70, 229, 0.08)",
   },
   stepDot: {
     width: "9px",
     height: "9px",
     borderRadius: "50%",
-    background: "#00d4ff",
-    boxShadow: "0 0 18px rgba(0,212,255,0.9)",
-    animation: "fitCardPulse 2s ease-in-out infinite",
+    background: "#6d5dfc",
+    boxShadow: "0 0 18px rgba(109, 93, 252, 0.7)",
+    animation: "fitCardSoftPulse 2s ease-in-out infinite",
   },
   title: {
     margin: 0,
-    fontSize: "48px",
+    color: "#111827",
+    fontSize: "50px",
     lineHeight: 1.04,
-    letterSpacing: "-1.5px",
+    letterSpacing: "-1.6px",
   },
   subtitle: {
     maxWidth: "760px",
     margin: "14px 0 0",
-    color: "rgba(255,255,255,0.74)",
-    lineHeight: 1.65,
+    color: "#475569",
+    lineHeight: 1.7,
     fontSize: "16px",
+    fontWeight: 600,
   },
   previewCard: {
-    border: "1px solid rgba(255,255,255,0.14)",
-    borderRadius: "26px",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "28px",
     padding: "20px",
-    background:
-      "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05))",
-    boxShadow: "0 18px 40px rgba(0,0,0,0.18)",
+    background: "rgba(255,255,255,0.76)",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.10)",
+    backdropFilter: "blur(18px)",
+  },
+  previewTop: {
+    display: "flex",
+    alignItems: "center",
+    gap: "14px",
   },
   previewIcon: {
-    width: "64px",
-    height: "64px",
+    width: "62px",
+    height: "62px",
     borderRadius: "22px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.11)",
-    border: "1px solid rgba(255,255,255,0.14)",
-    fontSize: "31px",
-    marginBottom: "15px",
-    animation: "fitCardFloat 3.2s ease-in-out infinite",
+    background: "linear-gradient(135deg, #ffffff, #eef2ff)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    fontSize: "30px",
+    boxShadow: "0 14px 30px rgba(15, 23, 42, 0.10)",
+    animation: "fitCardSoftFloat 3.2s ease-in-out infinite",
   },
   previewLabel: {
     margin: "0 0 4px",
-    color: "rgba(255,255,255,0.62)",
-    fontWeight: 900,
+    color: "#64748b",
     fontSize: "12px",
+    fontWeight: 900,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
   },
   previewScore: {
     margin: 0,
+    color: "#111827",
     fontSize: "36px",
     lineHeight: 1,
   },
   progressTrack: {
     height: "11px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.12)",
+    background: "#e2e8f0",
     overflow: "hidden",
     margin: "14px 0",
   },
   progressFill: {
     height: "100%",
     borderRadius: "inherit",
-    background: "linear-gradient(90deg,#7c5cff,#00d4ff)",
+    background: "linear-gradient(90deg, #6d5dfc, #00bcd4)",
   },
   previewText: {
-    margin: 0,
-    color: "rgba(255,255,255,0.70)",
-    lineHeight: 1.5,
+    margin: "0 0 14px",
+    color: "#475569",
+    lineHeight: 1.55,
     fontSize: "14px",
+    fontWeight: 600,
+  },
+  previewTags: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+  },
+  previewTag: {
+    padding: "7px 10px",
+    borderRadius: "999px",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    color: "#334155",
+    fontSize: "12px",
+    fontWeight: 900,
   },
   layout: {
     display: "grid",
@@ -996,133 +834,163 @@ const styles = {
     display: "grid",
     gap: "18px",
   },
-  cardShell: {
-    overflow: "hidden",
-    border: "1px solid rgba(255,255,255,0.14)",
-    borderRadius: "30px",
-    background: "rgba(255,255,255,0.065)",
-    boxShadow: "0 22px 52px rgba(0,0,0,0.20)",
-  },
-  cardTopBand: {
+  heroCard: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: "16px",
+    gap: "18px",
+    flexWrap: "wrap",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "30px",
     padding: "24px",
     background:
-      "linear-gradient(135deg, rgba(124,92,255,0.95), rgba(0,212,255,0.82))",
+      "linear-gradient(135deg, rgba(255,255,255,0.88), rgba(236,254,255,0.86))",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.09)",
   },
-  cardLabel: {
+  heroLabel: {
     margin: "0 0 6px",
-    color: "rgba(255,255,255,0.78)",
+    color: "#64748b",
     fontSize: "12px",
     fontWeight: 900,
     textTransform: "uppercase",
-    letterSpacing: "0.1em",
+    letterSpacing: "0.08em",
   },
-  cardTitle: {
+  heroTitle: {
     margin: 0,
-    fontSize: "26px",
+    color: "#111827",
+    fontSize: "32px",
   },
-  cardGenerated: {
-    margin: "7px 0 0",
-    color: "rgba(255,255,255,0.76)",
-    fontSize: "13px",
+  heroText: {
+    margin: "8px 0 0",
+    color: "#475569",
+    fontWeight: 700,
   },
-  cardLogo: {
-    width: "62px",
-    height: "62px",
-    borderRadius: "22px",
+  statusBubble: {
+    width: "138px",
+    height: "138px",
+    borderRadius: "34px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.20)",
-    border: "1px solid rgba(255,255,255,0.26)",
-    fontWeight: 900,
-    fontSize: "22px",
+    textAlign: "center",
+    padding: "14px",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    color: "#111827",
   },
   cardGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "14px",
-    padding: "18px",
+    gap: "16px",
   },
   sectionCard: {
-    padding: "16px",
-    borderRadius: "22px",
-    background: "rgba(0,0,0,0.16)",
-    border: "1px solid rgba(255,255,255,0.08)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "26px",
+    padding: "18px",
+    background: "rgba(255,255,255,0.78)",
+    boxShadow: "0 14px 34px rgba(15, 23, 42, 0.08)",
   },
-  sectionTitle: {
-    margin: "0 0 12px",
-    fontSize: "19px",
-  },
-  dataList: {
-    display: "grid",
-    gap: "9px",
-  },
-  dataRow: {
-    display: "grid",
-    gridTemplateColumns: "130px minmax(0, 1fr)",
-    gap: "12px",
-    padding: "10px",
-    borderRadius: "14px",
-    background: "rgba(255,255,255,0.06)",
-    border: "1px solid rgba(255,255,255,0.06)",
-    alignItems: "start",
-  },
-  reasonBox: {
-    marginTop: "4px",
-    padding: "11px",
-    borderRadius: "14px",
-    background: "rgba(0,212,255,0.10)",
-    border: "1px solid rgba(0,212,255,0.20)",
-    color: "#d9fbff",
-    lineHeight: 1.5,
-    fontSize: "13px",
-  },
-  emptyText: {
-    margin: 0,
-    color: "rgba(255,255,255,0.66)",
-  },
-  notesCard: {
-    margin: "0 18px 18px",
-    padding: "16px",
-    borderRadius: "22px",
-    background: "rgba(0,212,255,0.09)",
-    border: "1px solid rgba(0,212,255,0.20)",
-  },
-  noteList: {
-    display: "grid",
-    gap: "10px",
-  },
-  noteItem: {
+  sectionHeader: {
     display: "flex",
-    alignItems: "flex-start",
-    gap: "10px",
-    lineHeight: 1.5,
-    color: "rgba(255,255,255,0.78)",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "14px",
   },
-  noteCheck: {
-    width: "22px",
-    height: "22px",
-    borderRadius: "50%",
+  sectionIcon: {
+    width: "46px",
+    height: "46px",
+    borderRadius: "17px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(0,212,255,0.16)",
-    color: "#d9fbff",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    fontSize: "22px",
+  },
+  sectionTitle: {
+    margin: 0,
+    color: "#111827",
+    fontSize: "21px",
+  },
+  sectionBody: {
+    display: "grid",
+    gap: "10px",
+  },
+  infoRow: {
+    padding: "11px",
+    borderRadius: "15px",
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
+    display: "grid",
+    gap: "4px",
+    color: "#111827",
+  },
+  reasonCard: {
+    padding: "16px",
+    borderRadius: "22px",
+    background: "#ecfeff",
+    border: "1px solid #a5f3fc",
+  },
+  reasonBadge: {
+    display: "inline-flex",
+    marginBottom: "8px",
+    padding: "6px 9px",
+    borderRadius: "999px",
+    background: "#ffffff",
+    color: "#0891b2",
     fontSize: "12px",
     fontWeight: 900,
+  },
+  reasonText: {
+    margin: 0,
+    color: "#475569",
+    lineHeight: 1.6,
+    fontWeight: 700,
+  },
+  messageGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "14px",
+  },
+  messageCard: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "13px",
+    padding: "16px",
+    borderRadius: "22px",
+    background: "rgba(255,255,255,0.78)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    boxShadow: "0 14px 34px rgba(15, 23, 42, 0.08)",
+  },
+  messageIcon: {
+    width: "44px",
+    height: "44px",
+    borderRadius: "16px",
+    display: "grid",
+    placeItems: "center",
+    background: "linear-gradient(135deg, #fef3c7, #dbeafe)",
+    fontSize: "21px",
     flex: "0 0 auto",
+  },
+  messageTitle: {
+    margin: "0 0 7px",
+    color: "#111827",
+    fontSize: "17px",
+  },
+  messageText: {
+    margin: 0,
+    color: "#475569",
+    lineHeight: 1.55,
+    fontSize: "13px",
+    fontWeight: 700,
   },
   sidePanel: {
     position: "sticky",
     top: "18px",
-    border: "1px solid rgba(255,255,255,0.14)",
-    borderRadius: "28px",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "30px",
     padding: "22px",
-    background:
-      "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05))",
-    boxShadow: "0 22px 52px rgba(0,0,0,0.20)",
+    background: "rgba(255,255,255,0.78)",
+    boxShadow: "0 20px 48px rgba(15, 23, 42, 0.10)",
+    backdropFilter: "blur(18px)",
   },
   sideTop: {
     display: "flex",
@@ -1136,14 +1004,13 @@ const styles = {
     borderRadius: "20px",
     display: "grid",
     placeItems: "center",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.90), rgba(0,212,255,0.78))",
-    border: "1px solid rgba(255,255,255,0.18)",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
     fontSize: "28px",
   },
   sideLabel: {
     margin: "0 0 4px",
-    color: "rgba(255,255,255,0.60)",
+    color: "#64748b",
     fontSize: "12px",
     fontWeight: 900,
     textTransform: "uppercase",
@@ -1151,55 +1018,8 @@ const styles = {
   },
   sideTitle: {
     margin: 0,
+    color: "#111827",
     fontSize: "22px",
-  },
-  actions: {
-    display: "grid",
-    gap: "10px",
-    marginBottom: "14px",
-  },
-  actionButton: {
-    width: "100%",
-  },
-  successBox: {
-    marginBottom: "14px",
-    padding: "13px 15px",
-    borderRadius: "16px",
-    background: "rgba(0,212,255,0.10)",
-    border: "1px solid rgba(0,212,255,0.25)",
-    color: "#d9fbff",
-    lineHeight: 1.45,
-  },
-  errorBox: {
-    marginBottom: "14px",
-    padding: "13px 15px",
-    borderRadius: "16px",
-    background: "rgba(255, 86, 86, 0.16)",
-    border: "1px solid rgba(255, 120, 120, 0.35)",
-    color: "#ffdede",
-  },
-  messagePreview: {
-    marginBottom: "12px",
-    padding: "14px",
-    borderRadius: "20px",
-    background: "rgba(0,0,0,0.16)",
-    border: "1px solid rgba(255,255,255,0.08)",
-  },
-  messageBadge: {
-    display: "inline-flex",
-    marginBottom: "8px",
-    padding: "5px 8px",
-    borderRadius: "999px",
-    background: "rgba(255,255,255,0.10)",
-    color: "#d9fbff",
-    fontSize: "11px",
-    fontWeight: 900,
-  },
-  messageText: {
-    margin: 0,
-    color: "rgba(255,255,255,0.72)",
-    lineHeight: 1.5,
-    fontSize: "13px",
   },
   summaryList: {
     display: "grid",
@@ -1208,10 +1028,92 @@ const styles = {
   summaryItem: {
     padding: "12px",
     borderRadius: "16px",
-    background: "rgba(0,0,0,0.16)",
-    border: "1px solid rgba(255,255,255,0.08)",
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
     display: "grid",
     gap: "4px",
+    color: "#111827",
+  },
+  actionStack: {
+    display: "grid",
+    gap: "10px",
+    marginTop: "14px",
+  },
+  primaryButton: {
+    border: 0,
+    borderRadius: "999px",
+    padding: "13px 18px",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 16px 34px rgba(79, 70, 229, 0.25)",
+  },
+  secondaryButton: {
+    border: "1px solid #cbd5e1",
+    borderRadius: "999px",
+    padding: "13px 18px",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
+  },
+  successBox: {
+    marginTop: "14px",
+    padding: "13px",
+    borderRadius: "17px",
+    background: "#ecfeff",
+    border: "1px solid #a5f3fc",
+    color: "#0891b2",
+    fontWeight: 800,
+    lineHeight: 1.5,
+  },
+  nextCard: {
+    marginTop: "14px",
+    padding: "14px",
+    borderRadius: "20px",
+    background: "#ecfeff",
+    border: "1px solid #a5f3fc",
+  },
+  nextBadge: {
+    display: "inline-flex",
+    marginBottom: "8px",
+    padding: "5px 8px",
+    borderRadius: "999px",
+    background: "#ffffff",
+    color: "#0891b2",
+    fontSize: "11px",
+    fontWeight: 900,
+  },
+  nextTitle: {
+    margin: "0 0 8px",
+    color: "#111827",
+    fontSize: "18px",
+  },
+  nextText: {
+    margin: 0,
+    color: "#475569",
+    lineHeight: 1.5,
+    fontSize: "13px",
+    fontWeight: 700,
+  },
+  nextPills: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+    marginTop: "12px",
+    color: "#334155",
+    fontWeight: 800,
+  },
+  errorBox: {
+    marginTop: "16px",
+    padding: "13px 15px",
+    borderRadius: "16px",
+    background: "#fff1f2",
+    border: "1px solid #fecdd3",
+    color: "#be123c",
+    fontWeight: 800,
   },
   finalSummary: {
     display: "flex",
@@ -1220,8 +1122,9 @@ const styles = {
     marginTop: "18px",
     padding: "16px",
     borderRadius: "22px",
-    background: "rgba(0,0,0,0.18)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.78)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    boxShadow: "0 14px 34px rgba(15, 23, 42, 0.08)",
   },
   finalIcon: {
     width: "45px",
@@ -1229,20 +1132,20 @@ const styles = {
     borderRadius: "16px",
     display: "grid",
     placeItems: "center",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.9), rgba(0,212,255,0.8))",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
     fontSize: "22px",
     flex: "0 0 auto",
   },
   finalLabel: {
     margin: "0 0 4px",
-    color: "rgba(255,255,255,0.58)",
+    color: "#64748b",
     fontSize: "12px",
     fontWeight: 900,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
   },
   finalText: {
+    color: "#111827",
     fontSize: "16px",
   },
   footer: {
@@ -1251,7 +1154,26 @@ const styles = {
     gap: "12px",
     marginTop: "22px",
   },
-  footerButton: {
+  backButton: {
+    minWidth: "170px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "999px",
+    padding: "14px 22px",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
+  },
+  nextButton: {
     minWidth: "230px",
+    border: "0",
+    borderRadius: "999px",
+    padding: "14px 24px",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 16px 34px rgba(79, 70, 229, 0.28)",
   },
 };
