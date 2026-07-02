@@ -17,8 +17,8 @@ const DELIVERY_OPTIONS = [
       "Share Fit Card digitally",
       "Track delivery updates online",
     ],
-    gradient:
-      "linear-gradient(135deg, rgba(124,92,255,0.95), rgba(0,212,255,0.82))",
+    gradient: "linear-gradient(135deg, #dbeafe, #ede9fe, #fce7f3)",
+    accent: "#6d5dfc",
   },
   {
     value: "Offline",
@@ -32,8 +32,8 @@ const DELIVERY_OPTIONS = [
       "In-person measurement check",
       "Pickup or local delivery support",
     ],
-    gradient:
-      "linear-gradient(135deg, rgba(255,122,162,0.95), rgba(255,170,91,0.82))",
+    gradient: "linear-gradient(135deg, #fce7f3, #ffe4e6, #fed7aa)",
+    accent: "#db2777",
   },
   {
     value: "Both",
@@ -47,8 +47,8 @@ const DELIVERY_OPTIONS = [
       "Flexible consultation mode",
       "Choose final mode after expert confirmation",
     ],
-    gradient:
-      "linear-gradient(135deg, rgba(30,215,166,0.95), rgba(0,212,255,0.82))",
+    gradient: "linear-gradient(135deg, #dcfce7, #cffafe, #e0e7ff)",
+    accent: "#059669",
   },
 ];
 
@@ -64,11 +64,6 @@ function getTodayDateString() {
   const localDate = new Date(today.getTime() - offset * 60 * 1000);
 
   return localDate.toISOString().split("T")[0];
-}
-
-function getDefaultSchedule() {
-  const today = getTodayDateString();
-  return `${today} · Evening · 4 PM - 8 PM`;
 }
 
 function parseSchedule(schedule) {
@@ -120,19 +115,22 @@ export default function DeliveryPage() {
 
   const selectedOutfit = recommendations?.selectedOutfit || null;
 
+  const readinessScore = useMemo(() => {
+    let score = 0;
+
+    if (deliveryMode) score += 40;
+    if (selectedDate) score += 25;
+    if (selectedSlot) score += 25;
+    if (chatEnabled) score += 10;
+
+    return score;
+  }, [deliveryMode, selectedDate, selectedSlot, chatEnabled]);
+
   function selectDeliveryMode(value) {
     setError("");
 
     patch({
       deliveryMode: value,
-    });
-  }
-
-  function toggleChat(value) {
-    setError("");
-
-    patch({
-      chatEnabled: value,
     });
   }
 
@@ -159,6 +157,14 @@ export default function DeliveryPage() {
     saveSchedule(selectedDate, value);
   }
 
+  function toggleChat() {
+    setError("");
+
+    patch({
+      chatEnabled: !chatEnabled,
+    });
+  }
+
   function continueNext() {
     if (!deliveryMode) {
       setError("Please choose how you want your delivery or consultation.");
@@ -183,35 +189,32 @@ export default function DeliveryPage() {
     <PageShell>
       <style>
         {`
-          @keyframes deliveryFloat {
+          @keyframes deliverySoftFloat {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
             100% { transform: translateY(0px); }
           }
 
-          @keyframes deliveryPulse {
+          @keyframes deliverySoftPulse {
             0% { opacity: 0.55; transform: scale(0.96); }
             50% { opacity: 1; transform: scale(1.04); }
             100% { opacity: 0.55; transform: scale(0.96); }
           }
 
-          @media (max-width: 1050px) {
+          @media (max-width: 1080px) {
             .delivery-header {
               grid-template-columns: 1fr !important;
             }
 
             .delivery-title {
-              font-size: 36px !important;
+              font-size: 38px !important;
             }
 
             .delivery-layout {
               grid-template-columns: 1fr !important;
             }
 
-            .delivery-grid {
-              grid-template-columns: 1fr !important;
-            }
-
+            .delivery-grid,
             .delivery-schedule-grid {
               grid-template-columns: 1fr !important;
             }
@@ -230,6 +233,7 @@ export default function DeliveryPage() {
       <div style={styles.page}>
         <div style={styles.glowOne} />
         <div style={styles.glowTwo} />
+        <div style={styles.glowThree} />
 
         <motion.div
           initial={{ opacity: 0, y: 22 }}
@@ -255,31 +259,40 @@ export default function DeliveryPage() {
             </div>
 
             <aside style={styles.previewCard}>
-              <div style={styles.previewIcon}>
-                {selectedDelivery?.icon || "📦"}
+              <div style={styles.previewTop}>
+                <span style={styles.previewIcon}>
+                  {selectedDelivery?.icon || "📦"}
+                </span>
+
+                <div>
+                  <p style={styles.previewLabel}>Delivery readiness</p>
+                  <h2 style={styles.previewScore}>{readinessScore}%</h2>
+                </div>
               </div>
 
-              <div>
-                <p style={styles.previewLabel}>Selected delivery mode</p>
-                <h2 style={styles.previewTitle}>
+              <div style={styles.progressTrack}>
+                <div
+                  style={{
+                    ...styles.progressFill,
+                    width: `${readinessScore}%`,
+                  }}
+                />
+              </div>
+
+              <p style={styles.previewText}>
+                {selectedDelivery
+                  ? selectedDelivery.bestFor
+                  : "Pick a delivery mode to prepare the Fit Card handoff."}
+              </p>
+
+              <div style={styles.previewTags}>
+                <span style={styles.previewTag}>
                   {selectedDelivery?.title || "Mode pending"}
-                </h2>
-                <p style={styles.previewText}>
-                  {selectedDelivery?.bestFor ||
-                    "Pick a delivery mode to prepare the Fit Card handoff."}
-                </p>
-              </div>
-
-              <div style={styles.previewLine} />
-
-              <div style={styles.previewChips}>
-                <span style={styles.previewChip}>
+                </span>
+                <span style={styles.previewTag}>
                   {selectedDate || "Date pending"}
                 </span>
-                <span style={styles.previewChip}>
-                  {selectedSlot || "Slot pending"}
-                </span>
-                <span style={styles.previewChip}>
+                <span style={styles.previewTag}>
                   {chatEnabled ? "Chat enabled" : "Chat optional"}
                 </span>
               </div>
@@ -288,7 +301,7 @@ export default function DeliveryPage() {
 
           <section className="delivery-layout" style={styles.layout}>
             <main style={styles.mainPanel}>
-              <section style={styles.filterBlock}>
+              <section style={styles.block}>
                 <div style={styles.blockHeader}>
                   <span style={styles.blockIcon}>🚚</span>
 
@@ -298,7 +311,7 @@ export default function DeliveryPage() {
                     </h2>
                     <p style={styles.blockText}>
                       Choose the way you prefer to interact with the expert and
-                      receive the final outfit/service.
+                      receive the final outfit or service.
                     </p>
                   </div>
                 </div>
@@ -316,7 +329,12 @@ export default function DeliveryPage() {
                         onClick={() => selectDeliveryMode(option.value)}
                         style={{
                           ...styles.deliveryCard,
-                          ...(selected ? styles.deliveryCardSelected : {}),
+                          ...(selected
+                            ? {
+                                borderColor: option.accent,
+                                boxShadow: `0 22px 45px ${option.accent}24`,
+                              }
+                            : {}),
                         }}
                       >
                         <div
@@ -326,7 +344,15 @@ export default function DeliveryPage() {
                           }}
                         >
                           <span style={styles.deliveryIcon}>{option.icon}</span>
-                          <span style={styles.deliveryBadge}>{option.badge}</span>
+
+                          <span
+                            style={{
+                              ...styles.deliveryBadge,
+                              color: option.accent,
+                            }}
+                          >
+                            {selected ? "Selected" : option.badge}
+                          </span>
                         </div>
 
                         <div style={styles.deliveryBody}>
@@ -339,11 +365,22 @@ export default function DeliveryPage() {
                             <span
                               style={{
                                 ...styles.checkCircle,
-                                ...(selected ? styles.checkCircleSelected : {}),
+                                ...(selected
+                                  ? {
+                                      background: option.accent,
+                                      borderColor: option.accent,
+                                      color: "#ffffff",
+                                    }
+                                  : {}),
                               }}
                             >
                               {selected ? "✓" : ""}
                             </span>
+                          </div>
+
+                          <div style={styles.bestForBox}>
+                            <span>Best for</span>
+                            <strong>{option.bestFor}</strong>
                           </div>
 
                           <div style={styles.pointsList}>
@@ -361,7 +398,7 @@ export default function DeliveryPage() {
                 </div>
               </section>
 
-              <section style={styles.filterBlock}>
+              <section style={styles.block}>
                 <div style={styles.blockHeader}>
                   <span style={styles.blockIcon}>🗓️</span>
 
@@ -427,22 +464,22 @@ export default function DeliveryPage() {
                 </div>
               </section>
 
-              <section style={styles.filterBlock}>
+              <section style={styles.block}>
                 <div style={styles.blockHeader}>
                   <span style={styles.blockIcon}>💬</span>
 
                   <div>
                     <h2 style={styles.blockTitle}>Chat with expert</h2>
                     <p style={styles.blockText}>
-                      Enable chat if you want the expert to ask questions,
-                      confirm measurements, and discuss design notes.
+                      Enable chat if you want the expert to confirm measurements,
+                      ask questions, and discuss design notes.
                     </p>
                   </div>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => toggleChat(!chatEnabled)}
+                  onClick={toggleChat}
                   style={{
                     ...styles.chatToggle,
                     ...(chatEnabled ? styles.chatToggleEnabled : {}),
@@ -465,7 +502,12 @@ export default function DeliveryPage() {
                     </small>
                   </span>
 
-                  <span style={styles.togglePill}>
+                  <span
+                    style={{
+                      ...styles.togglePill,
+                      ...(chatEnabled ? styles.togglePillOn : {}),
+                    }}
+                  >
                     {chatEnabled ? "ON" : "OFF"}
                   </span>
                 </button>
@@ -506,7 +548,9 @@ export default function DeliveryPage() {
 
                 <div style={styles.summaryItem}>
                   <span>Expert Contact</span>
-                  <strong>{selectedExpert?.phone || "Available after selection"}</strong>
+                  <strong>
+                    {selectedExpert?.phone || "Available after selection"}
+                  </strong>
                 </div>
 
                 <div style={styles.summaryItem}>
@@ -533,7 +577,7 @@ export default function DeliveryPage() {
                   <strong>
                     {selectedDate && selectedSlot
                       ? `${selectedDate} · ${selectedSlot}`
-                      : getDefaultSchedule()}
+                      : "Not selected"}
                   </strong>
                 </div>
 
@@ -549,9 +593,9 @@ export default function DeliveryPage() {
                 <h3 style={styles.nextTitle}>Generate Fit Card</h3>
 
                 <p style={styles.nextText}>
-                  FitGenie will create a shareable card containing measurements,
-                  body type, style preferences, selected outfit, delivery mode,
-                  schedule, and notes for the selected expert.
+                  FitGenie will create a shareable card with measurements, body
+                  type, style preferences, selected outfit, expert details,
+                  delivery mode, schedule, and notes.
                 </p>
 
                 <div style={styles.nextPills}>
@@ -567,9 +611,7 @@ export default function DeliveryPage() {
           {error ? <div style={styles.errorBox}>{error}</div> : null}
 
           <section style={styles.finalSummary}>
-            <div style={styles.finalIcon}>
-              {selectedDelivery?.icon || "🪄"}
-            </div>
+            <div style={styles.finalIcon}>{selectedDelivery?.icon || "🪄"}</div>
 
             <div>
               <p style={styles.finalLabel}>Delivery interaction summary</p>
@@ -586,20 +628,14 @@ export default function DeliveryPage() {
           <div className="delivery-footer" style={styles.footer}>
             <button
               type="button"
-              className="btn ghost"
               onClick={() => nav("/experts")}
-              style={styles.footerButton}
+              style={styles.backButton}
             >
-              Back
+              ← Back
             </button>
 
-            <button
-              type="button"
-              className="btn"
-              onClick={continueNext}
-              style={styles.footerButton}
-            >
-              Generate Fit Card
+            <button type="button" onClick={continueNext} style={styles.nextButton}>
+              Generate Fit Card →
             </button>
           </div>
         </motion.div>
@@ -615,19 +651,21 @@ const styles = {
     overflow: "hidden",
     borderRadius: "34px",
     padding: "34px",
+    color: "#14213d",
     background:
-      "radial-gradient(circle at 12% 10%, rgba(124,92,255,0.28), transparent 30%), radial-gradient(circle at 88% 8%, rgba(0,212,255,0.22), transparent 28%), linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035))",
-    border: "1px solid rgba(255,255,255,0.12)",
+      "linear-gradient(135deg, #fff7ed 0%, #eef6ff 40%, #f5f3ff 72%, #ecfeff 100%)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    boxShadow: "0 24px 70px rgba(15, 23, 42, 0.12)",
   },
   glowOne: {
     position: "absolute",
     width: "360px",
     height: "360px",
     borderRadius: "50%",
-    background: "rgba(124,92,255,0.18)",
-    filter: "blur(72px)",
-    top: "-120px",
-    left: "-100px",
+    background: "rgba(255, 214, 165, 0.55)",
+    filter: "blur(68px)",
+    top: "-110px",
+    left: "-90px",
     pointerEvents: "none",
   },
   glowTwo: {
@@ -635,10 +673,21 @@ const styles = {
     width: "360px",
     height: "360px",
     borderRadius: "50%",
-    background: "rgba(0,212,255,0.14)",
+    background: "rgba(191, 219, 254, 0.72)",
     filter: "blur(72px)",
-    right: "-130px",
+    right: "-120px",
+    top: "60px",
+    pointerEvents: "none",
+  },
+  glowThree: {
+    position: "absolute",
+    width: "340px",
+    height: "340px",
+    borderRadius: "50%",
+    background: "rgba(221, 214, 254, 0.72)",
+    filter: "blur(74px)",
     bottom: "-140px",
+    left: "34%",
     pointerEvents: "none",
   },
   content: {
@@ -656,92 +705,110 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     gap: "9px",
-    padding: "8px 12px",
+    padding: "9px 13px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.08)",
-    border: "1px solid rgba(255,255,255,0.14)",
-    color: "rgba(255,255,255,0.84)",
+    background: "rgba(255, 255, 255, 0.72)",
+    border: "1px solid rgba(109, 93, 252, 0.16)",
+    color: "#4f46e5",
     fontSize: "13px",
-    fontWeight: 800,
+    fontWeight: 900,
     marginBottom: "16px",
+    boxShadow: "0 10px 24px rgba(79, 70, 229, 0.08)",
   },
   stepDot: {
     width: "9px",
     height: "9px",
     borderRadius: "50%",
-    background: "#00d4ff",
-    boxShadow: "0 0 18px rgba(0,212,255,0.9)",
-    animation: "deliveryPulse 2s ease-in-out infinite",
+    background: "#6d5dfc",
+    boxShadow: "0 0 18px rgba(109, 93, 252, 0.7)",
+    animation: "deliverySoftPulse 2s ease-in-out infinite",
   },
   title: {
     margin: 0,
-    fontSize: "48px",
+    color: "#111827",
+    fontSize: "50px",
     lineHeight: 1.04,
-    letterSpacing: "-1.5px",
+    letterSpacing: "-1.6px",
   },
   subtitle: {
     maxWidth: "760px",
     margin: "14px 0 0",
-    color: "rgba(255,255,255,0.74)",
-    lineHeight: 1.65,
+    color: "#475569",
+    lineHeight: 1.7,
     fontSize: "16px",
+    fontWeight: 600,
   },
   previewCard: {
-    border: "1px solid rgba(255,255,255,0.14)",
-    borderRadius: "26px",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "28px",
     padding: "20px",
-    background:
-      "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05))",
-    boxShadow: "0 18px 40px rgba(0,0,0,0.18)",
+    background: "rgba(255,255,255,0.76)",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.10)",
+    backdropFilter: "blur(18px)",
+  },
+  previewTop: {
+    display: "flex",
+    alignItems: "center",
+    gap: "14px",
   },
   previewIcon: {
-    width: "64px",
-    height: "64px",
+    width: "62px",
+    height: "62px",
     borderRadius: "22px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.11)",
-    border: "1px solid rgba(255,255,255,0.14)",
-    fontSize: "31px",
-    marginBottom: "15px",
-    animation: "deliveryFloat 3.2s ease-in-out infinite",
+    background: "linear-gradient(135deg, #ffffff, #eef2ff)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    fontSize: "30px",
+    boxShadow: "0 14px 30px rgba(15, 23, 42, 0.10)",
+    animation: "deliverySoftFloat 3.2s ease-in-out infinite",
   },
   previewLabel: {
     margin: "0 0 4px",
-    color: "rgba(255,255,255,0.62)",
-    fontWeight: 900,
+    color: "#64748b",
     fontSize: "12px",
+    fontWeight: 900,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
   },
-  previewTitle: {
+  previewScore: {
     margin: 0,
-    fontSize: "22px",
+    color: "#111827",
+    fontSize: "36px",
+    lineHeight: 1,
+  },
+  progressTrack: {
+    height: "11px",
+    borderRadius: "999px",
+    background: "#e2e8f0",
+    overflow: "hidden",
+    margin: "14px 0",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: "inherit",
+    background: "linear-gradient(90deg, #6d5dfc, #00bcd4)",
   },
   previewText: {
-    margin: "9px 0 0",
-    color: "rgba(255,255,255,0.70)",
-    lineHeight: 1.5,
+    margin: "0 0 14px",
+    color: "#475569",
+    lineHeight: 1.55,
     fontSize: "14px",
+    fontWeight: 600,
   },
-  previewLine: {
-    height: "1px",
-    margin: "18px 0",
-    background: "rgba(255,255,255,0.13)",
-  },
-  previewChips: {
+  previewTags: {
     display: "flex",
     flexWrap: "wrap",
     gap: "8px",
   },
-  previewChip: {
-    padding: "7px 9px",
+  previewTag: {
+    padding: "7px 10px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.08)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    color: "#334155",
     fontSize: "12px",
-    color: "rgba(255,255,255,0.78)",
-    fontWeight: 800,
+    fontWeight: 900,
   },
   layout: {
     display: "grid",
@@ -753,12 +820,12 @@ const styles = {
     display: "grid",
     gap: "18px",
   },
-  filterBlock: {
-    border: "1px solid rgba(255,255,255,0.13)",
-    borderRadius: "28px",
+  block: {
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "30px",
     padding: "22px",
-    background: "rgba(255,255,255,0.06)",
-    boxShadow: "0 18px 42px rgba(0,0,0,0.16)",
+    background: "rgba(255,255,255,0.76)",
+    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.09)",
   },
   blockHeader: {
     display: "flex",
@@ -767,25 +834,26 @@ const styles = {
     marginBottom: "18px",
   },
   blockIcon: {
-    width: "46px",
-    height: "46px",
-    borderRadius: "16px",
+    width: "48px",
+    height: "48px",
+    borderRadius: "17px",
     display: "grid",
     placeItems: "center",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.90), rgba(0,212,255,0.78))",
-    border: "1px solid rgba(255,255,255,0.18)",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
     fontSize: "22px",
     flex: "0 0 auto",
   },
   blockTitle: {
     margin: "0 0 6px",
+    color: "#111827",
     fontSize: "25px",
   },
   blockText: {
     margin: 0,
-    color: "rgba(255,255,255,0.68)",
-    lineHeight: 1.55,
+    color: "#475569",
+    lineHeight: 1.6,
+    fontWeight: 600,
   },
   deliveryGrid: {
     display: "grid",
@@ -793,43 +861,39 @@ const styles = {
     gap: "14px",
   },
   deliveryCard: {
-    border: "1px solid rgba(255,255,255,0.13)",
-    borderRadius: "24px",
+    border: "2px solid rgba(148, 163, 184, 0.22)",
+    borderRadius: "26px",
     overflow: "hidden",
     padding: 0,
-    background: "rgba(255,255,255,0.065)",
-    color: "inherit",
+    background: "rgba(255,255,255,0.86)",
+    color: "#111827",
     textAlign: "left",
     cursor: "pointer",
-    boxShadow: "0 16px 36px rgba(0,0,0,0.18)",
-  },
-  deliveryCardSelected: {
-    border: "2px solid rgba(0,212,255,0.95)",
-    boxShadow: "0 22px 50px rgba(0,212,255,0.14)",
+    boxShadow: "0 12px 28px rgba(15, 23, 42, 0.07)",
   },
   deliveryVisual: {
-    height: "96px",
+    height: "106px",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
     padding: "18px",
   },
   deliveryIcon: {
-    width: "58px",
-    height: "58px",
-    borderRadius: "21px",
+    width: "62px",
+    height: "62px",
+    borderRadius: "23px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.22)",
-    border: "1px solid rgba(255,255,255,0.24)",
-    fontSize: "31px",
-    boxShadow: "0 14px 28px rgba(0,0,0,0.22)",
+    background: "rgba(255,255,255,0.68)",
+    border: "1px solid rgba(255,255,255,0.72)",
+    fontSize: "33px",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
   },
   deliveryBadge: {
     padding: "8px 11px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.22)",
-    border: "1px solid rgba(255,255,255,0.22)",
+    background: "rgba(255,255,255,0.75)",
+    border: "1px solid rgba(255,255,255,0.72)",
     fontSize: "12px",
     fontWeight: 900,
   },
@@ -844,30 +908,39 @@ const styles = {
   },
   cardTitle: {
     margin: 0,
+    color: "#111827",
     fontSize: "20px",
+    lineHeight: 1.25,
   },
   cardText: {
     margin: "8px 0 12px",
-    color: "rgba(255,255,255,0.70)",
-    lineHeight: 1.45,
+    color: "#475569",
+    lineHeight: 1.48,
     fontSize: "14px",
+    fontWeight: 600,
   },
   checkCircle: {
-    width: "26px",
-    height: "26px",
+    width: "27px",
+    height: "27px",
     borderRadius: "50%",
     display: "grid",
     placeItems: "center",
-    border: "1px solid rgba(255,255,255,0.22)",
-    color: "#061224",
+    border: "1px solid #cbd5e1",
+    background: "#ffffff",
+    color: "#ffffff",
     fontSize: "13px",
     fontWeight: 900,
     flex: "0 0 auto",
   },
-  checkCircleSelected: {
-    background: "#00d4ff",
-    borderColor: "#00d4ff",
-    boxShadow: "0 0 20px rgba(0,212,255,0.5)",
+  bestForBox: {
+    padding: "11px",
+    borderRadius: "16px",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    display: "grid",
+    gap: "4px",
+    marginBottom: "12px",
+    color: "#111827",
   },
   pointsList: {
     display: "grid",
@@ -877,9 +950,10 @@ const styles = {
     display: "flex",
     alignItems: "flex-start",
     gap: "8px",
-    color: "rgba(255,255,255,0.72)",
+    color: "#475569",
     fontSize: "13px",
-    lineHeight: 1.4,
+    lineHeight: 1.45,
+    fontWeight: 600,
   },
   pointDot: {
     width: "18px",
@@ -887,8 +961,8 @@ const styles = {
     borderRadius: "50%",
     display: "grid",
     placeItems: "center",
-    background: "rgba(0,212,255,0.13)",
-    color: "#d9fbff",
+    background: "#ecfeff",
+    color: "#0891b2",
     fontSize: "10px",
     fontWeight: 900,
     flex: "0 0 auto",
@@ -905,18 +979,20 @@ const styles = {
     marginTop: "14px",
   },
   inputLabel: {
+    color: "#111827",
     fontWeight: 900,
     fontSize: "14px",
   },
   input: {
     width: "100%",
-    border: "1px solid rgba(255,255,255,0.15)",
+    border: "1px solid #dbe4ee",
     borderRadius: "18px",
     padding: "14px",
-    background: "rgba(255,255,255,0.08)",
-    color: "inherit",
+    background: "#ffffff",
+    color: "#111827",
     outline: "none",
     fontWeight: 800,
+    boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
   },
   slotCards: {
     display: "flex",
@@ -924,36 +1000,39 @@ const styles = {
     flexWrap: "wrap",
   },
   slotCard: {
-    border: "1px solid rgba(255,255,255,0.13)",
+    border: "1px solid #e2e8f0",
     borderRadius: "999px",
     padding: "11px 13px",
-    background: "rgba(255,255,255,0.07)",
-    color: "inherit",
+    background: "#ffffff",
+    color: "#334155",
     cursor: "pointer",
     fontWeight: 900,
+    boxShadow: "0 10px 22px rgba(15, 23, 42, 0.06)",
   },
   slotCardSelected: {
-    border: "1px solid rgba(0,212,255,0.85)",
-    background: "rgba(0,212,255,0.12)",
-    color: "#d9fbff",
+    border: "1px solid rgba(109, 93, 252, 0.58)",
+    background: "#f5f3ff",
+    color: "#4f46e5",
+    boxShadow: "0 14px 30px rgba(109, 93, 252, 0.12)",
   },
   chatToggle: {
     width: "100%",
-    border: "1px solid rgba(255,255,255,0.13)",
+    border: "1px solid #e2e8f0",
     borderRadius: "22px",
     padding: "15px",
-    background: "rgba(255,255,255,0.07)",
-    color: "inherit",
+    background: "#ffffff",
+    color: "#111827",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
     gap: "14px",
     textAlign: "left",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.06)",
   },
   chatToggleEnabled: {
-    border: "1px solid rgba(0,212,255,0.85)",
-    background: "rgba(0,212,255,0.12)",
-    boxShadow: "0 14px 30px rgba(0,212,255,0.10)",
+    border: "1px solid rgba(109, 93, 252, 0.58)",
+    background: "#f5f3ff",
+    boxShadow: "0 14px 30px rgba(109, 93, 252, 0.12)",
   },
   chatIcon: {
     width: "48px",
@@ -961,8 +1040,8 @@ const styles = {
     borderRadius: "17px",
     display: "grid",
     placeItems: "center",
-    background: "rgba(255,255,255,0.11)",
-    border: "1px solid rgba(255,255,255,0.14)",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
     fontSize: "24px",
     flex: "0 0 auto",
   },
@@ -971,41 +1050,50 @@ const styles = {
     flexDirection: "column",
     gap: "5px",
     flex: 1,
+    color: "#111827",
   },
   togglePill: {
     padding: "7px 10px",
     borderRadius: "999px",
-    background: "rgba(0,0,0,0.20)",
-    border: "1px solid rgba(255,255,255,0.12)",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    color: "#64748b",
     fontWeight: 900,
     fontSize: "12px",
   },
+  togglePillOn: {
+    background: "#ecfeff",
+    borderColor: "#a5f3fc",
+    color: "#0891b2",
+  },
   optionalText: {
-    color: "rgba(255,255,255,0.55)",
+    color: "#64748b",
     fontSize: "13px",
   },
   textarea: {
     width: "100%",
     minHeight: "105px",
     resize: "vertical",
-    border: "1px solid rgba(255,255,255,0.15)",
+    border: "1px solid #dbe4ee",
     borderRadius: "18px",
     padding: "14px",
-    background: "rgba(255,255,255,0.08)",
-    color: "inherit",
+    background: "#ffffff",
+    color: "#111827",
     outline: "none",
     lineHeight: 1.5,
     fontFamily: "inherit",
+    fontWeight: 700,
+    boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
   },
   sidePanel: {
     position: "sticky",
     top: "18px",
-    border: "1px solid rgba(255,255,255,0.14)",
-    borderRadius: "28px",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "30px",
     padding: "22px",
-    background:
-      "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05))",
-    boxShadow: "0 22px 52px rgba(0,0,0,0.20)",
+    background: "rgba(255,255,255,0.78)",
+    boxShadow: "0 20px 48px rgba(15, 23, 42, 0.10)",
+    backdropFilter: "blur(18px)",
   },
   sideTop: {
     display: "flex",
@@ -1019,14 +1107,13 @@ const styles = {
     borderRadius: "20px",
     display: "grid",
     placeItems: "center",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.90), rgba(0,212,255,0.78))",
-    border: "1px solid rgba(255,255,255,0.18)",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
     fontSize: "28px",
   },
   sideLabel: {
     margin: "0 0 4px",
-    color: "rgba(255,255,255,0.60)",
+    color: "#64748b",
     fontSize: "12px",
     fontWeight: 900,
     textTransform: "uppercase",
@@ -1034,6 +1121,7 @@ const styles = {
   },
   sideTitle: {
     margin: 0,
+    color: "#111827",
     fontSize: "22px",
   },
   summaryList: {
@@ -1043,51 +1131,57 @@ const styles = {
   summaryItem: {
     padding: "12px",
     borderRadius: "16px",
-    background: "rgba(0,0,0,0.16)",
-    border: "1px solid rgba(255,255,255,0.08)",
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
     display: "grid",
     gap: "4px",
+    color: "#111827",
   },
   nextCard: {
     marginTop: "14px",
     padding: "14px",
     borderRadius: "20px",
-    background: "rgba(0,212,255,0.10)",
-    border: "1px solid rgba(0,212,255,0.22)",
+    background: "#ecfeff",
+    border: "1px solid #a5f3fc",
   },
   nextBadge: {
     display: "inline-flex",
     marginBottom: "8px",
     padding: "5px 8px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.10)",
-    color: "#d9fbff",
+    background: "#ffffff",
+    color: "#0891b2",
     fontSize: "11px",
     fontWeight: 900,
   },
   nextTitle: {
     margin: "0 0 8px",
+    color: "#111827",
     fontSize: "18px",
   },
   nextText: {
     margin: 0,
-    color: "rgba(255,255,255,0.72)",
+    color: "#475569",
     lineHeight: 1.5,
     fontSize: "13px",
+    fontWeight: 700,
   },
   nextPills: {
     display: "flex",
     flexWrap: "wrap",
     gap: "8px",
     marginTop: "12px",
+    color: "#334155",
+    fontWeight: 800,
   },
   errorBox: {
     marginTop: "16px",
     padding: "13px 15px",
     borderRadius: "16px",
-    background: "rgba(255, 86, 86, 0.16)",
-    border: "1px solid rgba(255, 120, 120, 0.35)",
-    color: "#ffdede",
+    background: "#fff1f2",
+    border: "1px solid #fecdd3",
+    color: "#be123c",
+    fontWeight: 800,
   },
   finalSummary: {
     display: "flex",
@@ -1096,8 +1190,9 @@ const styles = {
     marginTop: "18px",
     padding: "16px",
     borderRadius: "22px",
-    background: "rgba(0,0,0,0.18)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.78)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    boxShadow: "0 14px 34px rgba(15, 23, 42, 0.08)",
   },
   finalIcon: {
     width: "45px",
@@ -1105,20 +1200,20 @@ const styles = {
     borderRadius: "16px",
     display: "grid",
     placeItems: "center",
-    background:
-      "linear-gradient(135deg, rgba(124,92,255,0.9), rgba(0,212,255,0.8))",
+    background: "linear-gradient(135deg, #ede9fe, #cffafe)",
     fontSize: "22px",
     flex: "0 0 auto",
   },
   finalLabel: {
     margin: "0 0 4px",
-    color: "rgba(255,255,255,0.58)",
+    color: "#64748b",
     fontSize: "12px",
     fontWeight: 900,
     textTransform: "uppercase",
     letterSpacing: "0.08em",
   },
   finalText: {
+    color: "#111827",
     fontSize: "16px",
   },
   footer: {
@@ -1127,7 +1222,26 @@ const styles = {
     gap: "12px",
     marginTop: "22px",
   },
-  footerButton: {
-    minWidth: "210px",
+  backButton: {
+    minWidth: "170px",
+    border: "1px solid #cbd5e1",
+    borderRadius: "999px",
+    padding: "14px 22px",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
+  },
+  nextButton: {
+    minWidth: "230px",
+    border: "0",
+    borderRadius: "999px",
+    padding: "14px 24px",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 16px 34px rgba(79, 70, 229, 0.28)",
   },
 };
