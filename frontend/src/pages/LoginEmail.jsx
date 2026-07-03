@@ -90,7 +90,7 @@ export default function LoginEmail() {
           window.google.accounts.id.renderButton(googleButtonRef.current, {
             theme: "outline",
             size: "large",
-            width: 320,
+            width: 330,
             text: "continue_with",
             shape: "pill",
             logo_alignment: "left",
@@ -171,224 +171,444 @@ export default function LoginEmail() {
 
   return (
     <StepShell step="Login" title="Choose your Google account">
-      <div style={styles.page}>
-        <section style={styles.heroCard}>
-          <div>
-            <div style={styles.logoCircle}>G</div>
+      <main style={styles.pageShell}>
+        <div style={styles.blurOne} />
+        <div style={styles.blurTwo} />
+        <div style={styles.gridPattern} />
 
-            <p style={styles.eyebrow}>Secure Google sign-in</p>
-
-            <h2 style={styles.heading}>Continue with your real Google account</h2>
-
-            <p style={styles.subText}>
-              FitGenie uses Google Sign-In so your recommendations, fit card,
-              selected expert, and order updates stay connected to your account.
-            </p>
-          </div>
-
-          <div style={styles.founderBox}>
-            <div>
-              <span style={styles.founderLabel}>Founder</span>
-              <strong>JANVI PATEL</strong>
+        <section style={styles.page}>
+          <article style={styles.heroCard}>
+            <div style={styles.badgeRow}>
+              <span style={styles.badge}>FitGenie secure login</span>
+              <span style={styles.badgeLight}>Real Google account</span>
             </div>
 
-            <div style={styles.founderDivider} />
-
             <div>
-              <span style={styles.founderLabel}>Co-founder</span>
-              <strong>JAFAR KACHHI</strong>
+              <div style={styles.logoWrap}>
+                <div style={styles.logoCircle}>G</div>
+                <div style={styles.logoGlow} />
+              </div>
+
+              <p style={styles.eyebrow}>Personalized fashion starts here</p>
+
+              <h2 style={styles.heading}>Continue with your Google account</h2>
+
+              <p style={styles.subText}>
+                Sign in securely to save your preferences, AI recommendations,
+                fit card, selected expert, bookings, and delivery updates.
+              </p>
             </div>
-          </div>
-        </section>
 
-        <section style={styles.accountPanel}>
-          <div style={styles.sectionHeader}>
-            <h3 style={styles.sectionTitle}>Sign in with Google</h3>
+            <div style={styles.founderBox}>
+              <div style={styles.founderItem}>
+                <span style={styles.founderLabel}>Founder</span>
+                <strong style={styles.founderName}>JANVI PATEL</strong>
+              </div>
 
-            <p style={styles.sectionSub}>
-              The real Google account chooser will open from Google. It will show
-              the Google accounts already available on the user’s device/browser.
-            </p>
-          </div>
+              <div style={styles.founderDivider} />
 
-          <div style={styles.googleArea}>
-            {GOOGLE_CLIENT_ID ? (
-              <>
-                <div ref={googleButtonRef} style={styles.googleButtonMount} />
+              <div style={styles.founderItem}>
+                <span style={styles.founderLabel}>Co-founder</span>
+                <strong style={styles.founderName}>JAFAR KACHHI</strong>
+              </div>
+            </div>
+          </article>
 
-                <button
-                  type="button"
-                  style={styles.secondaryAction}
-                  onClick={openGooglePrompt}
-                  disabled={loading}
-                >
-                  Open Google account chooser
-                </button>
+          <article style={styles.accountPanel}>
+            <div style={styles.sectionHeader}>
+              <span style={styles.stepChip}>01</span>
 
-                {!googleReady ? (
-                  <p style={styles.helperText}>Loading Google Sign-In...</p>
-                ) : null}
-              </>
-            ) : (
-              <div style={styles.setupBox}>
-                <strong>Google login setup required</strong>
+              <div>
+                <h3 style={styles.sectionTitle}>Sign in with Google</h3>
 
-                <p>
-                  Add <code>VITE_GOOGLE_CLIENT_ID</code> in Vercel to enable the
-                  real Google account chooser.
+                <p style={styles.sectionSub}>
+                  The official Google account chooser will open and show the
+                  Google accounts available on the user’s device or browser.
                 </p>
               </div>
-            )}
-          </div>
+            </div>
 
-          {error ? <div style={styles.error}>{error}</div> : null}
+            <div style={styles.googleCard}>
+              <div style={styles.googleIconBox}>
+                <span style={styles.googleLetter}>G</span>
+              </div>
 
-          <div style={styles.actionRow}>
-            <button
-              type="button"
-              style={styles.backButton}
-              onClick={() => navigate("/welcome")}
-              disabled={loading}
-            >
-              Back
-            </button>
+              <div style={styles.googleTextArea}>
+                <h4 style={styles.googleTitle}>Google Sign-In</h4>
 
-            <button
-              type="button"
-              style={styles.primaryButton}
-              onClick={openGooglePrompt}
-              disabled={loading || !GOOGLE_CLIENT_ID}
-            >
-              {loading ? "Signing in..." : "Continue with Google"}
-            </button>
-          </div>
+                <p style={styles.googleDescription}>
+                  Fast, secure, and connected to your FitGenie profile.
+                </p>
+              </div>
+
+              <div style={styles.googleButtonArea}>
+                {GOOGLE_CLIENT_ID ? (
+                  <>
+                    <div ref={googleButtonRef} style={styles.googleButtonMount} />
+
+                    {!googleReady ? (
+                      <p style={styles.helperText}>Loading Google Sign-In...</p>
+                    ) : null}
+                  </>
+                ) : (
+                  <div style={styles.setupBox}>
+                    <strong>Google login setup required</strong>
+
+                    <p>
+                      Add <code>VITE_GOOGLE_CLIENT_ID</code> in Vercel to enable
+                      the real Google account chooser.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={styles.infoStrip}>
+              <span style={styles.infoIcon}>✨</span>
+
+              <p>
+                Your login helps FitGenie keep your fit preferences, outfit
+                suggestions, expert selection, and order journey in one place.
+              </p>
+            </div>
+
+            {error ? <div style={styles.error}>{error}</div> : null}
+
+            <div style={styles.actionRow}>
+              <button
+                type="button"
+                style={styles.backButton}
+                onClick={() => navigate("/welcome")}
+                disabled={loading}
+              >
+                Back
+              </button>
+
+              <button
+                type="button"
+                style={{
+                  ...styles.primaryButton,
+                  opacity: loading || !GOOGLE_CLIENT_ID ? 0.68 : 1,
+                  cursor:
+                    loading || !GOOGLE_CLIENT_ID ? "not-allowed" : "pointer",
+                }}
+                onClick={openGooglePrompt}
+                disabled={loading || !GOOGLE_CLIENT_ID}
+              >
+                {loading ? "Signing in..." : "Continue with Google"}
+              </button>
+            </div>
+          </article>
         </section>
-      </div>
+      </main>
     </StepShell>
   );
 }
 
 const styles = {
-  page: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-    gap: "22px",
-    alignItems: "stretch",
+  pageShell: {
+    position: "relative",
+    overflow: "hidden",
+    minHeight: "calc(100vh - 120px)",
+    padding: "28px",
+    borderRadius: "34px",
+    background:
+      "linear-gradient(135deg, #fff7ed 0%, #eef6ff 40%, #f5f3ff 72%, #ecfeff 100%)",
     color: "#14213d",
+    fontFamily:
+      "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+  },
+
+  blurOne: {
+    position: "absolute",
+    top: "-90px",
+    left: "-80px",
+    width: "260px",
+    height: "260px",
+    borderRadius: "999px",
+    background: "rgba(109, 93, 252, 0.2)",
+    filter: "blur(24px)",
+    pointerEvents: "none",
+  },
+
+  blurTwo: {
+    position: "absolute",
+    right: "-90px",
+    bottom: "-90px",
+    width: "300px",
+    height: "300px",
+    borderRadius: "999px",
+    background: "rgba(0, 188, 212, 0.18)",
+    filter: "blur(28px)",
+    pointerEvents: "none",
+  },
+
+  gridPattern: {
+    position: "absolute",
+    inset: 0,
+    backgroundImage:
+      "linear-gradient(rgba(15,23,42,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.035) 1px, transparent 1px)",
+    backgroundSize: "34px 34px",
+    maskImage:
+      "linear-gradient(135deg, rgba(0,0,0,0.6), rgba(0,0,0,0.08))",
+    pointerEvents: "none",
+  },
+
+  page: {
+    position: "relative",
+    zIndex: 1,
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+    gap: "24px",
+    alignItems: "stretch",
   },
 
   heroCard: {
     border: "1px solid rgba(109, 93, 252, 0.14)",
-    borderRadius: "28px",
+    borderRadius: "30px",
     padding: "28px",
-    background:
-      "linear-gradient(135deg, rgba(255,247,237,0.86), rgba(238,246,255,0.88), rgba(245,243,255,0.9))",
-    boxShadow: "0 20px 50px rgba(15, 23, 42, 0.12)",
+    background: "rgba(255,255,255,0.76)",
+    boxShadow: "0 24px 58px rgba(15, 23, 42, 0.12)",
+    backdropFilter: "blur(18px)",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    gap: "24px",
-    minHeight: "430px",
+    gap: "28px",
+    minHeight: "460px",
+  },
+
+  badgeRow: {
+    display: "flex",
+    gap: "10px",
+    flexWrap: "wrap",
+  },
+
+  badge: {
+    display: "inline-flex",
+    alignItems: "center",
+    borderRadius: "999px",
+    padding: "8px 12px",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    fontSize: "12px",
+    fontWeight: 900,
+    letterSpacing: "0.04em",
+  },
+
+  badgeLight: {
+    display: "inline-flex",
+    alignItems: "center",
+    borderRadius: "999px",
+    padding: "8px 12px",
+    background: "#ffffff",
+    color: "#475569",
+    border: "1px solid #dbeafe",
+    fontSize: "12px",
+    fontWeight: 900,
+  },
+
+  logoWrap: {
+    position: "relative",
+    width: "84px",
+    height: "84px",
+    marginBottom: "22px",
   },
 
   logoCircle: {
-    width: "72px",
-    height: "72px",
-    borderRadius: "24px",
+    position: "relative",
+    zIndex: 2,
+    width: "84px",
+    height: "84px",
+    borderRadius: "28px",
     display: "grid",
     placeItems: "center",
-    fontSize: "34px",
-    fontWeight: 900,
+    fontSize: "38px",
+    fontWeight: 950,
     color: "#ffffff",
     background:
       "conic-gradient(from 90deg, #4285f4, #34a853, #fbbc05, #ea4335, #4285f4)",
-    boxShadow: "0 16px 34px rgba(66, 133, 244, 0.24)",
-    marginBottom: "20px",
+    boxShadow: "0 18px 38px rgba(66, 133, 244, 0.28)",
+  },
+
+  logoGlow: {
+    position: "absolute",
+    inset: "-10px",
+    borderRadius: "34px",
+    background:
+      "linear-gradient(135deg, rgba(66,133,244,0.18), rgba(52,168,83,0.12), rgba(251,188,5,0.12))",
+    filter: "blur(8px)",
   },
 
   eyebrow: {
     margin: "0 0 10px",
     color: "#6d5dfc",
-    fontWeight: 900,
+    fontWeight: 950,
     letterSpacing: "0.08em",
     textTransform: "uppercase",
     fontSize: "12px",
   },
 
   heading: {
-    margin: "0 0 10px",
-    fontSize: "30px",
-    lineHeight: 1.1,
+    margin: "0 0 12px",
+    fontSize: "clamp(28px, 4vw, 42px)",
+    lineHeight: 1.06,
+    letterSpacing: "-0.04em",
     color: "#111827",
+    fontWeight: 950,
   },
 
   subText: {
     margin: 0,
     color: "#475569",
-    lineHeight: 1.65,
+    lineHeight: 1.7,
+    fontSize: "15px",
+    maxWidth: "560px",
   },
 
   founderBox: {
     display: "grid",
     gridTemplateColumns: "1fr auto 1fr",
-    gap: "14px",
+    gap: "16px",
     alignItems: "center",
     border: "1px solid rgba(109, 93, 252, 0.14)",
-    borderRadius: "22px",
-    padding: "16px",
-    background: "rgba(255,255,255,0.72)",
+    borderRadius: "24px",
+    padding: "18px",
+    background:
+      "linear-gradient(135deg, rgba(255,255,255,0.86), rgba(238,246,255,0.72))",
     color: "#111827",
+  },
+
+  founderItem: {
+    minWidth: 0,
   },
 
   founderLabel: {
     display: "block",
-    marginBottom: "4px",
+    marginBottom: "5px",
     color: "#64748b",
-    fontSize: "12px",
-    fontWeight: 800,
+    fontSize: "11px",
+    fontWeight: 950,
     textTransform: "uppercase",
-    letterSpacing: "0.08em",
+    letterSpacing: "0.09em",
+  },
+
+  founderName: {
+    display: "block",
+    color: "#111827",
+    fontSize: "15px",
+    letterSpacing: "0.02em",
   },
 
   founderDivider: {
     width: "1px",
-    height: "40px",
+    height: "46px",
     background: "#cbd5e1",
   },
 
   accountPanel: {
     border: "1px solid rgba(109, 93, 252, 0.14)",
-    borderRadius: "28px",
-    padding: "24px",
-    background: "rgba(255,255,255,0.76)",
-    boxShadow: "0 20px 50px rgba(15, 23, 42, 0.12)",
+    borderRadius: "30px",
+    padding: "26px",
+    background: "rgba(255,255,255,0.78)",
+    boxShadow: "0 24px 58px rgba(15, 23, 42, 0.12)",
+    backdropFilter: "blur(18px)",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    gap: "18px",
   },
 
   sectionHeader: {
-    marginBottom: "18px",
+    display: "flex",
+    gap: "14px",
+    alignItems: "flex-start",
+  },
+
+  stepChip: {
+    flex: "0 0 auto",
+    width: "44px",
+    height: "44px",
+    borderRadius: "16px",
+    display: "grid",
+    placeItems: "center",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    fontWeight: 950,
+    boxShadow: "0 14px 28px rgba(109,93,252,0.22)",
   },
 
   sectionTitle: {
-    margin: "0 0 6px",
-    fontSize: "22px",
+    margin: "0 0 7px",
+    fontSize: "24px",
     color: "#111827",
+    fontWeight: 950,
+    letterSpacing: "-0.02em",
   },
 
   sectionSub: {
     margin: 0,
     color: "#475569",
-    lineHeight: 1.55,
+    lineHeight: 1.58,
+    fontSize: "14px",
   },
 
-  googleArea: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "14px",
-    alignItems: "flex-start",
-    padding: "18px",
-    borderRadius: "22px",
+  googleCard: {
+    display: "grid",
+    gridTemplateColumns: "auto 1fr",
+    gap: "16px",
+    alignItems: "center",
+    borderRadius: "26px",
     border: "1px solid rgba(203, 213, 225, 0.9)",
     background: "linear-gradient(135deg, #ffffff, #f8fafc)",
+    padding: "18px",
+    boxShadow: "0 14px 34px rgba(15,23,42,0.08)",
+  },
+
+  googleIconBox: {
+    width: "56px",
+    height: "56px",
+    borderRadius: "20px",
+    display: "grid",
+    placeItems: "center",
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
+    boxShadow: "0 10px 22px rgba(15,23,42,0.08)",
+  },
+
+  googleLetter: {
+    fontSize: "28px",
+    fontWeight: 950,
+    background:
+      "linear-gradient(135deg, #4285f4, #34a853, #fbbc05, #ea4335)",
+    WebkitBackgroundClip: "text",
+    color: "transparent",
+  },
+
+  googleTextArea: {
+    minWidth: 0,
+  },
+
+  googleTitle: {
+    margin: "0 0 5px",
+    color: "#111827",
+    fontSize: "18px",
+    fontWeight: 950,
+  },
+
+  googleDescription: {
+    margin: 0,
+    color: "#64748b",
+    fontSize: "13px",
+    lineHeight: 1.5,
+  },
+
+  googleButtonArea: {
+    gridColumn: "1 / -1",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "10px",
+    paddingTop: "4px",
   },
 
   googleButtonMount: {
@@ -412,54 +632,63 @@ const styles = {
     margin: 0,
     color: "#64748b",
     fontSize: "13px",
+    fontWeight: 700,
   },
 
-  secondaryAction: {
-    border: "1px solid #cbd5e1",
-    borderRadius: "999px",
-    padding: "11px 16px",
-    background: "#ffffff",
-    color: "#334155",
-    fontWeight: 800,
-    cursor: "pointer",
+  infoStrip: {
+    display: "flex",
+    gap: "12px",
+    alignItems: "flex-start",
+    borderRadius: "20px",
+    padding: "14px",
+    background: "rgba(236, 254, 255, 0.8)",
+    border: "1px solid rgba(0, 188, 212, 0.16)",
+    color: "#475569",
+    lineHeight: 1.55,
+    fontSize: "14px",
+  },
+
+  infoIcon: {
+    flex: "0 0 auto",
   },
 
   error: {
-    marginTop: "14px",
     border: "1px solid rgba(239, 68, 68, 0.26)",
     background: "#fef2f2",
     color: "#991b1b",
-    borderRadius: "16px",
-    padding: "12px 14px",
+    borderRadius: "18px",
+    padding: "13px 15px",
     lineHeight: 1.45,
+    fontWeight: 700,
   },
 
   actionRow: {
     display: "flex",
     justifyContent: "space-between",
     gap: "12px",
-    marginTop: "20px",
+    marginTop: "4px",
     flexWrap: "wrap",
   },
 
   backButton: {
     border: "1px solid #cbd5e1",
     borderRadius: "999px",
-    padding: "12px 18px",
+    padding: "13px 20px",
     background: "#ffffff",
     color: "#334155",
-    fontWeight: 900,
+    fontWeight: 950,
     cursor: "pointer",
+    boxShadow: "0 10px 22px rgba(15,23,42,0.07)",
   },
 
   primaryButton: {
     border: "none",
     borderRadius: "999px",
-    padding: "12px 20px",
+    padding: "13px 22px",
     background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
     color: "#ffffff",
-    fontWeight: 900,
+    fontWeight: 950,
     cursor: "pointer",
-    boxShadow: "0 14px 30px rgba(0,188,212,0.22)",
+    boxShadow: "0 16px 34px rgba(0,188,212,0.24)",
   },
 };
