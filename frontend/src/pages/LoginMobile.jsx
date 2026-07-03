@@ -1,7 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+} from "firebase/auth";
 import StepShell from "../components/StepShell";
 import { callApi } from "../services/api";
+import { firebaseAuth } from "../services/firebase";
 import { useFlowStore } from "../store/useFlowStore";
 
 const COUNTRIES = [
@@ -22,6 +27,7 @@ export default function LoginMobile() {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [requestId, setRequestId] = useState("");
+  const [confirmationResult, setConfirmationResult] = useState(null);
   const [step, setStep] = useState("phone");
   const [loading, setLoading] = useState(false);
   const [autoVerifying, setAutoVerifying] = useState(false);
@@ -71,28 +77,36 @@ export default function LoginMobile() {
     setLoading(true);
 
     try {
-      const res = await callApi("/auth/mobile/request-otp", "POST", {
-        countryCode: selectedCountry.code,
-        countryName: selectedCountry.name,
-        phone: cleanPhone,
+      if (!window.firebaseRecaptchaVerifier) {
+        window.firebaseRecaptchaVerifier = new RecaptchaVerifier(
+          firebaseAuth,
+          "firebase-recaptcha-container",
+          {
+            size: "invisible",
+          }
+        );
+      }
+
+      const result = await signInWithPhoneNumber(
+        firebaseAuth,
         fullPhone,
-      });
+        window.firebaseRecaptchaVerifier
+      );
 
-      if (!res.ok) {
-        setError(res.data?.message || "Unable to send OTP. Please try again.");
-        return;
-      }
-
-      setRequestId(res.data.requestId || "");
+      setConfirmationResult(result);
+      setRequestId(result.verificationId || "");
       setStep("otp");
+      setInfo(`OTP has been sent to ${fullPhone}.`);
+    } catch (firebaseError) {
+      setError(
+        firebaseError.message ||
+          "Unable to send OTP through Firebase. Please check Firebase Phone Auth setup."
+      );
 
-      if (res.data.developmentOtp) {
-        setInfo(`OTP generated. Use ${res.data.developmentOtp}.`);
-      } else {
-        setInfo(res.data?.message || `OTP has been sent to ${fullPhone}.`);
+      if (window.firebaseRecaptchaVerifier) {
+        window.firebaseRecaptchaVerifier.clear();
+        window.firebaseRecaptchaVerifier = null;
       }
-    } catch (_error) {
-      setError("Unable to connect to OTP service.");
     } finally {
       setLoading(false);
     }
@@ -103,7 +117,7 @@ export default function LoginMobile() {
 
     setError("");
 
-    if (!requestId) {
+    if (!confirmationResult) {
       setError("Please request an OTP first.");
       return;
     }
@@ -116,16 +130,17 @@ export default function LoginMobile() {
     setLoading(true);
 
     try {
-      const res = await callApi("/auth/mobile/verify-otp", "POST", {
-        requestId,
-        countryCode: selectedCountry.code,
-        phone: cleanPhone,
-        fullPhone,
-        otp: otpToVerify,
+      const firebaseResult = await confirmationResult.confirm(otpToVerify);
+      const firebaseUser = firebaseResult.user;
+      const firebaseIdToken = await firebaseUser.getIdToken();
+
+      const res = await callApi("/auth/firebase-phone", "POST", {
+        idToken: firebaseIdToken,
+        phone: firebaseUser.phoneNumber || fullPhone,
       });
 
       if (!res.ok) {
-        setError(res.data?.message || "OTP verification failed.");
+        setError(res.data?.message || "Firebase phone login failed.");
         setLoading(false);
         return;
       }
@@ -137,8 +152,8 @@ export default function LoginMobile() {
       });
 
       nav("/intent");
-    } catch (_error) {
-      setError("Unable to verify OTP. Please try again.");
+    } catch (verifyError) {
+      setError(verifyError.message || "Invalid OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -148,6 +163,7 @@ export default function LoginMobile() {
     setStep("phone");
     setOtp("");
     setRequestId("");
+    setConfirmationResult(null);
     setError("");
     setInfo("");
   }
@@ -173,7 +189,7 @@ export default function LoginMobile() {
 
             <div style={styles.badgeRow}>
               <span style={styles.badge}>FitGenie secure login</span>
-              <span style={styles.badgeLight}>Mobile OTP</span>
+              <span style={styles.badgeLight}>Firebase OTP</span>
             </div>
 
             <div style={styles.heroContent}>
@@ -201,7 +217,7 @@ export default function LoginMobile() {
               <div style={styles.featureTile}>
                 <span style={styles.featureIcon}>🔐</span>
                 <strong>Secure OTP</strong>
-                <p>Private login flow for your FitGenie account.</p>
+                <p>Firebase verifies the mobile number before login.</p>
               </div>
 
               <div style={styles.featureTile}>
@@ -216,13 +232,13 @@ export default function LoginMobile() {
             <div style={styles.panelGlow} />
 
             <div style={styles.sectionHeader}>
-              <span style={styles.stepChip}>{step === "phone" ? "01" : "02"}</span>
+              <span style={styles.stepChip}>
+                {step === "phone" ? "01" : "02"}
+              </span>
 
               <div>
                 <h3 style={styles.sectionTitle}>
-                  {step === "phone"
-                    ? "Add your mobile number"
-                    : "Verify OTP"}
+                  {step === "phone" ? "Add your mobile number" : "Verify OTP"}
                 </h3>
 
                 <p style={styles.sectionSub}>
@@ -300,7 +316,8 @@ export default function LoginMobile() {
                   style={{
                     ...styles.primaryButton,
                     opacity: loading || !isPhoneValid ? 0.68 : 1,
-                    cursor: loading || !isPhoneValid ? "not-allowed" : "pointer",
+                    cursor:
+                      loading || !isPhoneValid ? "not-allowed" : "pointer",
                   }}
                 >
                   {loading ? "Sending OTP..." : "Send OTP"}
@@ -398,6 +415,8 @@ export default function LoginMobile() {
             </button>
           </article>
         </section>
+
+        <div id="firebase-recaptcha-container" style={styles.recaptchaBox} />
       </main>
     </StepShell>
   );
@@ -878,5 +897,10 @@ const styles = {
     fontWeight: 950,
     cursor: "pointer",
     boxShadow: "0 12px 24px rgba(15,23,42,0.07)",
+  },
+
+  recaptchaBox: {
+    position: "relative",
+    zIndex: 2,
   },
 };
