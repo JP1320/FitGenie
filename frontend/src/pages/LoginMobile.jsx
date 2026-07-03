@@ -162,18 +162,21 @@ export default function LoginMobile() {
       }
     >
       <main style={styles.pageShell}>
-        <div style={styles.blurOne} />
-        <div style={styles.blurTwo} />
+        <div style={styles.orbOne} />
+        <div style={styles.orbTwo} />
+        <div style={styles.orbThree} />
         <div style={styles.gridPattern} />
 
         <section style={styles.page}>
           <article style={styles.heroCard}>
+            <div style={styles.heroOverlay} />
+
             <div style={styles.badgeRow}>
               <span style={styles.badge}>FitGenie secure login</span>
               <span style={styles.badgeLight}>Mobile OTP</span>
             </div>
 
-            <div>
+            <div style={styles.heroContent}>
               <div style={styles.logoWrap}>
                 <div style={styles.logoCircle}>📱</div>
                 <div style={styles.logoGlow} />
@@ -194,22 +197,24 @@ export default function LoginMobile() {
               </p>
             </div>
 
-            <div style={styles.founderBox}>
-              <div style={styles.founderItem}>
-                <span style={styles.founderLabel}>Founder</span>
-                <strong style={styles.founderName}>JANVI PATEL</strong>
+            <div style={styles.featureGrid}>
+              <div style={styles.featureTile}>
+                <span style={styles.featureIcon}>🔐</span>
+                <strong>Secure OTP</strong>
+                <p>Private login flow for your FitGenie account.</p>
               </div>
 
-              <div style={styles.founderDivider} />
-
-              <div style={styles.founderItem}>
-                <span style={styles.founderLabel}>Co-founder</span>
-                <strong style={styles.founderName}>JAFAR KACHHI</strong>
+              <div style={styles.featureTile}>
+                <span style={styles.featureIcon}>✨</span>
+                <strong>Saved fit journey</strong>
+                <p>Your profile, fit card, and order updates stay connected.</p>
               </div>
             </div>
           </article>
 
           <article style={styles.accountPanel}>
+            <div style={styles.panelGlow} />
+
             <div style={styles.sectionHeader}>
               <span style={styles.stepChip}>{step === "phone" ? "01" : "02"}</span>
 
@@ -375,7 +380,7 @@ export default function LoginMobile() {
             )}
 
             <div style={styles.infoStrip}>
-              <span style={styles.infoIcon}>✨</span>
+              <span style={styles.infoIcon}>💫</span>
 
               <p>
                 Mobile login helps FitGenie keep your recommendations, selected
@@ -403,36 +408,51 @@ const styles = {
     position: "relative",
     overflow: "hidden",
     minHeight: "calc(100vh - 120px)",
-    padding: "28px",
-    borderRadius: "34px",
+    padding: "30px",
+    borderRadius: "36px",
     background:
-      "linear-gradient(135deg, #fff7ed 0%, #eef6ff 40%, #f5f3ff 72%, #ecfeff 100%)",
+      "radial-gradient(circle at 8% 12%, rgba(255, 183, 77, 0.42), transparent 28%), radial-gradient(circle at 88% 18%, rgba(109, 93, 252, 0.34), transparent 30%), radial-gradient(circle at 50% 95%, rgba(0, 188, 212, 0.34), transparent 34%), linear-gradient(135deg, #fff7ed 0%, #dbeafe 32%, #ede9fe 62%, #ccfbf1 100%)",
     color: "#14213d",
     fontFamily:
       "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
   },
 
-  blurOne: {
+  orbOne: {
     position: "absolute",
-    top: "-90px",
-    left: "-80px",
-    width: "260px",
-    height: "260px",
+    top: "-110px",
+    left: "-90px",
+    width: "310px",
+    height: "310px",
     borderRadius: "999px",
-    background: "rgba(109, 93, 252, 0.2)",
-    filter: "blur(24px)",
+    background:
+      "linear-gradient(135deg, rgba(255, 138, 76, 0.48), rgba(255, 214, 102, 0.3))",
+    filter: "blur(18px)",
     pointerEvents: "none",
   },
 
-  blurTwo: {
+  orbTwo: {
     position: "absolute",
-    right: "-90px",
-    bottom: "-90px",
-    width: "300px",
-    height: "300px",
+    right: "-120px",
+    top: "70px",
+    width: "360px",
+    height: "360px",
     borderRadius: "999px",
-    background: "rgba(0, 188, 212, 0.18)",
-    filter: "blur(28px)",
+    background:
+      "linear-gradient(135deg, rgba(109, 93, 252, 0.38), rgba(0, 188, 212, 0.3))",
+    filter: "blur(20px)",
+    pointerEvents: "none",
+  },
+
+  orbThree: {
+    position: "absolute",
+    left: "38%",
+    bottom: "-150px",
+    width: "340px",
+    height: "340px",
+    borderRadius: "999px",
+    background:
+      "linear-gradient(135deg, rgba(45, 212, 191, 0.34), rgba(186, 230, 253, 0.38))",
+    filter: "blur(22px)",
     pointerEvents: "none",
   },
 
@@ -440,10 +460,10 @@ const styles = {
     position: "absolute",
     inset: 0,
     backgroundImage:
-      "linear-gradient(rgba(15,23,42,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.035) 1px, transparent 1px)",
+      "linear-gradient(rgba(15,23,42,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.04) 1px, transparent 1px)",
     backgroundSize: "34px 34px",
     maskImage:
-      "linear-gradient(135deg, rgba(0,0,0,0.6), rgba(0,0,0,0.08))",
+      "linear-gradient(135deg, rgba(0,0,0,0.58), rgba(0,0,0,0.06))",
     pointerEvents: "none",
   },
 
@@ -451,26 +471,39 @@ const styles = {
     position: "relative",
     zIndex: 1,
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-    gap: "24px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(310px, 1fr))",
+    gap: "26px",
     alignItems: "stretch",
   },
 
   heroCard: {
-    border: "1px solid rgba(109, 93, 252, 0.14)",
-    borderRadius: "30px",
-    padding: "28px",
-    background: "rgba(255,255,255,0.76)",
-    boxShadow: "0 24px 58px rgba(15, 23, 42, 0.12)",
-    backdropFilter: "blur(18px)",
+    position: "relative",
+    overflow: "hidden",
+    border: "1px solid rgba(255, 255, 255, 0.68)",
+    borderRadius: "34px",
+    padding: "30px",
+    background:
+      "linear-gradient(145deg, rgba(255,255,255,0.82) 0%, rgba(255,237,213,0.86) 28%, rgba(219,234,254,0.9) 58%, rgba(221,214,254,0.88) 100%)",
+    boxShadow: "0 28px 70px rgba(79, 70, 229, 0.18)",
+    backdropFilter: "blur(20px)",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    gap: "28px",
-    minHeight: "460px",
+    gap: "30px",
+    minHeight: "500px",
+  },
+
+  heroOverlay: {
+    position: "absolute",
+    inset: 0,
+    background:
+      "radial-gradient(circle at 18% 20%, rgba(255,255,255,0.75), transparent 25%), radial-gradient(circle at 86% 12%, rgba(0,188,212,0.16), transparent 24%), radial-gradient(circle at 72% 88%, rgba(109,93,252,0.15), transparent 28%)",
+    pointerEvents: "none",
   },
 
   badgeRow: {
+    position: "relative",
+    zIndex: 1,
     display: "flex",
     gap: "10px",
     flexWrap: "wrap",
@@ -480,57 +513,64 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     borderRadius: "999px",
-    padding: "8px 12px",
+    padding: "9px 13px",
     background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
     color: "#ffffff",
     fontSize: "12px",
-    fontWeight: 900,
+    fontWeight: 950,
     letterSpacing: "0.04em",
+    boxShadow: "0 12px 26px rgba(109, 93, 252, 0.22)",
   },
 
   badgeLight: {
     display: "inline-flex",
     alignItems: "center",
     borderRadius: "999px",
-    padding: "8px 12px",
-    background: "#ffffff",
+    padding: "9px 13px",
+    background: "rgba(255,255,255,0.78)",
     color: "#475569",
-    border: "1px solid #dbeafe",
+    border: "1px solid rgba(255,255,255,0.86)",
     fontSize: "12px",
-    fontWeight: 900,
+    fontWeight: 950,
+  },
+
+  heroContent: {
+    position: "relative",
+    zIndex: 1,
   },
 
   logoWrap: {
     position: "relative",
-    width: "84px",
-    height: "84px",
-    marginBottom: "22px",
+    width: "92px",
+    height: "92px",
+    marginBottom: "24px",
   },
 
   logoCircle: {
     position: "relative",
     zIndex: 2,
-    width: "84px",
-    height: "84px",
-    borderRadius: "28px",
+    width: "92px",
+    height: "92px",
+    borderRadius: "30px",
     display: "grid",
     placeItems: "center",
-    fontSize: "36px",
-    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
-    boxShadow: "0 18px 38px rgba(109, 93, 252, 0.28)",
+    fontSize: "40px",
+    background:
+      "linear-gradient(135deg, #6d5dfc 0%, #00bcd4 52%, #2dd4bf 100%)",
+    boxShadow: "0 20px 44px rgba(0, 188, 212, 0.28)",
   },
 
   logoGlow: {
     position: "absolute",
-    inset: "-10px",
-    borderRadius: "34px",
+    inset: "-12px",
+    borderRadius: "38px",
     background:
-      "linear-gradient(135deg, rgba(109,93,252,0.18), rgba(0,188,212,0.16), rgba(251,188,5,0.1))",
-    filter: "blur(8px)",
+      "linear-gradient(135deg, rgba(109,93,252,0.24), rgba(0,188,212,0.2), rgba(255,183,77,0.18))",
+    filter: "blur(10px)",
   },
 
   eyebrow: {
-    margin: "0 0 10px",
+    margin: "0 0 11px",
     color: "#6d5dfc",
     fontWeight: 950,
     letterSpacing: "0.08em",
@@ -539,10 +579,10 @@ const styles = {
   },
 
   heading: {
-    margin: "0 0 12px",
-    fontSize: "clamp(28px, 4vw, 42px)",
-    lineHeight: 1.06,
-    letterSpacing: "-0.04em",
+    margin: "0 0 14px",
+    fontSize: "clamp(30px, 4vw, 46px)",
+    lineHeight: 1.04,
+    letterSpacing: "-0.045em",
     color: "#111827",
     fontWeight: 950,
   },
@@ -550,65 +590,67 @@ const styles = {
   subText: {
     margin: 0,
     color: "#475569",
-    lineHeight: 1.7,
+    lineHeight: 1.72,
     fontSize: "15px",
-    maxWidth: "560px",
+    maxWidth: "570px",
   },
 
-  founderBox: {
+  featureGrid: {
+    position: "relative",
+    zIndex: 1,
     display: "grid",
-    gridTemplateColumns: "1fr auto 1fr",
-    gap: "16px",
-    alignItems: "center",
-    border: "1px solid rgba(109, 93, 252, 0.14)",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "14px",
+  },
+
+  featureTile: {
+    border: "1px solid rgba(255,255,255,0.8)",
     borderRadius: "24px",
-    padding: "18px",
+    padding: "16px",
     background:
-      "linear-gradient(135deg, rgba(255,255,255,0.86), rgba(238,246,255,0.72))",
+      "linear-gradient(135deg, rgba(255,255,255,0.72), rgba(236,254,255,0.62))",
+    boxShadow: "0 16px 32px rgba(15, 23, 42, 0.08)",
     color: "#111827",
   },
 
-  founderItem: {
-    minWidth: 0,
-  },
-
-  founderLabel: {
+  featureIcon: {
     display: "block",
-    marginBottom: "5px",
-    color: "#64748b",
-    fontSize: "11px",
-    fontWeight: 950,
-    textTransform: "uppercase",
-    letterSpacing: "0.09em",
-  },
-
-  founderName: {
-    display: "block",
-    color: "#111827",
-    fontSize: "15px",
-    letterSpacing: "0.02em",
-  },
-
-  founderDivider: {
-    width: "1px",
-    height: "46px",
-    background: "#cbd5e1",
+    fontSize: "22px",
+    marginBottom: "8px",
   },
 
   accountPanel: {
-    border: "1px solid rgba(109, 93, 252, 0.14)",
-    borderRadius: "30px",
-    padding: "26px",
-    background: "rgba(255,255,255,0.78)",
-    boxShadow: "0 24px 58px rgba(15, 23, 42, 0.12)",
-    backdropFilter: "blur(18px)",
+    position: "relative",
+    overflow: "hidden",
+    border: "1px solid rgba(255, 255, 255, 0.72)",
+    borderRadius: "34px",
+    padding: "28px",
+    background:
+      "linear-gradient(150deg, rgba(255,255,255,0.92) 0%, rgba(238,246,255,0.94) 42%, rgba(245,243,255,0.92) 72%, rgba(236,254,255,0.9) 100%)",
+    boxShadow: "0 28px 70px rgba(14, 165, 233, 0.16)",
+    backdropFilter: "blur(20px)",
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
     gap: "18px",
   },
 
+  panelGlow: {
+    position: "absolute",
+    top: "-90px",
+    right: "-90px",
+    width: "220px",
+    height: "220px",
+    borderRadius: "999px",
+    background:
+      "linear-gradient(135deg, rgba(109,93,252,0.18), rgba(0,188,212,0.16))",
+    filter: "blur(10px)",
+    pointerEvents: "none",
+  },
+
   sectionHeader: {
+    position: "relative",
+    zIndex: 1,
     display: "flex",
     gap: "14px",
     alignItems: "flex-start",
@@ -616,38 +658,41 @@ const styles = {
 
   stepChip: {
     flex: "0 0 auto",
-    width: "44px",
-    height: "44px",
-    borderRadius: "16px",
+    width: "46px",
+    height: "46px",
+    borderRadius: "17px",
     display: "grid",
     placeItems: "center",
     background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
     color: "#ffffff",
     fontWeight: 950,
-    boxShadow: "0 14px 28px rgba(109,93,252,0.22)",
+    boxShadow: "0 14px 28px rgba(109,93,252,0.24)",
   },
 
   sectionTitle: {
     margin: "0 0 7px",
-    fontSize: "24px",
+    fontSize: "25px",
     color: "#111827",
     fontWeight: 950,
-    letterSpacing: "-0.02em",
+    letterSpacing: "-0.025em",
   },
 
   sectionSub: {
     margin: 0,
     color: "#475569",
-    lineHeight: 1.58,
+    lineHeight: 1.6,
     fontSize: "14px",
   },
 
   formCard: {
-    borderRadius: "26px",
-    border: "1px solid rgba(203, 213, 225, 0.9)",
-    background: "linear-gradient(135deg, #ffffff, #f8fafc)",
-    padding: "18px",
-    boxShadow: "0 14px 34px rgba(15,23,42,0.08)",
+    position: "relative",
+    zIndex: 1,
+    borderRadius: "28px",
+    border: "1px solid rgba(255,255,255,0.9)",
+    background:
+      "linear-gradient(135deg, rgba(255,255,255,0.86), rgba(248,250,252,0.92), rgba(236,254,255,0.62))",
+    padding: "20px",
+    boxShadow: "0 18px 42px rgba(15,23,42,0.09)",
   },
 
   label: {
@@ -660,14 +705,15 @@ const styles = {
 
   select: {
     width: "100%",
-    border: "1px solid #cbd5e1",
-    borderRadius: "16px",
+    border: "1px solid rgba(148, 163, 184, 0.72)",
+    borderRadius: "18px",
     padding: "14px",
-    background: "#ffffff",
+    background: "rgba(255,255,255,0.94)",
     color: "#14213d",
     marginBottom: "16px",
     outline: "none",
-    fontWeight: 800,
+    fontWeight: 850,
+    boxShadow: "0 10px 20px rgba(15,23,42,0.04)",
   },
 
   phoneRow: {
@@ -678,31 +724,34 @@ const styles = {
 
   countryBadge: {
     minWidth: "104px",
-    border: "1px solid #cbd5e1",
-    borderRadius: "16px",
+    border: "1px solid rgba(148, 163, 184, 0.72)",
+    borderRadius: "18px",
     padding: "0 12px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     gap: "8px",
-    background: "#ffffff",
+    background:
+      "linear-gradient(135deg, rgba(255,255,255,0.94), rgba(238,246,255,0.86))",
     color: "#111827",
+    boxShadow: "0 10px 20px rgba(15,23,42,0.04)",
   },
 
   phoneInput: {
     width: "100%",
-    border: "1px solid #cbd5e1",
-    borderRadius: "16px",
+    border: "1px solid rgba(148, 163, 184, 0.72)",
+    borderRadius: "18px",
     padding: "15px",
-    background: "#ffffff",
+    background: "rgba(255,255,255,0.94)",
     color: "#14213d",
     outline: "none",
     fontSize: "16px",
-    fontWeight: 800,
+    fontWeight: 850,
+    boxShadow: "0 10px 20px rgba(15,23,42,0.04)",
   },
 
   hint: {
-    marginTop: "9px",
+    marginTop: "10px",
     marginBottom: "16px",
     fontSize: "13px",
     color: "#64748b",
@@ -711,16 +760,17 @@ const styles = {
 
   otpInput: {
     width: "100%",
-    border: "1px solid #cbd5e1",
-    borderRadius: "18px",
+    border: "1px solid rgba(148, 163, 184, 0.72)",
+    borderRadius: "20px",
     padding: "16px",
-    background: "#ffffff",
+    background: "rgba(255,255,255,0.94)",
     color: "#111827",
     outline: "none",
     fontSize: "28px",
     letterSpacing: "12px",
     textAlign: "center",
     fontWeight: 950,
+    boxShadow: "0 12px 24px rgba(15,23,42,0.06)",
   },
 
   otpDots: {
@@ -745,35 +795,36 @@ const styles = {
 
   errorBox: {
     padding: "12px 14px",
-    borderRadius: "16px",
+    borderRadius: "17px",
     background: "#fef2f2",
     border: "1px solid rgba(239, 68, 68, 0.26)",
     color: "#991b1b",
     marginBottom: "14px",
     lineHeight: 1.45,
-    fontWeight: 700,
+    fontWeight: 750,
   },
 
   infoBox: {
     padding: "12px 14px",
-    borderRadius: "16px",
+    borderRadius: "17px",
     background: "#ecfeff",
     border: "1px solid rgba(0, 188, 212, 0.22)",
     color: "#155e75",
     marginBottom: "14px",
     lineHeight: 1.45,
-    fontWeight: 700,
+    fontWeight: 750,
   },
 
   primaryButton: {
     width: "100%",
     border: "none",
     borderRadius: "999px",
-    padding: "13px 22px",
-    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    padding: "14px 22px",
+    background:
+      "linear-gradient(135deg, #6d5dfc 0%, #00bcd4 58%, #2dd4bf 100%)",
     color: "#ffffff",
     fontWeight: 950,
-    boxShadow: "0 16px 34px rgba(0,188,212,0.24)",
+    boxShadow: "0 18px 38px rgba(0,188,212,0.25)",
   },
 
   actionRow: {
@@ -788,19 +839,23 @@ const styles = {
     border: "1px solid #cbd5e1",
     borderRadius: "999px",
     padding: "12px 14px",
-    background: "#ffffff",
+    background: "rgba(255,255,255,0.92)",
     color: "#334155",
     fontWeight: 950,
     cursor: "pointer",
+    boxShadow: "0 10px 20px rgba(15,23,42,0.05)",
   },
 
   infoStrip: {
+    position: "relative",
+    zIndex: 1,
     display: "flex",
     gap: "12px",
     alignItems: "flex-start",
-    borderRadius: "20px",
-    padding: "14px",
-    background: "rgba(236, 254, 255, 0.8)",
+    borderRadius: "22px",
+    padding: "15px",
+    background:
+      "linear-gradient(135deg, rgba(236,254,255,0.86), rgba(238,242,255,0.76))",
     border: "1px solid rgba(0, 188, 212, 0.16)",
     color: "#475569",
     lineHeight: 1.55,
@@ -812,14 +867,16 @@ const styles = {
   },
 
   backButton: {
+    position: "relative",
+    zIndex: 1,
     width: "100%",
     border: "1px solid #cbd5e1",
     borderRadius: "999px",
     padding: "13px 20px",
-    background: "#ffffff",
+    background: "rgba(255,255,255,0.94)",
     color: "#334155",
     fontWeight: 950,
     cursor: "pointer",
-    boxShadow: "0 10px 22px rgba(15,23,42,0.07)",
+    boxShadow: "0 12px 24px rgba(15,23,42,0.07)",
   },
 };
