@@ -83,15 +83,13 @@ export default function LoginMobile() {
         return;
       }
 
-      setRequestId(res.data.requestId);
+      setRequestId(res.data.requestId || "");
       setStep("otp");
 
       if (res.data.developmentOtp) {
-        setInfo(
-          `Demo OTP sent. Use ${res.data.developmentOtp}. Real SMS delivery needs SMS provider setup.`
-        );
+        setInfo(`OTP generated. Use ${res.data.developmentOtp}.`);
       } else {
-        setInfo(`OTP has been sent to ${fullPhone}.`);
+        setInfo(res.data?.message || `OTP has been sent to ${fullPhone}.`);
       }
     } catch (_error) {
       setError("Unable to connect to OTP service.");
@@ -155,302 +153,576 @@ export default function LoginMobile() {
   }
 
   return (
-    <StepShell step="Auth" title="Continue with mobile number">
-      <div style={styles.authLayout}>
-        <section style={styles.mainCard}>
-          <div style={styles.iconCircle}>📱</div>
+    <StepShell
+      step="Login"
+      title={
+        step === "phone"
+          ? "Continue with mobile number"
+          : "Verify your mobile number"
+      }
+    >
+      <main style={styles.pageShell}>
+        <div style={styles.blurOne} />
+        <div style={styles.blurTwo} />
+        <div style={styles.gridPattern} />
 
-          <h2 style={styles.title}>
-            {step === "phone" ? "Enter your mobile number" : "Verify OTP"}
-          </h2>
+        <section style={styles.page}>
+          <article style={styles.heroCard}>
+            <div style={styles.badgeRow}>
+              <span style={styles.badge}>FitGenie secure login</span>
+              <span style={styles.badgeLight}>Mobile OTP</span>
+            </div>
 
-          <p style={styles.subtitle}>
-            {step === "phone"
-              ? "Choose your country code, add your mobile number, and we will send a one-time password."
-              : `Enter the 6-digit OTP sent to ${fullPhone}. It will verify automatically once all digits are entered.`}
-          </p>
+            <div>
+              <div style={styles.logoWrap}>
+                <div style={styles.logoCircle}>📱</div>
+                <div style={styles.logoGlow} />
+              </div>
 
-          {step === "phone" ? (
-            <>
-              <label style={styles.label}>Country code</label>
+              <p style={styles.eyebrow}>Quick mobile access</p>
 
-              <select
-                value={`${selectedCountry.name}-${selectedCountry.code}`}
-                onChange={(event) => {
-                  const found = COUNTRIES.find(
-                    (country) =>
-                      `${country.name}-${country.code}` === event.target.value
-                  );
+              <h2 style={styles.heading}>
+                {step === "phone"
+                  ? "Continue with your mobile number"
+                  : "Enter the OTP sent to your phone"}
+              </h2>
 
-                  if (found) {
-                    setSelectedCountry(found);
-                    setPhone("");
-                  }
-                }}
-                style={styles.select}
-              >
-                {COUNTRIES.map((country) => (
-                  <option
-                    key={`${country.name}-${country.code}`}
-                    value={`${country.name}-${country.code}`}
-                  >
-                    {country.flag} {country.name} ({country.code})
-                  </option>
-                ))}
-              </select>
+              <p style={styles.subText}>
+                {step === "phone"
+                  ? "Use your phone number to access FitGenie, save your style preferences, fit card, expert selection, and order updates."
+                  : `Enter the 6-digit OTP sent to ${fullPhone}. FitGenie will continue automatically once verification is complete.`}
+              </p>
+            </div>
 
-              <label style={styles.label}>Mobile number</label>
+            <div style={styles.founderBox}>
+              <div style={styles.founderItem}>
+                <span style={styles.founderLabel}>Founder</span>
+                <strong style={styles.founderName}>JANVI PATEL</strong>
+              </div>
 
-              <div style={styles.phoneRow}>
-                <div style={styles.countryBadge}>
-                  <span>{selectedCountry.flag}</span>
-                  <strong>{selectedCountry.code}</strong>
+              <div style={styles.founderDivider} />
+
+              <div style={styles.founderItem}>
+                <span style={styles.founderLabel}>Co-founder</span>
+                <strong style={styles.founderName}>JAFAR KACHHI</strong>
+              </div>
+            </div>
+          </article>
+
+          <article style={styles.accountPanel}>
+            <div style={styles.sectionHeader}>
+              <span style={styles.stepChip}>{step === "phone" ? "01" : "02"}</span>
+
+              <div>
+                <h3 style={styles.sectionTitle}>
+                  {step === "phone"
+                    ? "Add your mobile number"
+                    : "Verify OTP"}
+                </h3>
+
+                <p style={styles.sectionSub}>
+                  {step === "phone"
+                    ? "Choose your country code, enter your mobile number, and request a one-time password."
+                    : "Enter the 6-digit code to securely continue your FitGenie journey."}
+                </p>
+              </div>
+            </div>
+
+            {step === "phone" ? (
+              <div style={styles.formCard}>
+                <label style={styles.label}>Country code</label>
+
+                <select
+                  value={`${selectedCountry.name}-${selectedCountry.code}`}
+                  onChange={(event) => {
+                    const found = COUNTRIES.find(
+                      (country) =>
+                        `${country.name}-${country.code}` === event.target.value
+                    );
+
+                    if (found) {
+                      setSelectedCountry(found);
+                      setPhone("");
+                    }
+                  }}
+                  style={styles.select}
+                >
+                  {COUNTRIES.map((country) => (
+                    <option
+                      key={`${country.name}-${country.code}`}
+                      value={`${country.name}-${country.code}`}
+                    >
+                      {country.flag} {country.name} ({country.code})
+                    </option>
+                  ))}
+                </select>
+
+                <label style={styles.label}>Mobile number</label>
+
+                <div style={styles.phoneRow}>
+                  <div style={styles.countryBadge}>
+                    <span>{selectedCountry.flag}</span>
+                    <strong>{selectedCountry.code}</strong>
+                  </div>
+
+                  <input
+                    value={phone}
+                    onChange={(event) => {
+                      const nextValue = event.target.value.replace(/[^\d]/g, "");
+                      setPhone(nextValue);
+                    }}
+                    placeholder="Enter mobile number"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    style={styles.phoneInput}
+                  />
                 </div>
 
-                <input
-                  value={phone}
-                  onChange={(event) => {
-                    const nextValue = event.target.value.replace(/[^\d]/g, "");
-                    setPhone(nextValue);
-                  }}
-                  placeholder="Enter mobile number"
-                  inputMode="numeric"
-                  autoComplete="tel"
-                  style={styles.phoneInput}
-                />
-              </div>
+                <p style={styles.hint}>
+                  Example: {selectedCountry.code}{" "}
+                  {selectedCountry.name === "India"
+                    ? "9876543210"
+                    : "5551234567"}
+                </p>
 
-              <div style={styles.hint}>
-                Example: {selectedCountry.code}{" "}
-                {selectedCountry.name === "India" ? "9876543210" : "5551234567"}
-              </div>
-
-              {error ? <div style={styles.errorBox}>{error}</div> : null}
-              {info ? <div style={styles.infoBox}>{info}</div> : null}
-
-              <button
-                type="button"
-                className="btn"
-                onClick={sendOtp}
-                disabled={loading || !isPhoneValid}
-                style={{
-                  ...styles.primaryButton,
-                  ...(!isPhoneValid ? styles.disabledButton : {}),
-                }}
-              >
-                {loading ? "Sending OTP..." : "Send OTP"}
-              </button>
-            </>
-          ) : (
-            <>
-              <label style={styles.label}>6-digit OTP</label>
-
-              <input
-                ref={otpInputRef}
-                value={otp}
-                onChange={(event) => {
-                  const nextValue = event.target.value
-                    .replace(/[^\d]/g, "")
-                    .slice(0, 6);
-                  setOtp(nextValue);
-                }}
-                placeholder="••••••"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                style={styles.otpInput}
-              />
-
-              <div style={styles.otpDots}>
-                {[0, 1, 2, 3, 4, 5].map((index) => (
-                  <span
-                    key={index}
-                    style={{
-                      ...styles.otpDot,
-                      ...(otp[index] ? styles.otpDotFilled : {}),
-                    }}
-                  />
-                ))}
-              </div>
-
-              {error ? <div style={styles.errorBox}>{error}</div> : null}
-              {info ? <div style={styles.infoBox}>{info}</div> : null}
-
-              <button
-                type="button"
-                className="btn"
-                onClick={() => verifyOtp()}
-                disabled={loading || otp.length !== 6}
-                style={{
-                  ...styles.primaryButton,
-                  ...(otp.length !== 6 ? styles.disabledButton : {}),
-                }}
-              >
-                {loading || autoVerifying ? "Verifying..." : "Verify & Continue"}
-              </button>
-
-              <div style={styles.actionRow}>
-                <button
-                  type="button"
-                  className="btn ghost"
-                  onClick={editPhoneNumber}
-                  style={styles.smallButton}
-                >
-                  Change number
-                </button>
+                {error ? <div style={styles.errorBox}>{error}</div> : null}
+                {info ? <div style={styles.infoBox}>{info}</div> : null}
 
                 <button
                   type="button"
-                  className="btn ghost"
                   onClick={sendOtp}
-                  disabled={loading}
-                  style={styles.smallButton}
+                  disabled={loading || !isPhoneValid}
+                  style={{
+                    ...styles.primaryButton,
+                    opacity: loading || !isPhoneValid ? 0.68 : 1,
+                    cursor: loading || !isPhoneValid ? "not-allowed" : "pointer",
+                  }}
                 >
-                  Resend OTP
+                  {loading ? "Sending OTP..." : "Send OTP"}
                 </button>
               </div>
-            </>
-          )}
+            ) : (
+              <div style={styles.formCard}>
+                <label style={styles.label}>6-digit OTP</label>
 
-          <button
-            type="button"
-            className="btn ghost"
-            onClick={() => nav("/welcome")}
-            style={styles.backButton}
-          >
-            Back
-          </button>
+                <input
+                  ref={otpInputRef}
+                  value={otp}
+                  onChange={(event) => {
+                    const nextValue = event.target.value
+                      .replace(/[^\d]/g, "")
+                      .slice(0, 6);
+
+                    setOtp(nextValue);
+                  }}
+                  placeholder="••••••"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  style={styles.otpInput}
+                />
+
+                <div style={styles.otpDots}>
+                  {[0, 1, 2, 3, 4, 5].map((index) => (
+                    <span
+                      key={index}
+                      style={{
+                        ...styles.otpDot,
+                        ...(otp.length > index ? styles.otpDotFilled : {}),
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {error ? <div style={styles.errorBox}>{error}</div> : null}
+                {info ? <div style={styles.infoBox}>{info}</div> : null}
+
+                <button
+                  type="button"
+                  onClick={() => verifyOtp()}
+                  disabled={loading || otp.length !== 6}
+                  style={{
+                    ...styles.primaryButton,
+                    opacity: loading || otp.length !== 6 ? 0.68 : 1,
+                    cursor:
+                      loading || otp.length !== 6 ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {loading || autoVerifying
+                    ? "Verifying..."
+                    : "Verify & Continue"}
+                </button>
+
+                <div style={styles.actionRow}>
+                  <button
+                    type="button"
+                    onClick={editPhoneNumber}
+                    style={styles.secondaryButton}
+                    disabled={loading}
+                  >
+                    Change number
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={sendOtp}
+                    style={styles.secondaryButton}
+                    disabled={loading}
+                  >
+                    Resend OTP
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div style={styles.infoStrip}>
+              <span style={styles.infoIcon}>✨</span>
+
+              <p>
+                Mobile login helps FitGenie keep your recommendations, selected
+                expert, fit card, and delivery updates connected to your account.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => nav("/welcome")}
+              style={styles.backButton}
+              disabled={loading}
+            >
+              Back
+            </button>
+          </article>
         </section>
-
-        <section style={styles.sideCard}>
-          <h3 style={styles.sideTitle}>Secure sign-in</h3>
-
-          <div style={styles.timeline}>
-            <div style={styles.timelineItem}>
-              <span style={styles.timelineNumber}>1</span>
-              <div>
-                <strong>Add number</strong>
-                <p>Choose country code and enter your mobile number.</p>
-              </div>
-            </div>
-
-            <div style={styles.timelineItem}>
-              <span style={styles.timelineNumber}>2</span>
-              <div>
-                <strong>Receive OTP</strong>
-                <p>We send a one-time password to your selected number.</p>
-              </div>
-            </div>
-
-            <div style={styles.timelineItem}>
-              <span style={styles.timelineNumber}>3</span>
-              <div>
-                <strong>Auto verify</strong>
-                <p>Once the 6 digits are entered, FitGenie verifies and proceeds.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
+      </main>
     </StepShell>
   );
 }
 
 const styles = {
-  authLayout: {
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1.1fr) minmax(280px, 0.9fr)",
-    gap: "20px",
-  },
-  mainCard: {
-    border: "1px solid rgba(255,255,255,0.16)",
-    borderRadius: "28px",
+  pageShell: {
+    position: "relative",
+    overflow: "hidden",
+    minHeight: "calc(100vh - 120px)",
     padding: "28px",
+    borderRadius: "34px",
     background:
-      "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04))",
-    boxShadow: "0 18px 45px rgba(0,0,0,0.22)",
+      "linear-gradient(135deg, #fff7ed 0%, #eef6ff 40%, #f5f3ff 72%, #ecfeff 100%)",
+    color: "#14213d",
+    fontFamily:
+      "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
   },
-  iconCircle: {
-    width: "60px",
-    height: "60px",
-    borderRadius: "20px",
+
+  blurOne: {
+    position: "absolute",
+    top: "-90px",
+    left: "-80px",
+    width: "260px",
+    height: "260px",
+    borderRadius: "999px",
+    background: "rgba(109, 93, 252, 0.2)",
+    filter: "blur(24px)",
+    pointerEvents: "none",
+  },
+
+  blurTwo: {
+    position: "absolute",
+    right: "-90px",
+    bottom: "-90px",
+    width: "300px",
+    height: "300px",
+    borderRadius: "999px",
+    background: "rgba(0, 188, 212, 0.18)",
+    filter: "blur(28px)",
+    pointerEvents: "none",
+  },
+
+  gridPattern: {
+    position: "absolute",
+    inset: 0,
+    backgroundImage:
+      "linear-gradient(rgba(15,23,42,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.035) 1px, transparent 1px)",
+    backgroundSize: "34px 34px",
+    maskImage:
+      "linear-gradient(135deg, rgba(0,0,0,0.6), rgba(0,0,0,0.08))",
+    pointerEvents: "none",
+  },
+
+  page: {
+    position: "relative",
+    zIndex: 1,
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+    gap: "24px",
+    alignItems: "stretch",
+  },
+
+  heroCard: {
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "30px",
+    padding: "28px",
+    background: "rgba(255,255,255,0.76)",
+    boxShadow: "0 24px 58px rgba(15, 23, 42, 0.12)",
+    backdropFilter: "blur(18px)",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    gap: "28px",
+    minHeight: "460px",
+  },
+
+  badgeRow: {
+    display: "flex",
+    gap: "10px",
+    flexWrap: "wrap",
+  },
+
+  badge: {
+    display: "inline-flex",
+    alignItems: "center",
+    borderRadius: "999px",
+    padding: "8px 12px",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    fontSize: "12px",
+    fontWeight: 900,
+    letterSpacing: "0.04em",
+  },
+
+  badgeLight: {
+    display: "inline-flex",
+    alignItems: "center",
+    borderRadius: "999px",
+    padding: "8px 12px",
+    background: "#ffffff",
+    color: "#475569",
+    border: "1px solid #dbeafe",
+    fontSize: "12px",
+    fontWeight: 900,
+  },
+
+  logoWrap: {
+    position: "relative",
+    width: "84px",
+    height: "84px",
+    marginBottom: "22px",
+  },
+
+  logoCircle: {
+    position: "relative",
+    zIndex: 2,
+    width: "84px",
+    height: "84px",
+    borderRadius: "28px",
     display: "grid",
     placeItems: "center",
-    fontSize: "28px",
-    background: "rgba(0,212,255,0.16)",
-    border: "1px solid rgba(0,212,255,0.35)",
-    marginBottom: "18px",
+    fontSize: "36px",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    boxShadow: "0 18px 38px rgba(109, 93, 252, 0.28)",
   },
-  title: {
+
+  logoGlow: {
+    position: "absolute",
+    inset: "-10px",
+    borderRadius: "34px",
+    background:
+      "linear-gradient(135deg, rgba(109,93,252,0.18), rgba(0,188,212,0.16), rgba(251,188,5,0.1))",
+    filter: "blur(8px)",
+  },
+
+  eyebrow: {
     margin: "0 0 10px",
-    fontSize: "30px",
-    lineHeight: 1.1,
+    color: "#6d5dfc",
+    fontWeight: 950,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    fontSize: "12px",
   },
-  subtitle: {
-    margin: "0 0 22px",
-    opacity: 0.82,
-    lineHeight: 1.6,
+
+  heading: {
+    margin: "0 0 12px",
+    fontSize: "clamp(28px, 4vw, 42px)",
+    lineHeight: 1.06,
+    letterSpacing: "-0.04em",
+    color: "#111827",
+    fontWeight: 950,
   },
+
+  subText: {
+    margin: 0,
+    color: "#475569",
+    lineHeight: 1.7,
+    fontSize: "15px",
+    maxWidth: "560px",
+  },
+
+  founderBox: {
+    display: "grid",
+    gridTemplateColumns: "1fr auto 1fr",
+    gap: "16px",
+    alignItems: "center",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "24px",
+    padding: "18px",
+    background:
+      "linear-gradient(135deg, rgba(255,255,255,0.86), rgba(238,246,255,0.72))",
+    color: "#111827",
+  },
+
+  founderItem: {
+    minWidth: 0,
+  },
+
+  founderLabel: {
+    display: "block",
+    marginBottom: "5px",
+    color: "#64748b",
+    fontSize: "11px",
+    fontWeight: 950,
+    textTransform: "uppercase",
+    letterSpacing: "0.09em",
+  },
+
+  founderName: {
+    display: "block",
+    color: "#111827",
+    fontSize: "15px",
+    letterSpacing: "0.02em",
+  },
+
+  founderDivider: {
+    width: "1px",
+    height: "46px",
+    background: "#cbd5e1",
+  },
+
+  accountPanel: {
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "30px",
+    padding: "26px",
+    background: "rgba(255,255,255,0.78)",
+    boxShadow: "0 24px 58px rgba(15, 23, 42, 0.12)",
+    backdropFilter: "blur(18px)",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    gap: "18px",
+  },
+
+  sectionHeader: {
+    display: "flex",
+    gap: "14px",
+    alignItems: "flex-start",
+  },
+
+  stepChip: {
+    flex: "0 0 auto",
+    width: "44px",
+    height: "44px",
+    borderRadius: "16px",
+    display: "grid",
+    placeItems: "center",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    fontWeight: 950,
+    boxShadow: "0 14px 28px rgba(109,93,252,0.22)",
+  },
+
+  sectionTitle: {
+    margin: "0 0 7px",
+    fontSize: "24px",
+    color: "#111827",
+    fontWeight: 950,
+    letterSpacing: "-0.02em",
+  },
+
+  sectionSub: {
+    margin: 0,
+    color: "#475569",
+    lineHeight: 1.58,
+    fontSize: "14px",
+  },
+
+  formCard: {
+    borderRadius: "26px",
+    border: "1px solid rgba(203, 213, 225, 0.9)",
+    background: "linear-gradient(135deg, #ffffff, #f8fafc)",
+    padding: "18px",
+    boxShadow: "0 14px 34px rgba(15,23,42,0.08)",
+  },
+
   label: {
     display: "block",
     marginBottom: "8px",
-    fontWeight: 800,
+    fontWeight: 950,
     fontSize: "14px",
+    color: "#111827",
   },
+
   select: {
     width: "100%",
-    border: "1px solid rgba(255,255,255,0.16)",
+    border: "1px solid #cbd5e1",
     borderRadius: "16px",
     padding: "14px",
-    background: "rgba(255,255,255,0.1)",
-    color: "inherit",
+    background: "#ffffff",
+    color: "#14213d",
     marginBottom: "16px",
     outline: "none",
+    fontWeight: 800,
   },
+
   phoneRow: {
     display: "flex",
     gap: "10px",
     alignItems: "stretch",
   },
+
   countryBadge: {
     minWidth: "104px",
-    border: "1px solid rgba(255,255,255,0.16)",
+    border: "1px solid #cbd5e1",
     borderRadius: "16px",
     padding: "0 12px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     gap: "8px",
-    background: "rgba(255,255,255,0.08)",
+    background: "#ffffff",
+    color: "#111827",
   },
+
   phoneInput: {
     width: "100%",
-    border: "1px solid rgba(255,255,255,0.16)",
+    border: "1px solid #cbd5e1",
     borderRadius: "16px",
     padding: "15px",
-    background: "rgba(255,255,255,0.1)",
-    color: "inherit",
+    background: "#ffffff",
+    color: "#14213d",
     outline: "none",
     fontSize: "16px",
+    fontWeight: 800,
   },
+
   hint: {
-    marginTop: "8px",
+    marginTop: "9px",
     marginBottom: "16px",
     fontSize: "13px",
-    opacity: 0.68,
+    color: "#64748b",
+    lineHeight: 1.5,
   },
+
   otpInput: {
     width: "100%",
-    border: "1px solid rgba(255,255,255,0.16)",
+    border: "1px solid #cbd5e1",
     borderRadius: "18px",
     padding: "16px",
-    background: "rgba(255,255,255,0.1)",
-    color: "inherit",
+    background: "#ffffff",
+    color: "#111827",
     outline: "none",
     fontSize: "28px",
     letterSpacing: "12px",
     textAlign: "center",
-    fontWeight: 900,
+    fontWeight: 950,
   },
+
   otpDots: {
     display: "flex",
     justifyContent: "center",
@@ -458,82 +730,96 @@ const styles = {
     marginTop: "14px",
     marginBottom: "16px",
   },
+
   otpDot: {
     width: "12px",
     height: "12px",
     borderRadius: "50%",
-    background: "rgba(255,255,255,0.25)",
+    background: "#cbd5e1",
   },
+
   otpDotFilled: {
-    background: "#00d4ff",
-    boxShadow: "0 0 18px rgba(0,212,255,0.55)",
+    background: "#00bcd4",
+    boxShadow: "0 0 18px rgba(0,188,212,0.45)",
   },
+
   errorBox: {
     padding: "12px 14px",
-    borderRadius: "14px",
-    background: "rgba(255, 86, 86, 0.16)",
-    border: "1px solid rgba(255, 120, 120, 0.35)",
-    color: "#ffdede",
+    borderRadius: "16px",
+    background: "#fef2f2",
+    border: "1px solid rgba(239, 68, 68, 0.26)",
+    color: "#991b1b",
     marginBottom: "14px",
+    lineHeight: 1.45,
+    fontWeight: 700,
   },
+
   infoBox: {
     padding: "12px 14px",
-    borderRadius: "14px",
-    background: "rgba(0, 212, 255, 0.12)",
-    border: "1px solid rgba(0, 212, 255, 0.32)",
-    color: "#d9fbff",
+    borderRadius: "16px",
+    background: "#ecfeff",
+    border: "1px solid rgba(0, 188, 212, 0.22)",
+    color: "#155e75",
     marginBottom: "14px",
+    lineHeight: 1.45,
+    fontWeight: 700,
   },
+
   primaryButton: {
     width: "100%",
-    marginTop: "4px",
+    border: "none",
+    borderRadius: "999px",
+    padding: "13px 22px",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    fontWeight: 950,
+    boxShadow: "0 16px 34px rgba(0,188,212,0.24)",
   },
-  disabledButton: {
-    opacity: 0.55,
-    cursor: "not-allowed",
-  },
+
   actionRow: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
     gap: "10px",
     marginTop: "12px",
   },
-  smallButton: {
+
+  secondaryButton: {
     width: "100%",
+    border: "1px solid #cbd5e1",
+    borderRadius: "999px",
+    padding: "12px 14px",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 950,
+    cursor: "pointer",
   },
+
+  infoStrip: {
+    display: "flex",
+    gap: "12px",
+    alignItems: "flex-start",
+    borderRadius: "20px",
+    padding: "14px",
+    background: "rgba(236, 254, 255, 0.8)",
+    border: "1px solid rgba(0, 188, 212, 0.16)",
+    color: "#475569",
+    lineHeight: 1.55,
+    fontSize: "14px",
+  },
+
+  infoIcon: {
+    flex: "0 0 auto",
+  },
+
   backButton: {
     width: "100%",
-    marginTop: "12px",
-  },
-  sideCard: {
-    border: "1px solid rgba(255,255,255,0.14)",
-    borderRadius: "28px",
-    padding: "24px",
-    background:
-      "radial-gradient(circle at top right, rgba(124,92,255,0.24), transparent 36%), rgba(255,255,255,0.06)",
-  },
-  sideTitle: {
-    margin: "0 0 20px",
-    fontSize: "22px",
-  },
-  timeline: {
-    display: "grid",
-    gap: "18px",
-  },
-  timelineItem: {
-    display: "flex",
-    gap: "14px",
-    alignItems: "flex-start",
-  },
-  timelineNumber: {
-    width: "32px",
-    height: "32px",
-    borderRadius: "50%",
-    display: "grid",
-    placeItems: "center",
-    flex: "0 0 auto",
-    background: "rgba(255,255,255,0.12)",
-    border: "1px solid rgba(255,255,255,0.18)",
-    fontWeight: 900,
+    border: "1px solid #cbd5e1",
+    borderRadius: "999px",
+    padding: "13px 20px",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 950,
+    cursor: "pointer",
+    boxShadow: "0 10px 22px rgba(15,23,42,0.07)",
   },
 };
