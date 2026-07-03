@@ -6,25 +6,11 @@ import { useFlowStore } from "../store/useFlowStore";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
-const DEMO_ACCOUNTS = [
-  {
-    name: "Personal Gmail",
-    email: "yourname@gmail.com",
-    avatar: "YG",
-    type: "Google Account",
-  },
-  {
-    name: "Shopping Account",
-    email: "shopping.user@gmail.com",
-    avatar: "SU",
-    type: "Google Account",
-  },
-];
-
 function decodeJwtPayload(token) {
   try {
     const payload = token.split(".")[1];
     const decoded = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+
     return JSON.parse(
       decodeURIComponent(
         decoded
@@ -46,13 +32,13 @@ export default function LoginEmail() {
 
   const googleButtonRef = useRef(null);
 
-  const [manualEmail, setManualEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) {
+      setGoogleReady(false);
       return undefined;
     }
 
@@ -107,6 +93,7 @@ export default function LoginEmail() {
             width: 320,
             text: "continue_with",
             shape: "pill",
+            logo_alignment: "left",
           });
         }
 
@@ -114,7 +101,7 @@ export default function LoginEmail() {
       } catch (_error) {
         setGoogleReady(false);
         setError(
-          "Google Sign-In could not be loaded. You can still continue with demo account selection."
+          "Google Sign-In could not be loaded. Please refresh and try again."
         );
       }
     }
@@ -130,11 +117,18 @@ export default function LoginEmail() {
     setError("");
     setLoading(true);
 
-    const profile = decodeJwtPayload(response?.credential || "");
+    const credential = response?.credential || "";
+    const profile = decodeJwtPayload(credential);
+
+    if (!credential || !profile?.email) {
+      setLoading(false);
+      setError("Google did not return a valid account. Please try again.");
+      return;
+    }
 
     try {
       const result = await callApi("/auth/google", "POST", {
-        credential: response?.credential || "",
+        credential,
         profile,
       });
 
@@ -151,161 +145,108 @@ export default function LoginEmail() {
 
       navigate("/intent");
     } catch (_error) {
-      setError("Unable to complete Google sign-in.");
+      setError("Unable to complete Google sign-in right now.");
     } finally {
       setLoading(false);
     }
-  }
-
-  async function continueWithDemoAccount(account) {
-    setError("");
-    setLoading(true);
-
-    try {
-      const result = await callApi("/auth/google", "POST", {
-        profile: {
-          name: account.name,
-          email: account.email,
-          picture: "",
-        },
-        mode: "demo",
-      });
-
-      if (!result.ok) {
-        setError(result.data?.message || "Unable to continue with this account.");
-        return;
-      }
-
-      patch({
-        loginMode: "google",
-        authUser: result.data.user,
-        authToken: result.data.token,
-      });
-
-      navigate("/intent");
-    } catch (_error) {
-      setError("Unable to continue with this account.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function continueWithManualEmail() {
-    const email = manualEmail.trim().toLowerCase();
-
-    if (!email || !email.includes("@")) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-
-    await continueWithDemoAccount({
-      name: "Google User",
-      email,
-    });
   }
 
   function openGooglePrompt() {
     setError("");
 
-    if (window.google?.accounts?.id && GOOGLE_CLIENT_ID) {
+    if (!GOOGLE_CLIENT_ID) {
+      setError(
+        "Google login is not configured yet. Add VITE_GOOGLE_CLIENT_ID in Vercel and redeploy the frontend."
+      );
+      return;
+    }
+
+    if (window.google?.accounts?.id) {
       window.google.accounts.id.prompt();
       return;
     }
 
-    setError(
-      "Real Google account chooser needs VITE_GOOGLE_CLIENT_ID. Use the account cards below for now."
-    );
+    setError("Google Sign-In is still loading. Please try again.");
   }
 
   return (
-    <StepShell step={1} title="Choose your Google account" className="bg-login">
+    <StepShell step="Login" title="Choose your Google account">
       <div style={styles.page}>
-        <div style={styles.heroCard}>
-          <div style={styles.logoCircle}>G</div>
-
+        <section style={styles.heroCard}>
           <div>
-            <h2 style={styles.heading}>Continue with Google</h2>
+            <div style={styles.logoCircle}>G</div>
+
+            <p style={styles.eyebrow}>Secure Google sign-in</p>
+
+            <h2 style={styles.heading}>Continue with your real Google account</h2>
+
             <p style={styles.subText}>
-              Choose the email account you want to use for FitGenie. This keeps
-              your fit card, recommendations, and order updates connected.
+              FitGenie uses Google Sign-In so your recommendations, fit card,
+              selected expert, and order updates stay connected to your account.
             </p>
           </div>
 
-          {GOOGLE_CLIENT_ID ? (
-            <div style={styles.realGoogleBox}>
-              <div ref={googleButtonRef} style={styles.googleButtonMount} />
-
-              <button
-                type="button"
-                className="btn ghost"
-                onClick={openGooglePrompt}
-                disabled={loading || !googleReady}
-                style={styles.fullWidthButton}
-              >
-                Open Google account chooser
-              </button>
+          <div style={styles.founderBox}>
+            <div>
+              <span style={styles.founderLabel}>Founder</span>
+              <strong>JANVI PATEL</strong>
             </div>
-          ) : (
-            <div style={styles.noticeBox}>
-              <strong>Demo mode active</strong>
-              <span>
-                Add <code>VITE_GOOGLE_CLIENT_ID</code> in Vercel to enable the
-                real Google account chooser.
-              </span>
-            </div>
-          )}
-        </div>
 
-        <div style={styles.accountPanel}>
+            <div style={styles.founderDivider} />
+
+            <div>
+              <span style={styles.founderLabel}>Co-founder</span>
+              <strong>JAFAR KACHHI</strong>
+            </div>
+          </div>
+        </section>
+
+        <section style={styles.accountPanel}>
           <div style={styles.sectionHeader}>
-            <h3 style={styles.sectionTitle}>Choose an account</h3>
+            <h3 style={styles.sectionTitle}>Sign in with Google</h3>
+
             <p style={styles.sectionSub}>
-              Select an account below or use another email.
+              The real Google account chooser will open from Google. It will show
+              the Google accounts already available on the user’s device/browser.
             </p>
           </div>
 
-          <div style={styles.accountList}>
-            {DEMO_ACCOUNTS.map((account) => (
-              <button
-                key={account.email}
-                type="button"
-                style={styles.accountButton}
-                onClick={() => continueWithDemoAccount(account)}
-                disabled={loading}
-              >
-                <span style={styles.avatar}>{account.avatar}</span>
+          <div style={styles.googleArea}>
+            {GOOGLE_CLIENT_ID ? (
+              <>
+                <div ref={googleButtonRef} style={styles.googleButtonMount} />
 
-                <span style={styles.accountText}>
-                  <strong>{account.email}</strong>
-                  <span>{account.type}</span>
-                </span>
+                <button
+                  type="button"
+                  style={styles.secondaryAction}
+                  onClick={openGooglePrompt}
+                  disabled={loading}
+                >
+                  Open Google account chooser
+                </button>
 
-                <span style={styles.arrow}>›</span>
-              </button>
-            ))}
+                {!googleReady ? (
+                  <p style={styles.helperText}>Loading Google Sign-In...</p>
+                ) : null}
+              </>
+            ) : (
+              <div style={styles.setupBox}>
+                <strong>Google login setup required</strong>
+
+                <p>
+                  Add <code>VITE_GOOGLE_CLIENT_ID</code> in Vercel to enable the
+                  real Google account chooser.
+                </p>
+              </div>
+            )}
           </div>
-
-          <div style={styles.divider}>
-            <span>or</span>
-          </div>
-
-          <label style={styles.label}>
-            Use another Gmail address
-            <input
-              style={styles.input}
-              type="email"
-              placeholder="example@gmail.com"
-              value={manualEmail}
-              onChange={(event) => setManualEmail(event.target.value)}
-            />
-          </label>
 
           {error ? <div style={styles.error}>{error}</div> : null}
 
           <div style={styles.actionRow}>
             <button
               type="button"
-              className="btn ghost"
+              style={styles.backButton}
               onClick={() => navigate("/welcome")}
               disabled={loading}
             >
@@ -314,14 +255,14 @@ export default function LoginEmail() {
 
             <button
               type="button"
-              className="btn"
-              onClick={continueWithManualEmail}
-              disabled={loading}
+              style={styles.primaryButton}
+              onClick={openGooglePrompt}
+              disabled={loading || !GOOGLE_CLIENT_ID}
             >
-              {loading ? "Continuing..." : "Continue"}
+              {loading ? "Signing in..." : "Continue with Google"}
             </button>
           </div>
-        </div>
+        </section>
       </div>
     </StepShell>
   );
@@ -333,20 +274,23 @@ const styles = {
     gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
     gap: "22px",
     alignItems: "stretch",
+    color: "#14213d",
   },
+
   heroCard: {
-    border: "1px solid rgba(255,255,255,0.16)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
     borderRadius: "28px",
     padding: "28px",
     background:
-      "linear-gradient(145deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06))",
-    boxShadow: "0 20px 50px rgba(0,0,0,0.22)",
+      "linear-gradient(135deg, rgba(255,247,237,0.86), rgba(238,246,255,0.88), rgba(245,243,255,0.9))",
+    boxShadow: "0 20px 50px rgba(15, 23, 42, 0.12)",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
     gap: "24px",
     minHeight: "430px",
   },
+
   logoCircle: {
     width: "72px",
     height: "72px",
@@ -355,128 +299,141 @@ const styles = {
     placeItems: "center",
     fontSize: "34px",
     fontWeight: 900,
-    color: "#fff",
+    color: "#ffffff",
     background:
       "conic-gradient(from 90deg, #4285f4, #34a853, #fbbc05, #ea4335, #4285f4)",
-    boxShadow: "0 16px 34px rgba(0,0,0,0.28)",
+    boxShadow: "0 16px 34px rgba(66, 133, 244, 0.24)",
+    marginBottom: "20px",
   },
+
+  eyebrow: {
+    margin: "0 0 10px",
+    color: "#6d5dfc",
+    fontWeight: 900,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    fontSize: "12px",
+  },
+
   heading: {
     margin: "0 0 10px",
     fontSize: "30px",
     lineHeight: 1.1,
+    color: "#111827",
   },
+
   subText: {
     margin: 0,
-    opacity: 0.82,
-    lineHeight: 1.6,
+    color: "#475569",
+    lineHeight: 1.65,
   },
-  realGoogleBox: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
+
+  founderBox: {
+    display: "grid",
+    gridTemplateColumns: "1fr auto 1fr",
+    gap: "14px",
+    alignItems: "center",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
+    borderRadius: "22px",
+    padding: "16px",
+    background: "rgba(255,255,255,0.72)",
+    color: "#111827",
   },
-  googleButtonMount: {
-    minHeight: "44px",
+
+  founderLabel: {
+    display: "block",
+    marginBottom: "4px",
+    color: "#64748b",
+    fontSize: "12px",
+    fontWeight: 800,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
   },
-  noticeBox: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "7px",
-    border: "1px solid rgba(255,255,255,0.16)",
-    borderRadius: "18px",
-    padding: "14px",
-    background: "rgba(0,0,0,0.18)",
-    lineHeight: 1.5,
+
+  founderDivider: {
+    width: "1px",
+    height: "40px",
+    background: "#cbd5e1",
   },
+
   accountPanel: {
-    border: "1px solid rgba(255,255,255,0.16)",
+    border: "1px solid rgba(109, 93, 252, 0.14)",
     borderRadius: "28px",
     padding: "24px",
-    background: "rgba(255,255,255,0.08)",
-    boxShadow: "0 20px 50px rgba(0,0,0,0.22)",
+    background: "rgba(255,255,255,0.76)",
+    boxShadow: "0 20px 50px rgba(15, 23, 42, 0.12)",
   },
+
   sectionHeader: {
     marginBottom: "18px",
   },
+
   sectionTitle: {
     margin: "0 0 6px",
     fontSize: "22px",
+    color: "#111827",
   },
+
   sectionSub: {
     margin: 0,
-    opacity: 0.74,
+    color: "#475569",
+    lineHeight: 1.55,
   },
-  accountList: {
+
+  googleArea: {
     display: "flex",
     flexDirection: "column",
-    gap: "12px",
-  },
-  accountButton: {
-    width: "100%",
-    border: "1px solid rgba(255,255,255,0.16)",
-    borderRadius: "18px",
-    padding: "14px",
-    background: "rgba(255,255,255,0.08)",
-    color: "inherit",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
     gap: "14px",
-    textAlign: "left",
+    alignItems: "flex-start",
+    padding: "18px",
+    borderRadius: "22px",
+    border: "1px solid rgba(203, 213, 225, 0.9)",
+    background: "linear-gradient(135deg, #ffffff, #f8fafc)",
   },
-  avatar: {
-    width: "46px",
-    height: "46px",
-    borderRadius: "16px",
-    background: "linear-gradient(135deg,#7c5cff,#00d4ff)",
-    display: "grid",
-    placeItems: "center",
-    color: "#fff",
-    fontWeight: 900,
+
+  googleButtonMount: {
+    minHeight: "44px",
   },
-  accountText: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-  },
-  arrow: {
-    fontSize: "28px",
-    opacity: 0.7,
-  },
-  divider: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    margin: "18px 0",
-    opacity: 0.72,
-  },
-  label: {
+
+  setupBox: {
     display: "flex",
     flexDirection: "column",
     gap: "8px",
-    fontWeight: 700,
-  },
-  input: {
     width: "100%",
-    boxSizing: "border-box",
-    border: "1px solid rgba(255,255,255,0.18)",
-    borderRadius: "16px",
-    padding: "14px 16px",
-    background: "rgba(0,0,0,0.22)",
-    color: "inherit",
-    outline: "none",
-    fontSize: "15px",
+    border: "1px solid rgba(245, 158, 11, 0.26)",
+    borderRadius: "18px",
+    padding: "14px",
+    background: "#fffbeb",
+    color: "#92400e",
+    lineHeight: 1.5,
   },
+
+  helperText: {
+    margin: 0,
+    color: "#64748b",
+    fontSize: "13px",
+  },
+
+  secondaryAction: {
+    border: "1px solid #cbd5e1",
+    borderRadius: "999px",
+    padding: "11px 16px",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+
   error: {
     marginTop: "14px",
-    border: "1px solid rgba(255,120,120,0.38)",
-    background: "rgba(255,70,70,0.14)",
-    color: "#ffdede",
+    border: "1px solid rgba(239, 68, 68, 0.26)",
+    background: "#fef2f2",
+    color: "#991b1b",
     borderRadius: "16px",
     padding: "12px 14px",
     lineHeight: 1.45,
   },
+
   actionRow: {
     display: "flex",
     justifyContent: "space-between",
@@ -484,7 +441,25 @@ const styles = {
     marginTop: "20px",
     flexWrap: "wrap",
   },
-  fullWidthButton: {
-    width: "100%",
+
+  backButton: {
+    border: "1px solid #cbd5e1",
+    borderRadius: "999px",
+    padding: "12px 18px",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+
+  primaryButton: {
+    border: "none",
+    borderRadius: "999px",
+    padding: "12px 20px",
+    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    color: "#ffffff",
+    fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 14px 30px rgba(0,188,212,0.22)",
   },
 };
