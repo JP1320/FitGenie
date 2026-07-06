@@ -4,6 +4,7 @@ import cors from "cors";
 import jwt from "jsonwebtoken";
 import { MongoClient } from "mongodb";
 import { OAuth2Client } from "google-auth-library";
+import admin from "firebase-admin";
 
 const app = express();
 const logger = pino();
@@ -14,6 +15,8 @@ const MONGODB_URI = process.env.MONGODB_URI || "";
 const FITGENIE_DB_NAME = process.env.FITGENIE_DB_NAME || "fitgenie";
 const JWT_SECRET = process.env.JWT_SECRET || "";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
+const FIREBASE_SERVICE_ACCOUNT_BASE64 =
+  process.env.FIREBASE_SERVICE_ACCOUNT_BASE64 || "";
 
 const allowedOrigins = (
   process.env.CORS_ORIGIN ||
@@ -42,6 +45,7 @@ app.use(express.json({ limit: "2mb" }));
 
 let mongoClient = null;
 let mongoDb = null;
+let firebaseAdminApp = null;
 
 async function getDb() {
   if (!MONGODB_URI) {
@@ -62,6 +66,31 @@ async function getDb() {
   return mongoDb;
 }
 
+function getFirebaseAdminApp() {
+  if (firebaseAdminApp) {
+    return firebaseAdminApp;
+  }
+
+  if (!FIREBASE_SERVICE_ACCOUNT_BASE64) {
+    throw new Error(
+      "FIREBASE_SERVICE_ACCOUNT_BASE64 is not configured in Render backend environment variables."
+    );
+  }
+
+  const serviceAccountJson = Buffer.from(
+    FIREBASE_SERVICE_ACCOUNT_BASE64,
+    "base64"
+  ).toString("utf8");
+
+  const serviceAccount = JSON.parse(serviceAccountJson);
+
+  firebaseAdminApp = admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+
+  return firebaseAdminApp;
+}
+
 function createToken(user) {
   if (!JWT_SECRET) {
     throw new Error(
@@ -73,6 +102,7 @@ function createToken(user) {
     {
       userId: String(user._id),
       email: user.email || "",
+      phone: user.phone || "",
       provider: user.provider || "google",
     },
     JWT_SECRET,
@@ -85,6 +115,7 @@ function publicUser(user) {
     id: String(user._id),
     name: user.name || "",
     email: user.email || "",
+    phone: user.phone || "",
     picture: user.picture || "",
     provider: user.provider || "google",
   };
@@ -140,16 +171,15 @@ app.get("/health", (_req, res) => {
 });
 
 app.get("/ready", async (_req, res) => {
-  const status = {
+  res.status(200).json({
     status: "ready",
     mode: "real",
     mongodbConfigured: Boolean(MONGODB_URI),
     jwtConfigured: Boolean(JWT_SECRET),
     googleConfigured: Boolean(GOOGLE_CLIENT_ID),
+    firebaseConfigured: Boolean(FIREBASE_SERVICE_ACCOUNT_BASE64),
     database: FITGENIE_DB_NAME,
-  };
-
-  res.status(200).json(status);
+  });
 });
 
 app.post("/auth/google", async (req, res) => {
@@ -160,31 +190,28 @@ app.post("/auth/google", async (req, res) => {
     const db = await getDb();
 
     const users = db.collection("users");
-
     const now = new Date();
-
-    const update = {
-      $set: {
-        provider: "google",
-        googleSub: googleProfile.sub,
-        email: googleProfile.email,
-        name: googleProfile.name || googleProfile.email,
-        picture: googleProfile.picture || "",
-        emailVerified: true,
-        updatedAt: now,
-        lastLoginAt: now,
-      },
-      $setOnInsert: {
-        createdAt: now,
-      },
-    };
 
     await users.updateOne(
       {
         provider: "google",
         googleSub: googleProfile.sub,
       },
-      update,
+      {
+        $set: {
+          provider: "google",
+          googleSub: googleProfile.sub,
+          email: googleProfile.email,
+          name: googleProfile.name || googleProfile.email,
+          picture: googleProfile.picture || "",
+          emailVerified: true,
+          updatedAt: now,
+          lastLoginAt: now,
+        },
+        $setOnInsert: {
+          createdAt: now,
+        },
+      },
       { upsert: true }
     );
 
@@ -208,6 +235,86 @@ app.post("/auth/google", async (req, res) => {
       message:
         error.message ||
         "Unable to complete Google sign-in. Please try again.",
+    });
+  }
+});
+
+app.post("/auth/firebase-phone", async (req, res) => {
+  try {
+    const { idToken, phone } = req.body || {};
+
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Firebase ID token is required.",
+      });
+    }
+
+    getFirebaseAdminApp();
+
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+    if (!decodedToken?.uid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid Firebase token.",
+      });
+    }
+
+    const verifiedPhone = decodedToken.phone_number || phone || "";
+
+    if (!verifiedPhone) {
+      return res.status(400).json({
+        success: false,
+        message: "Verified phone number was not returned by Firebase.",
+      });
+    }
+
+    const db = await getDb();
+    const users = db.collection("users");
+    const now = new Date();
+
+    await users.updateOne(
+      {
+        provider: "firebase-phone",
+        firebaseUid: decodedToken.uid,
+      },
+      {
+        $set: {
+          provider: "firebase-phone",
+          firebaseUid: decodedToken.uid,
+          phone: verifiedPhone,
+          name: verifiedPhone,
+          updatedAt: now,
+          lastLoginAt: now,
+        },
+        $setOnInsert: {
+          createdAt: now,
+        },
+      },
+      { upsert: true }
+    );
+
+    const user = await users.findOne({
+      provider: "firebase-phone",
+      firebaseUid: decodedToken.uid,
+    });
+
+    const token = createToken(user);
+
+    res.status(200).json({
+      success: true,
+      user: publicUser(user),
+      token,
+    });
+  } catch (error) {
+    logger.error({ error }, "Firebase phone login failed");
+
+    res.status(401).json({
+      success: false,
+      message:
+        error.message ||
+        "Unable to complete Firebase phone login. Please try again.",
     });
   }
 });
@@ -262,46 +369,20 @@ app.post("/auth/login", async (req, res) => {
   }
 });
 
-app.post("/auth/mobile/request-otp", async (req, res) => {
-  const { phone } = req.body || {};
-
-  if (!phone) {
-    return res.status(400).json({
-      success: false,
-      message: "Phone number is required.",
-    });
-  }
-
-  res.status(200).json({
-    success: true,
+app.post("/auth/mobile/request-otp", async (_req, res) => {
+  res.status(410).json({
+    success: false,
     message:
-      "OTP provider is not connected yet. Connect SMS provider for production OTP.",
+      "This OTP route is no longer used. FitGenie mobile login now uses Firebase Phone Authentication.",
   });
 });
 
-app.post("/auth/mobile/verify-otp", async (req, res) => {
-  try {
-    const { phone, otp } = req.body || {};
-
-    if (!phone || !otp) {
-      return res.status(400).json({
-        success: false,
-        message: "Phone and OTP are required.",
-      });
-    }
-
-    return res.status(501).json({
-      success: false,
-      message: "Real OTP verification is not connected yet.",
-    });
-  } catch (error) {
-    logger.error({ error }, "Mobile OTP verification failed");
-
-    res.status(500).json({
-      success: false,
-      message: error.message || "Mobile OTP verification failed.",
-    });
-  }
+app.post("/auth/mobile/verify-otp", async (_req, res) => {
+  res.status(410).json({
+    success: false,
+    message:
+      "This OTP route is no longer used. FitGenie mobile login now uses Firebase Phone Authentication.",
+  });
 });
 
 app.post("/recommendations", async (req, res) => {
@@ -330,7 +411,8 @@ app.post("/recommendations", async (req, res) => {
     }
 
     if (fabric) {
-      query.fabric = Array.isArray(fabric) && fabric.length > 0 ? { $in: fabric } : fabric;
+      query.fabric =
+        Array.isArray(fabric) && fabric.length > 0 ? { $in: fabric } : fabric;
     }
 
     const catalog = await db
@@ -359,27 +441,30 @@ app.post("/recommendations", async (req, res) => {
       });
     }
 
-    const recommendations = fallbackCatalog.map((item, index) => ({
-      ...serializeDocument(item),
-      outfitId: String(item._id),
-      fitScore: item.fitScore || Math.max(0.72, 0.94 - index * 0.04),
-      confidence:
-        item.confidence || `${Math.round(Math.max(0.72, 0.94 - index * 0.04) * 100)}%`,
-      reason:
-        item.reason ||
-        `Recommended for ${style || "your selected style"} preference, ${
-          budget || "selected budget"
-        }, ${bodyType || "body profile"}, and ${size || "size"} fit needs.`,
-      fitSummary: {
-        ageRange: ageRange || "",
-        gender: gender || "",
-        bodyType: bodyType || "",
-        size: size || "",
-        sleeve: fitDetails?.sleeve || "",
-        length: fitDetails?.length || "",
-        fit: fitDetails?.fit || "",
-      },
-    }));
+    const recommendations = fallbackCatalog.map((item, index) => {
+      const fitScore = item.fitScore || Math.max(0.72, 0.94 - index * 0.04);
+
+      return {
+        ...serializeDocument(item),
+        outfitId: String(item._id),
+        fitScore,
+        confidence: item.confidence || `${Math.round(fitScore * 100)}%`,
+        reason:
+          item.reason ||
+          `Recommended for ${style || "your selected style"} preference, ${
+            budget || "selected budget"
+          }, ${bodyType || "body profile"}, and ${size || "size"} fit needs.`,
+        fitSummary: {
+          ageRange: ageRange || "",
+          gender: gender || "",
+          bodyType: bodyType || "",
+          size: size || "",
+          sleeve: fitDetails?.sleeve || "",
+          length: fitDetails?.length || "",
+          fit: fitDetails?.fit || "",
+        },
+      };
+    });
 
     res.status(200).json({
       success: true,
