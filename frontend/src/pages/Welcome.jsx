@@ -9,7 +9,7 @@ export default function Welcome() {
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 2200);
+    const timer = setTimeout(() => setShowSplash(false), 3000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -30,12 +30,17 @@ export default function Welcome() {
         {`
           @keyframes fitGenieFloat {
             0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
+            50% { transform: translateY(-12px); }
           }
 
           @keyframes fitGeniePulse {
-            0%, 100% { opacity: 0.7; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.16); }
+            0%, 100% { opacity: 0.65; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.18); }
+          }
+
+          @keyframes premiumShimmer {
+            0% { transform: translateX(-130%); }
+            100% { transform: translateX(130%); }
           }
 
           @media (max-width: 900px) {
@@ -63,7 +68,7 @@ export default function Welcome() {
             }
 
             .fitgenie-welcome-title {
-              font-size: 36px !important;
+              font-size: 35px !important;
             }
 
             .fitgenie-panel-title {
@@ -73,56 +78,91 @@ export default function Welcome() {
         `}
       </style>
 
-      <div style={styles.backgroundGlowOne} />
-      <div style={styles.backgroundGlowTwo} />
-      <div style={styles.backgroundGlowThree} />
+      <div style={styles.deepGlowOne} />
+      <div style={styles.deepGlowTwo} />
+      <div style={styles.deepGlowThree} />
       <div style={styles.backgroundGrid} />
+      <div style={styles.noiseLayer} />
 
       <AnimatePresence mode="wait">
         {showSplash ? (
           <motion.section
             key="splash"
             style={styles.splash}
-            initial={{ opacity: 0, scale: 0.98 }}
+            initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.02 }}
-            transition={{ duration: 0.55 }}
+            exit={{ opacity: 0, scale: 1.04, filter: "blur(10px)" }}
+            transition={{ duration: 0.7 }}
           >
-            <div style={styles.splashLogo}>
+            <motion.div
+              style={styles.splashLogo}
+              initial={{ y: 16, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.7, delay: 0.15 }}
+            >
               <span style={styles.splashLogoIcon}>✦</span>
-            </div>
+              <span style={styles.logoRing} />
+            </motion.div>
 
-            <h1 style={styles.splashTitle}>FitGenie</h1>
+            <motion.h1
+              style={styles.splashTitle}
+              initial={{ y: 18, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.7, delay: 0.28 }}
+            >
+              FitGenie
+            </motion.h1>
 
-            <p style={styles.splashSubtitle}>Find your perfect fit in seconds</p>
+            <motion.p
+              style={styles.splashSubtitle}
+              initial={{ y: 14, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.7, delay: 0.42 }}
+            >
+              Find your perfect fit in seconds
+            </motion.p>
 
-            <div style={styles.loadingBar}>
+            <motion.div
+              style={styles.splashPremiumLine}
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 260, opacity: 1 }}
+              transition={{ duration: 0.7, delay: 0.56 }}
+            >
+              <span style={styles.splashPremiumLineGlow} />
+            </motion.div>
+
+            <motion.div
+              style={styles.loadingBar}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.8 }}
+            >
               <motion.div
                 style={styles.loadingShine}
-                initial={{ x: "-80px" }}
-                animate={{ x: "260px" }}
+                initial={{ x: "-90px" }}
+                animate={{ x: "310px" }}
                 transition={{
                   duration: 1.2,
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
               />
-            </div>
+            </motion.div>
           </motion.section>
         ) : (
           <motion.section
             key="welcome"
             style={styles.container}
-            initial={{ opacity: 0, y: 26 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 26, filter: "blur(8px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.55 }}
+            transition={{ duration: 0.65 }}
           >
             <div className="fitgenie-welcome-grid" style={styles.grid}>
               <section style={styles.heroSection}>
                 <div style={styles.badge}>
                   <span style={styles.badgeDot} />
-                  AI-powered fit discovery
+                  AI-powered premium fit discovery
                 </div>
 
                 <h1 className="fitgenie-welcome-title" style={styles.title}>
@@ -187,6 +227,8 @@ export default function Welcome() {
               </section>
 
               <section style={styles.authPanel}>
+                <div style={styles.panelGlow} />
+
                 <div style={styles.panelHeader}>
                   <span style={styles.panelPill}>Get started</span>
 
@@ -279,45 +321,45 @@ const styles = {
     position: "relative",
     overflow: "hidden",
     background:
-      "radial-gradient(circle at 12% 12%, rgba(255, 183, 77, 0.34), transparent 30%), radial-gradient(circle at 88% 16%, rgba(109, 93, 252, 0.32), transparent 30%), radial-gradient(circle at 50% 94%, rgba(0, 188, 212, 0.26), transparent 34%), linear-gradient(135deg, #fff7ed 0%, #eef6ff 38%, #f5f3ff 72%, #ecfeff 100%)",
-    color: "#14213d",
+      "radial-gradient(circle at 12% 10%, rgba(124, 58, 237, 0.44), transparent 28%), radial-gradient(circle at 86% 16%, rgba(14, 165, 233, 0.34), transparent 30%), radial-gradient(circle at 50% 94%, rgba(20, 184, 166, 0.26), transparent 34%), linear-gradient(135deg, #070a18 0%, #111827 34%, #1e1b4b 66%, #0f172a 100%)",
+    color: "#f8fafc",
     fontFamily:
       "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
   },
 
-  backgroundGlowOne: {
+  deepGlowOne: {
     position: "absolute",
-    width: "430px",
-    height: "430px",
+    width: "520px",
+    height: "520px",
     borderRadius: "50%",
     background:
-      "linear-gradient(135deg, rgba(255, 138, 76, 0.28), rgba(255, 214, 102, 0.2))",
-    filter: "blur(70px)",
-    top: "-130px",
-    left: "-120px",
+      "linear-gradient(135deg, rgba(124, 58, 237, 0.35), rgba(236, 72, 153, 0.18))",
+    filter: "blur(80px)",
+    top: "-180px",
+    left: "-160px",
     pointerEvents: "none",
   },
 
-  backgroundGlowTwo: {
+  deepGlowTwo: {
     position: "absolute",
-    width: "420px",
-    height: "420px",
+    width: "500px",
+    height: "500px",
     borderRadius: "50%",
     background:
-      "linear-gradient(135deg, rgba(109, 93, 252, 0.26), rgba(0, 188, 212, 0.2))",
+      "linear-gradient(135deg, rgba(14, 165, 233, 0.32), rgba(45, 212, 191, 0.18))",
+    filter: "blur(86px)",
+    bottom: "-170px",
+    right: "-150px",
+    pointerEvents: "none",
+  },
+
+  deepGlowThree: {
+    position: "absolute",
+    width: "360px",
+    height: "360px",
+    borderRadius: "50%",
+    background: "rgba(250, 204, 21, 0.12)",
     filter: "blur(78px)",
-    bottom: "-140px",
-    right: "-120px",
-    pointerEvents: "none",
-  },
-
-  backgroundGlowThree: {
-    position: "absolute",
-    width: "320px",
-    height: "320px",
-    borderRadius: "50%",
-    background: "rgba(45, 212, 191, 0.18)",
-    filter: "blur(70px)",
     top: "42%",
     left: "48%",
     pointerEvents: "none",
@@ -327,9 +369,17 @@ const styles = {
     position: "absolute",
     inset: 0,
     backgroundImage:
-      "linear-gradient(rgba(15,23,42,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.035) 1px, transparent 1px)",
-    backgroundSize: "42px 42px",
-    maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.86), transparent)",
+      "linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px)",
+    backgroundSize: "44px 44px",
+    maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.82), transparent)",
+    pointerEvents: "none",
+  },
+
+  noiseLayer: {
+    position: "absolute",
+    inset: 0,
+    background:
+      "linear-gradient(135deg, rgba(255,255,255,0.04), transparent 40%, rgba(255,255,255,0.025))",
     pointerEvents: "none",
   },
 
@@ -345,55 +395,89 @@ const styles = {
   },
 
   splashLogo: {
-    width: "96px",
-    height: "96px",
-    borderRadius: "30px",
+    position: "relative",
+    width: "112px",
+    height: "112px",
+    borderRadius: "34px",
     display: "grid",
     placeItems: "center",
-    marginBottom: "22px",
+    marginBottom: "24px",
     background:
-      "linear-gradient(135deg, rgba(255,255,255,0.86), rgba(238,246,255,0.72))",
-    border: "1px solid rgba(109, 93, 252, 0.16)",
+      "linear-gradient(145deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08))",
+    border: "1px solid rgba(255,255,255,0.24)",
     boxShadow:
-      "0 25px 60px rgba(15,23,42,0.16), inset 0 1px 0 rgba(255,255,255,0.8)",
+      "0 30px 80px rgba(0,0,0,0.38), 0 0 60px rgba(109,93,252,0.32), inset 0 1px 0 rgba(255,255,255,0.32)",
+    backdropFilter: "blur(18px)",
     animation: "fitGenieFloat 3s ease-in-out infinite",
   },
 
   splashLogoIcon: {
-    fontSize: "42px",
-    color: "#6d5dfc",
-    textShadow: "0 0 22px rgba(0,188,212,0.55)",
+    position: "relative",
+    zIndex: 2,
+    fontSize: "48px",
+    color: "#facc15",
+    textShadow:
+      "0 0 24px rgba(250,204,21,0.65), 0 0 44px rgba(0,188,212,0.45)",
+  },
+
+  logoRing: {
+    position: "absolute",
+    inset: "-10px",
+    borderRadius: "40px",
+    border: "1px solid rgba(250,204,21,0.25)",
+    boxShadow:
+      "0 0 40px rgba(250,204,21,0.18), inset 0 0 34px rgba(109,93,252,0.2)",
   },
 
   splashTitle: {
     margin: 0,
-    fontSize: "64px",
+    fontSize: "72px",
     lineHeight: 1,
-    letterSpacing: "-2px",
-    color: "#111827",
+    letterSpacing: "-3px",
+    color: "#ffffff",
+    textShadow: "0 18px 55px rgba(0,0,0,0.5)",
   },
 
   splashSubtitle: {
-    margin: "14px 0 28px",
-    color: "#475569",
+    margin: "16px 0 26px",
+    color: "#cbd5e1",
     fontSize: "18px",
+    letterSpacing: "0.02em",
+  },
+
+  splashPremiumLine: {
+    position: "relative",
+    height: "1px",
+    marginBottom: "24px",
+    background:
+      "linear-gradient(90deg, transparent, rgba(250,204,21,0.92), rgba(0,188,212,0.72), transparent)",
+    overflow: "hidden",
+  },
+
+  splashPremiumLineGlow: {
+    position: "absolute",
+    inset: "-10px 0",
+    background:
+      "linear-gradient(90deg, transparent, rgba(250,204,21,0.65), transparent)",
+    animation: "premiumShimmer 1.6s linear infinite",
   },
 
   loadingBar: {
     position: "relative",
-    width: "260px",
-    height: "8px",
+    width: "280px",
+    height: "9px",
     borderRadius: "999px",
     overflow: "hidden",
-    background: "rgba(255,255,255,0.72)",
-    border: "1px solid rgba(109, 93, 252, 0.14)",
+    background: "rgba(255,255,255,0.12)",
+    border: "1px solid rgba(255,255,255,0.16)",
+    boxShadow: "inset 0 1px 8px rgba(0,0,0,0.32)",
   },
 
   loadingShine: {
-    width: "70px",
+    width: "82px",
     height: "100%",
     background:
-      "linear-gradient(90deg, transparent, rgba(109,93,252,0.95), transparent)",
+      "linear-gradient(90deg, transparent, rgba(250,204,21,0.95), rgba(0,188,212,0.95), transparent)",
   },
 
   container: {
@@ -410,7 +494,7 @@ const styles = {
   grid: {
     display: "grid",
     gridTemplateColumns: "1.05fr 0.95fr",
-    gap: "28px",
+    gap: "30px",
     alignItems: "center",
   },
 
@@ -421,42 +505,45 @@ const styles = {
   badge: {
     display: "inline-flex",
     alignItems: "center",
-    gap: "9px",
-    border: "1px solid rgba(109, 93, 252, 0.16)",
-    background: "rgba(255,255,255,0.74)",
-    padding: "9px 13px",
+    gap: "10px",
+    border: "1px solid rgba(250,204,21,0.26)",
+    background:
+      "linear-gradient(135deg, rgba(250,204,21,0.14), rgba(255,255,255,0.06))",
+    padding: "10px 14px",
     borderRadius: "999px",
-    color: "#475569",
+    color: "#fde68a",
     fontSize: "13px",
     fontWeight: 900,
-    marginBottom: "18px",
-    boxShadow: "0 12px 24px rgba(15,23,42,0.06)",
+    marginBottom: "20px",
+    boxShadow: "0 16px 34px rgba(0,0,0,0.18)",
+    backdropFilter: "blur(16px)",
   },
 
   badgeDot: {
     width: "9px",
     height: "9px",
     borderRadius: "50%",
-    background: "#00bcd4",
-    boxShadow: "0 0 18px rgba(0,188,212,0.75)",
+    background: "#22d3ee",
+    boxShadow: "0 0 20px rgba(34,211,238,0.85)",
     animation: "fitGeniePulse 2s ease-in-out infinite",
   },
 
   title: {
     margin: 0,
-    maxWidth: "680px",
-    fontSize: "58px",
+    maxWidth: "700px",
+    fontSize: "60px",
     lineHeight: 1.02,
-    letterSpacing: "-2px",
-    color: "#111827",
+    letterSpacing: "-2.4px",
+    color: "#ffffff",
+    textShadow: "0 20px 60px rgba(0,0,0,0.4)",
   },
 
   subtitle: {
     maxWidth: "650px",
-    margin: "20px 0 26px",
-    color: "#475569",
+    margin: "22px 0 28px",
+    color: "#cbd5e1",
     fontSize: "17px",
-    lineHeight: 1.7,
+    lineHeight: 1.72,
   },
 
   visualCard: {
@@ -464,14 +551,15 @@ const styles = {
     gridTemplateColumns: "150px minmax(0, 1fr)",
     gap: "18px",
     alignItems: "center",
-    maxWidth: "600px",
-    borderRadius: "28px",
-    padding: "18px",
+    maxWidth: "610px",
+    borderRadius: "30px",
+    padding: "19px",
     background:
-      "linear-gradient(135deg, rgba(255,255,255,0.84), rgba(238,246,255,0.78), rgba(245,243,255,0.7))",
-    border: "1px solid rgba(109, 93, 252, 0.14)",
-    boxShadow: "0 18px 45px rgba(15,23,42,0.1)",
-    backdropFilter: "blur(16px)",
+      "linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0.08), rgba(14,165,233,0.1))",
+    border: "1px solid rgba(255,255,255,0.18)",
+    boxShadow:
+      "0 26px 70px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.18)",
+    backdropFilter: "blur(20px)",
   },
 
   avatarCluster: {
@@ -488,28 +576,28 @@ const styles = {
     placeItems: "center",
     fontWeight: 950,
     color: "#fff",
-    border: "1px solid rgba(255,255,255,0.56)",
-    boxShadow: "0 16px 34px rgba(15,23,42,0.16)",
+    border: "1px solid rgba(255,255,255,0.4)",
+    boxShadow: "0 18px 38px rgba(0,0,0,0.28)",
   },
 
   avatarOne: {
     top: "16px",
     left: "0px",
-    background: "linear-gradient(135deg,#ff9f7c,#ff5f8f)",
+    background: "linear-gradient(135deg,#f97316,#ec4899)",
     transform: "rotate(-10deg)",
   },
 
   avatarTwo: {
     top: "0px",
     left: "42px",
-    background: "linear-gradient(135deg,#6d5dfc,#00bcd4)",
+    background: "linear-gradient(135deg,#7c3aed,#06b6d4)",
     zIndex: 2,
   },
 
   avatarThree: {
     top: "34px",
     left: "82px",
-    background: "linear-gradient(135deg,#1ed7a6,#8cffd3)",
+    background: "linear-gradient(135deg,#10b981,#22d3ee)",
     transform: "rotate(10deg)",
   },
 
@@ -525,19 +613,20 @@ const styles = {
   },
 
   previewLabel: {
-    color: "#64748b",
+    color: "#cbd5e1",
     fontSize: "13px",
     fontWeight: 900,
   },
 
   previewScore: {
-    color: "#111827",
+    color: "#facc15",
+    textShadow: "0 0 20px rgba(250,204,21,0.3)",
   },
 
   progressTrack: {
     height: "11px",
     borderRadius: "999px",
-    background: "#e2e8f0",
+    background: "rgba(255,255,255,0.14)",
     overflow: "hidden",
     marginBottom: "13px",
   },
@@ -546,7 +635,8 @@ const styles = {
     width: "92%",
     height: "100%",
     borderRadius: "inherit",
-    background: "linear-gradient(90deg,#6d5dfc,#00bcd4)",
+    background: "linear-gradient(90deg,#facc15,#22d3ee,#7c3aed)",
+    boxShadow: "0 0 18px rgba(34,211,238,0.36)",
   },
 
   previewTags: {
@@ -557,11 +647,11 @@ const styles = {
 
   previewTag: {
     fontSize: "12px",
-    padding: "7px 9px",
+    padding: "7px 10px",
     borderRadius: "999px",
-    background: "#ffffff",
-    border: "1px solid #e2e8f0",
-    color: "#475569",
+    background: "rgba(255,255,255,0.12)",
+    border: "1px solid rgba(255,255,255,0.16)",
+    color: "#e2e8f0",
     fontWeight: 800,
   },
 
@@ -569,21 +659,22 @@ const styles = {
     display: "flex",
     flexWrap: "wrap",
     gap: "12px",
-    marginTop: "18px",
+    marginTop: "20px",
   },
 
   featureItem: {
     display: "inline-flex",
     alignItems: "center",
     gap: "9px",
-    padding: "10px 13px",
+    padding: "11px 14px",
     borderRadius: "999px",
-    background: "rgba(255,255,255,0.76)",
-    border: "1px solid rgba(109, 93, 252, 0.12)",
-    color: "#475569",
+    background: "rgba(255,255,255,0.09)",
+    border: "1px solid rgba(255,255,255,0.14)",
+    color: "#e2e8f0",
     fontSize: "13px",
     fontWeight: 900,
-    boxShadow: "0 10px 22px rgba(15,23,42,0.05)",
+    boxShadow: "0 16px 34px rgba(0,0,0,0.16)",
+    backdropFilter: "blur(16px)",
   },
 
   featureIcon: {
@@ -591,108 +682,133 @@ const styles = {
   },
 
   authPanel: {
-    borderRadius: "34px",
-    padding: "30px",
+    position: "relative",
+    overflow: "hidden",
+    borderRadius: "36px",
+    padding: "32px",
     background:
-      "linear-gradient(145deg, rgba(255,255,255,0.88), rgba(238,246,255,0.82), rgba(245,243,255,0.78))",
-    border: "1px solid rgba(109, 93, 252, 0.14)",
+      "linear-gradient(145deg, rgba(255,255,255,0.18), rgba(255,255,255,0.09), rgba(124,58,237,0.12))",
+    border: "1px solid rgba(255,255,255,0.2)",
     boxShadow:
-      "0 30px 80px rgba(15,23,42,0.14), inset 0 1px 0 rgba(255,255,255,0.86)",
-    backdropFilter: "blur(18px)",
+      "0 34px 90px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.2)",
+    backdropFilter: "blur(22px)",
+  },
+
+  panelGlow: {
+    position: "absolute",
+    top: "-120px",
+    right: "-120px",
+    width: "260px",
+    height: "260px",
+    borderRadius: "999px",
+    background:
+      "linear-gradient(135deg, rgba(250,204,21,0.22), rgba(34,211,238,0.2))",
+    filter: "blur(20px)",
+    pointerEvents: "none",
   },
 
   panelHeader: {
-    marginBottom: "20px",
+    position: "relative",
+    zIndex: 1,
+    marginBottom: "22px",
   },
 
   panelPill: {
     display: "inline-flex",
     borderRadius: "999px",
-    padding: "7px 10px",
-    background: "rgba(0,188,212,0.12)",
-    border: "1px solid rgba(0,188,212,0.22)",
-    color: "#155e75",
+    padding: "8px 11px",
+    background: "rgba(34,211,238,0.14)",
+    border: "1px solid rgba(34,211,238,0.24)",
+    color: "#67e8f9",
     fontSize: "12px",
     fontWeight: 950,
-    marginBottom: "12px",
+    marginBottom: "13px",
   },
 
   panelTitle: {
-    margin: "0 0 9px",
-    fontSize: "30px",
+    margin: "0 0 10px",
+    fontSize: "31px",
     lineHeight: 1.15,
-    color: "#111827",
+    color: "#ffffff",
+    letterSpacing: "-0.04em",
   },
 
   panelText: {
     margin: 0,
-    color: "#475569",
-    lineHeight: 1.6,
+    color: "#cbd5e1",
+    lineHeight: 1.62,
   },
 
   authGrid: {
+    position: "relative",
+    zIndex: 1,
     display: "grid",
-    gap: "13px",
+    gap: "14px",
   },
 
   authButtonPrimary: {
     width: "100%",
-    border: 0,
-    borderRadius: "22px",
-    padding: "15px",
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    background: "#ffffff",
-    color: "#111827",
-    cursor: "pointer",
-    boxShadow: "0 16px 32px rgba(15,23,42,0.12)",
-  },
-
-  guestButton: {
-    width: "100%",
-    border: "1px solid rgba(109, 93, 252, 0.14)",
-    borderRadius: "22px",
-    padding: "15px",
+    border: "1px solid rgba(250,204,21,0.28)",
+    borderRadius: "24px",
+    padding: "16px",
     display: "flex",
     alignItems: "center",
     gap: "14px",
     background:
-      "linear-gradient(135deg, rgba(255,255,255,0.84), rgba(236,254,255,0.72))",
+      "linear-gradient(135deg, rgba(255,255,255,0.96), rgba(253,230,138,0.92))",
     color: "#111827",
     cursor: "pointer",
-    boxShadow: "0 14px 28px rgba(15,23,42,0.08)",
+    boxShadow:
+      "0 20px 46px rgba(0,0,0,0.28), 0 0 34px rgba(250,204,21,0.12)",
+  },
+
+  guestButton: {
+    width: "100%",
+    border: "1px solid rgba(255,255,255,0.18)",
+    borderRadius: "24px",
+    padding: "16px",
+    display: "flex",
+    alignItems: "center",
+    gap: "14px",
+    background:
+      "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(34,211,238,0.12), rgba(124,58,237,0.14))",
+    color: "#ffffff",
+    cursor: "pointer",
+    boxShadow: "0 18px 42px rgba(0,0,0,0.22)",
+    backdropFilter: "blur(16px)",
   },
 
   providerIconGoogle: {
-    width: "46px",
-    height: "46px",
-    borderRadius: "16px",
+    width: "48px",
+    height: "48px",
+    borderRadius: "17px",
     display: "grid",
     placeItems: "center",
-    background: "#f3f4f6",
+    background: "#ffffff",
     color: "#111827",
     fontSize: "22px",
     fontWeight: 950,
     flex: "0 0 auto",
+    boxShadow: "0 12px 24px rgba(0,0,0,0.16)",
   },
 
   providerIconGuest: {
-    width: "46px",
-    height: "46px",
-    borderRadius: "16px",
+    width: "48px",
+    height: "48px",
+    borderRadius: "17px",
     display: "grid",
     placeItems: "center",
-    background: "linear-gradient(135deg,#6d5dfc,#00bcd4)",
+    background: "linear-gradient(135deg,#facc15,#22d3ee,#7c3aed)",
     color: "#ffffff",
     fontSize: "20px",
     flex: "0 0 auto",
+    boxShadow: "0 14px 26px rgba(34,211,238,0.18)",
   },
 
   buttonCopy: {
     display: "flex",
     flexDirection: "column",
-    gap: "3px",
+    gap: "4px",
     textAlign: "left",
     flex: 1,
   },
@@ -700,21 +816,24 @@ const styles = {
   buttonArrow: {
     fontSize: "24px",
     fontWeight: 950,
-    opacity: 0.72,
+    opacity: 0.78,
   },
 
   securityNote: {
+    position: "relative",
+    zIndex: 1,
     display: "flex",
     gap: "10px",
     alignItems: "flex-start",
-    marginTop: "18px",
-    padding: "13px",
-    borderRadius: "18px",
-    background: "rgba(255,255,255,0.74)",
-    color: "#475569",
+    marginTop: "19px",
+    padding: "14px",
+    borderRadius: "20px",
+    background: "rgba(255,255,255,0.1)",
+    color: "#cbd5e1",
     fontSize: "13px",
-    lineHeight: 1.5,
-    border: "1px solid rgba(109, 93, 252, 0.1)",
+    lineHeight: 1.52,
+    border: "1px solid rgba(255,255,255,0.13)",
+    backdropFilter: "blur(16px)",
   },
 
   securityIcon: {
@@ -722,11 +841,13 @@ const styles = {
   },
 
   miniTimeline: {
+    position: "relative",
+    zIndex: 1,
     display: "flex",
     alignItems: "center",
     gap: "8px",
-    marginTop: "18px",
-    color: "#64748b",
+    marginTop: "19px",
+    color: "#cbd5e1",
     fontSize: "12px",
     fontWeight: 900,
   },
@@ -742,6 +863,6 @@ const styles = {
     height: "1px",
     flex: 1,
     minWidth: "20px",
-    background: "#cbd5e1",
+    background: "rgba(255,255,255,0.2)",
   },
 };
