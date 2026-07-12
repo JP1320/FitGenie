@@ -9,7 +9,7 @@ export default function Welcome() {
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 3000);
+    const timer = setTimeout(() => setShowSplash(false), 4200);
 
     return () => clearTimeout(timer);
   }, []);
@@ -74,6 +74,10 @@ export default function Welcome() {
             .fitgenie-panel-title {
               font-size: 26px !important;
             }
+
+            .fitgenie-creator-block {
+              grid-template-columns: 1fr !important;
+            }
           }
         `}
       </style>
@@ -123,10 +127,38 @@ export default function Welcome() {
             </motion.p>
 
             <motion.div
+              className="fitgenie-creator-block"
+              style={styles.creatorBlock}
+              initial={{ y: 18, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.75, delay: 0.68 }}
+            >
+              <motion.div
+                style={styles.creatorCard}
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.82 }}
+              >
+                <span style={styles.creatorLabel}>Founder</span>
+                <strong style={styles.creatorName}>Janvi Patel</strong>
+              </motion.div>
+
+              <motion.div
+                style={styles.creatorCard}
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.6, delay: 1.02 }}
+              >
+                <span style={styles.creatorLabel}>Co-Founder</span>
+                <strong style={styles.creatorName}>Jafar Kachhi</strong>
+              </motion.div>
+            </motion.div>
+
+            <motion.div
               style={styles.splashPremiumLine}
               initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 260, opacity: 1 }}
-              transition={{ duration: 0.7, delay: 0.56 }}
+              animate={{ width: 280, opacity: 1 }}
+              transition={{ duration: 0.7, delay: 1.22 }}
             >
               <span style={styles.splashPremiumLineGlow} />
             </motion.div>
@@ -135,7 +167,7 @@ export default function Welcome() {
               style={styles.loadingBar}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.4, delay: 0.8 }}
+              transition={{ duration: 0.4, delay: 1.42 }}
             >
               <motion.div
                 style={styles.loadingShine}
@@ -439,10 +471,48 @@ const styles = {
   },
 
   splashSubtitle: {
-    margin: "16px 0 26px",
+    margin: "16px 0 22px",
     color: "#cbd5e1",
     fontSize: "18px",
     letterSpacing: "0.02em",
+  },
+
+  creatorBlock: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "14px",
+    width: "min(480px, 92vw)",
+    margin: "0 auto 24px",
+  },
+
+  creatorCard: {
+    padding: "14px 18px",
+    borderRadius: "22px",
+    background:
+      "linear-gradient(145deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06))",
+    border: "1px solid rgba(255,255,255,0.18)",
+    boxShadow:
+      "0 20px 50px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.16)",
+    backdropFilter: "blur(18px)",
+  },
+
+  creatorLabel: {
+    display: "block",
+    marginBottom: "6px",
+    color: "#fde68a",
+    fontSize: "11px",
+    fontWeight: 950,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+  },
+
+  creatorName: {
+    display: "block",
+    color: "#ffffff",
+    fontSize: "17px",
+    fontWeight: 950,
+    letterSpacing: "-0.02em",
+    textShadow: "0 10px 28px rgba(0,0,0,0.35)",
   },
 
   splashPremiumLine: {
