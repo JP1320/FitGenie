@@ -2,9 +2,9 @@ import express from "express";
 import pino from "pino";
 import cors from "cors";
 import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer";
 import { MongoClient } from "mongodb";
 import { OAuth2Client } from "google-auth-library";
-import admin from "firebase-admin";
 
 const app = express();
 const logger = pino();
@@ -15,8 +15,14 @@ const MONGODB_URI = process.env.MONGODB_URI || "";
 const FITGENIE_DB_NAME = process.env.FITGENIE_DB_NAME || "fitgenie";
 const JWT_SECRET = process.env.JWT_SECRET || "";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
-const FIREBASE_SERVICE_ACCOUNT_BASE64 =
-  process.env.FIREBASE_SERVICE_ACCOUNT_BASE64 || "";
+
+const SMTP_HOST = process.env.SMTP_HOST || "";
+const SMTP_PORT = Number(process.env.SMTP_PORT || 465);
+const SMTP_SECURE = String(process.env.SMTP_SECURE || "true") === "true";
+const SMTP_USER = process.env.SMTP_USER || "";
+const SMTP_PASS = process.env.SMTP_PASS || "";
+const MAIL_FROM_NAME = process.env.MAIL_FROM_NAME || "FitGenie";
+const MAIL_FROM_EMAIL = process.env.MAIL_FROM_EMAIL || SMTP_USER || "";
 
 const allowedOrigins = (
   process.env.CORS_ORIGIN ||
@@ -45,7 +51,7 @@ app.use(express.json({ limit: "2mb" }));
 
 let mongoClient = null;
 let mongoDb = null;
-let firebaseAdminApp = null;
+let mailTransporter = null;
 
 async function getDb() {
   if (!MONGODB_URI) {
@@ -66,29 +72,32 @@ async function getDb() {
   return mongoDb;
 }
 
-function getFirebaseAdminApp() {
-  if (firebaseAdminApp) {
-    return firebaseAdminApp;
-  }
+function isMailConfigured() {
+  return Boolean(SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS && MAIL_FROM_EMAIL);
+}
 
-  if (!FIREBASE_SERVICE_ACCOUNT_BASE64) {
+function getMailTransporter() {
+  if (!isMailConfigured()) {
     throw new Error(
-      "FIREBASE_SERVICE_ACCOUNT_BASE64 is not configured in Render backend environment variables."
+      "SMTP email is not configured. Add SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and MAIL_FROM_EMAIL in Render environment variables."
     );
   }
 
-  const serviceAccountJson = Buffer.from(
-    FIREBASE_SERVICE_ACCOUNT_BASE64,
-    "base64"
-  ).toString("utf8");
+  if (mailTransporter) {
+    return mailTransporter;
+  }
 
-  const serviceAccount = JSON.parse(serviceAccountJson);
-
-  firebaseAdminApp = admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+  mailTransporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_SECURE,
+    auth: {
+      user: SMTP_USER,
+      pass: SMTP_PASS,
+    },
   });
 
-  return firebaseAdminApp;
+  return mailTransporter;
 }
 
 function createToken(user) {
@@ -129,6 +138,204 @@ function serializeDocument(doc) {
   return {
     ...doc,
     _id: String(doc._id),
+  };
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function buildWelcomeEmailHtml({ name, email }) {
+  const safeName = escapeHtml(name || "there");
+  const safeEmail = escapeHtml(email || "");
+
+  return `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Welcome to FitGenie</title>
+      </head>
+
+      <body style="margin:0;padding:0;background:#070a18;font-family:Arial,Helvetica,sans-serif;color:#111827;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:linear-gradient(135deg,#070a18,#111827,#1e1b4b);padding:32px 16px;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border-radius:28px;overflow:hidden;box-shadow:0 28px 80px rgba(0,0,0,0.35);">
+                <tr>
+                  <td style="padding:34px 30px;background:linear-gradient(135deg,#111827,#1e1b4b,#0f172a);color:#ffffff;text-align:center;">
+                    <div style="display:inline-block;width:74px;height:74px;line-height:74px;border-radius:24px;background:linear-gradient(135deg,#facc15,#22d3ee,#7c3aed);font-size:34px;margin-bottom:18px;">
+                      ✦
+                    </div>
+
+                    <h1 style="margin:0;font-size:34px;line-height:1.15;letter-spacing:-1px;">
+                      Welcome to FitGenie
+                    </h1>
+
+                    <p style="margin:12px 0 0;color:#cbd5e1;font-size:15px;line-height:1.6;">
+                      Your smart fashion and perfect-fit journey starts here.
+                    </p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:32px 30px;">
+                    <p style="margin:0 0 18px;font-size:18px;line-height:1.6;color:#111827;">
+                      Hi ${safeName},
+                    </p>
+
+                    <p style="margin:0 0 18px;font-size:15px;line-height:1.8;color:#475569;">
+                      Thank you for creating your account with <strong style="color:#111827;">FitGenie</strong>.
+                      Your account has been created successfully using this email ID:
+                    </p>
+
+                    <div style="margin:20px 0;padding:16px 18px;border-radius:18px;background:#f8fafc;border:1px solid #e2e8f0;color:#111827;font-size:15px;font-weight:700;">
+                      ${safeEmail}
+                    </div>
+
+                    <p style="margin:0 0 18px;font-size:15px;line-height:1.8;color:#475569;">
+                      FitGenie helps you discover better outfit recommendations based on your
+                      style, size, body profile, budget, fabric preference, and fit needs.
+                      You can create your fit card, connect with suitable fashion experts,
+                      and track your outfit journey from selection to delivery.
+                    </p>
+
+                    <div style="margin:24px 0;padding:20px;border-radius:22px;background:linear-gradient(135deg,#eef2ff,#ecfeff);border:1px solid #dbeafe;">
+                      <h2 style="margin:0 0 12px;font-size:18px;color:#111827;">
+                        What you can do with FitGenie
+                      </h2>
+
+                      <ul style="margin:0;padding-left:20px;color:#475569;font-size:15px;line-height:1.8;">
+                        <li>Get AI-powered outfit and size suggestions.</li>
+                        <li>Save your profile and fit preferences.</li>
+                        <li>Create a fit card for tailors, designers, and boutiques.</li>
+                        <li>Choose service types like tailoring, designer wear, alteration, or styling.</li>
+                        <li>Track your order and share feedback after delivery.</li>
+                      </ul>
+                    </div>
+
+                    <p style="margin:0 0 8px;font-size:15px;line-height:1.8;color:#475569;">
+                      We’re excited to help you find your perfect fit.
+                    </p>
+
+                    <p style="margin:0;font-size:15px;line-height:1.8;color:#111827;font-weight:700;">
+                      Team FitGenie
+                    </p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:18px 30px;background:#f8fafc;border-top:1px solid #e2e8f0;text-align:center;">
+                    <p style="margin:0;color:#64748b;font-size:12px;line-height:1.6;">
+                      You received this email because a FitGenie account was created using ${safeEmail}.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `;
+}
+
+function buildWelcomeEmailText({ name, email }) {
+  return `
+Hi ${name || "there"},
+
+Thank you for creating your account with FitGenie.
+
+Your account has been created successfully using this email ID:
+${email}
+
+FitGenie helps you discover better outfit recommendations based on your style, size, body profile, budget, fabric preference, and fit needs. You can create your fit card, connect with suitable fashion experts, and track your outfit journey from selection to delivery.
+
+What you can do with FitGenie:
+- Get AI-powered outfit and size suggestions.
+- Save your profile and fit preferences.
+- Create a fit card for tailors, designers, and boutiques.
+- Choose service types like tailoring, designer wear, alteration, or styling.
+- Track your order and share feedback after delivery.
+
+We’re excited to help you find your perfect fit.
+
+Team FitGenie
+  `.trim();
+}
+
+async function sendWelcomeEmailOnce({ db, user }) {
+  if (!user?.email) {
+    return {
+      sent: false,
+      reason: "missing-email",
+    };
+  }
+
+  if (!isMailConfigured()) {
+    await db.collection("users").updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          welcomeEmailSkippedAt: new Date(),
+          welcomeEmailSkippedReason: "smtp-not-configured",
+        },
+      }
+    );
+
+    return {
+      sent: false,
+      reason: "smtp-not-configured",
+    };
+  }
+
+  if (user.welcomeEmailSentAt) {
+    return {
+      sent: false,
+      reason: "already-sent",
+    };
+  }
+
+  const transporter = getMailTransporter();
+
+  const subject = "Welcome to FitGenie — Your account has been created";
+
+  const mailResult = await transporter.sendMail({
+    from: `"${MAIL_FROM_NAME}" <${MAIL_FROM_EMAIL}>`,
+    to: user.email,
+    subject,
+    text: buildWelcomeEmailText({
+      name: user.name,
+      email: user.email,
+    }),
+    html: buildWelcomeEmailHtml({
+      name: user.name,
+      email: user.email,
+    }),
+  });
+
+  await db.collection("users").updateOne(
+    { _id: user._id },
+    {
+      $set: {
+        welcomeEmailSentAt: new Date(),
+        welcomeEmailMessageId: mailResult.messageId || "",
+      },
+      $unset: {
+        welcomeEmailSkippedReason: "",
+      },
+    }
+  );
+
+  return {
+    sent: true,
+    messageId: mailResult.messageId || "",
   };
 }
 
@@ -177,7 +384,7 @@ app.get("/ready", async (_req, res) => {
     mongodbConfigured: Boolean(MONGODB_URI),
     jwtConfigured: Boolean(JWT_SECRET),
     googleConfigured: Boolean(GOOGLE_CLIENT_ID),
-    firebaseConfigured: Boolean(FIREBASE_SERVICE_ACCOUNT_BASE64),
+    emailConfigured: isMailConfigured(),
     database: FITGENIE_DB_NAME,
   });
 });
@@ -192,10 +399,15 @@ app.post("/auth/google", async (req, res) => {
     const users = db.collection("users");
     const now = new Date();
 
+    const existingUser = await users.findOne({
+      provider: "google",
+      email: googleProfile.email,
+    });
+
     await users.updateOne(
       {
         provider: "google",
-        googleSub: googleProfile.sub,
+        email: googleProfile.email,
       },
       {
         $set: {
@@ -215,10 +427,44 @@ app.post("/auth/google", async (req, res) => {
       { upsert: true }
     );
 
-    const user = await users.findOne({
+    let user = await users.findOne({
       provider: "google",
-      googleSub: googleProfile.sub,
+      email: googleProfile.email,
     });
+
+    let welcomeEmail = {
+      sent: false,
+      reason: "existing-user",
+    };
+
+    if (!existingUser) {
+      try {
+        welcomeEmail = await sendWelcomeEmailOnce({ db, user });
+
+        user = await users.findOne({
+          provider: "google",
+          email: googleProfile.email,
+        });
+      } catch (emailError) {
+        logger.error({ emailError }, "Welcome email failed");
+
+        await users.updateOne(
+          { _id: user._id },
+          {
+            $set: {
+              welcomeEmailFailedAt: new Date(),
+              welcomeEmailError:
+                emailError.message || "Welcome email failed.",
+            },
+          }
+        );
+
+        welcomeEmail = {
+          sent: false,
+          reason: emailError.message || "welcome-email-failed",
+        };
+      }
+    }
 
     const token = createToken(user);
 
@@ -226,6 +472,7 @@ app.post("/auth/google", async (req, res) => {
       success: true,
       user: publicUser(user),
       token,
+      welcomeEmail,
     });
   } catch (error) {
     logger.error({ error }, "Google sign-in failed");
@@ -235,86 +482,6 @@ app.post("/auth/google", async (req, res) => {
       message:
         error.message ||
         "Unable to complete Google sign-in. Please try again.",
-    });
-  }
-});
-
-app.post("/auth/firebase-phone", async (req, res) => {
-  try {
-    const { idToken, phone } = req.body || {};
-
-    if (!idToken) {
-      return res.status(400).json({
-        success: false,
-        message: "Firebase ID token is required.",
-      });
-    }
-
-    getFirebaseAdminApp();
-
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-
-    if (!decodedToken?.uid) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid Firebase token.",
-      });
-    }
-
-    const verifiedPhone = decodedToken.phone_number || phone || "";
-
-    if (!verifiedPhone) {
-      return res.status(400).json({
-        success: false,
-        message: "Verified phone number was not returned by Firebase.",
-      });
-    }
-
-    const db = await getDb();
-    const users = db.collection("users");
-    const now = new Date();
-
-    await users.updateOne(
-      {
-        provider: "firebase-phone",
-        firebaseUid: decodedToken.uid,
-      },
-      {
-        $set: {
-          provider: "firebase-phone",
-          firebaseUid: decodedToken.uid,
-          phone: verifiedPhone,
-          name: verifiedPhone,
-          updatedAt: now,
-          lastLoginAt: now,
-        },
-        $setOnInsert: {
-          createdAt: now,
-        },
-      },
-      { upsert: true }
-    );
-
-    const user = await users.findOne({
-      provider: "firebase-phone",
-      firebaseUid: decodedToken.uid,
-    });
-
-    const token = createToken(user);
-
-    res.status(200).json({
-      success: true,
-      user: publicUser(user),
-      token,
-    });
-  } catch (error) {
-    logger.error({ error }, "Firebase phone login failed");
-
-    res.status(401).json({
-      success: false,
-      message:
-        error.message ||
-        "Unable to complete Firebase phone login. Please try again.",
     });
   }
 });
@@ -334,6 +501,11 @@ app.post("/auth/login", async (req, res) => {
     const users = db.collection("users");
     const now = new Date();
 
+    const existingUser = await users.findOne({
+      provider: "email",
+      email,
+    });
+
     await users.updateOne(
       { provider: "email", email },
       {
@@ -351,13 +523,49 @@ app.post("/auth/login", async (req, res) => {
       { upsert: true }
     );
 
-    const user = await users.findOne({ provider: "email", email });
+    let user = await users.findOne({ provider: "email", email });
+
+    let welcomeEmail = {
+      sent: false,
+      reason: "existing-user",
+    };
+
+    if (!existingUser) {
+      try {
+        welcomeEmail = await sendWelcomeEmailOnce({ db, user });
+
+        user = await users.findOne({
+          provider: "email",
+          email,
+        });
+      } catch (emailError) {
+        logger.error({ emailError }, "Welcome email failed");
+
+        await users.updateOne(
+          { _id: user._id },
+          {
+            $set: {
+              welcomeEmailFailedAt: new Date(),
+              welcomeEmailError:
+                emailError.message || "Welcome email failed.",
+            },
+          }
+        );
+
+        welcomeEmail = {
+          sent: false,
+          reason: emailError.message || "welcome-email-failed",
+        };
+      }
+    }
+
     const token = createToken(user);
 
     res.status(200).json({
       success: true,
       user: publicUser(user),
       token,
+      welcomeEmail,
     });
   } catch (error) {
     logger.error({ error }, "Email login failed");
@@ -367,22 +575,6 @@ app.post("/auth/login", async (req, res) => {
       message: error.message || "Email login failed.",
     });
   }
-});
-
-app.post("/auth/mobile/request-otp", async (_req, res) => {
-  res.status(410).json({
-    success: false,
-    message:
-      "This OTP route is no longer used. FitGenie mobile login now uses Firebase Phone Authentication.",
-  });
-});
-
-app.post("/auth/mobile/verify-otp", async (_req, res) => {
-  res.status(410).json({
-    success: false,
-    message:
-      "This OTP route is no longer used. FitGenie mobile login now uses Firebase Phone Authentication.",
-  });
 });
 
 app.post("/recommendations", async (req, res) => {
