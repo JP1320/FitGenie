@@ -73,7 +73,9 @@ async function getDb() {
 }
 
 function isMailConfigured() {
-  return Boolean(SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS && MAIL_FROM_EMAIL);
+  return Boolean(
+    SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS && MAIL_FROM_EMAIL
+  );
 }
 
 function getMailTransporter() {
@@ -167,10 +169,10 @@ function buildWelcomeEmailHtml({ name, email }) {
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:linear-gradient(135deg,#070a18,#111827,#1e1b4b);padding:32px 16px;">
           <tr>
             <td align="center">
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border-radius:28px;overflow:hidden;box-shadow:0 28px 80px rgba(0,0,0,0.35);">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border-radius:28px;overflow:hidden;box-shadow:0 28px 80px rgba(0,0,0,0.35);">
                 <tr>
-                  <td style="padding:34px 30px;background:linear-gradient(135deg,#111827,#1e1b4b,#0f172a);color:#ffffff;text-align:center;">
-                    <div style="display:inline-block;width:74px;height:74px;line-height:74px;border-radius:24px;background:linear-gradient(135deg,#facc15,#22d3ee,#7c3aed);font-size:34px;margin-bottom:18px;">
+                  <td style="padding:36px 30px;background:linear-gradient(135deg,#111827,#1e1b4b,#0f172a);color:#ffffff;text-align:center;">
+                    <div style="display:inline-block;width:76px;height:76px;line-height:76px;border-radius:24px;background:linear-gradient(135deg,#facc15,#22d3ee,#7c3aed);font-size:34px;margin-bottom:18px;">
                       ✦
                     </div>
 
@@ -179,7 +181,7 @@ function buildWelcomeEmailHtml({ name, email }) {
                     </h1>
 
                     <p style="margin:12px 0 0;color:#cbd5e1;font-size:15px;line-height:1.6;">
-                      Your smart fashion and perfect-fit journey starts here.
+                      Thank you for creating your FitGenie account.
                     </p>
                   </td>
                 </tr>
@@ -191,8 +193,7 @@ function buildWelcomeEmailHtml({ name, email }) {
                     </p>
 
                     <p style="margin:0 0 18px;font-size:15px;line-height:1.8;color:#475569;">
-                      Thank you for creating your account with <strong style="color:#111827;">FitGenie</strong>.
-                      Your account has been created successfully using this email ID:
+                      Your <strong style="color:#111827;">FitGenie</strong> account has been created successfully using this email ID:
                     </p>
 
                     <div style="margin:20px 0;padding:16px 18px;border-radius:18px;background:#f8fafc;border:1px solid #e2e8f0;color:#111827;font-size:15px;font-weight:700;">
@@ -270,73 +271,120 @@ Team FitGenie
   `.trim();
 }
 
-async function sendWelcomeEmailOnce({ db, user }) {
-  if (!user?.email) {
-    return {
-      sent: false,
-      reason: "missing-email",
-    };
-  }
+async function sendWelcomeEmailInBackground({ userId }) {
+  try {
+    const db = await getDb();
+    const users = db.collection("users");
 
-  if (!isMailConfigured()) {
-    await db.collection("users").updateOne(
-      { _id: user._id },
+    const user = await users.findOne({ _id: userId });
+
+    if (!user?.email) {
+      return;
+    }
+
+    if (user.welcomeEmailSentAt) {
+      return;
+    }
+
+    if (!isMailConfigured()) {
+      await users.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            welcomeEmailSkippedAt: new Date(),
+            welcomeEmailSkippedReason: "smtp-not-configured",
+          },
+        }
+      );
+
+      return;
+    }
+
+    const claim = await users.updateOne(
+      {
+        _id: user._id,
+        welcomeEmailSentAt: { $exists: false },
+        welcomeEmailSendingAt: { $exists: false },
+      },
       {
         $set: {
-          welcomeEmailSkippedAt: new Date(),
-          welcomeEmailSkippedReason: "smtp-not-configured",
+          welcomeEmailSendingAt: new Date(),
+        },
+        $unset: {
+          welcomeEmailFailedAt: "",
+          welcomeEmailError: "",
+          welcomeEmailSkippedReason: "",
         },
       }
     );
 
-    return {
-      sent: false,
-      reason: "smtp-not-configured",
-    };
-  }
-
-  if (user.welcomeEmailSentAt) {
-    return {
-      sent: false,
-      reason: "already-sent",
-    };
-  }
-
-  const transporter = getMailTransporter();
-
-  const subject = "Welcome to FitGenie — Your account has been created";
-
-  const mailResult = await transporter.sendMail({
-    from: `"${MAIL_FROM_NAME}" <${MAIL_FROM_EMAIL}>`,
-    to: user.email,
-    subject,
-    text: buildWelcomeEmailText({
-      name: user.name,
-      email: user.email,
-    }),
-    html: buildWelcomeEmailHtml({
-      name: user.name,
-      email: user.email,
-    }),
-  });
-
-  await db.collection("users").updateOne(
-    { _id: user._id },
-    {
-      $set: {
-        welcomeEmailSentAt: new Date(),
-        welcomeEmailMessageId: mailResult.messageId || "",
-      },
-      $unset: {
-        welcomeEmailSkippedReason: "",
-      },
+    if (claim.modifiedCount !== 1) {
+      return;
     }
-  );
 
-  return {
-    sent: true,
-    messageId: mailResult.messageId || "",
-  };
+    const transporter = getMailTransporter();
+
+    const mailResult = await transporter.sendMail({
+      from: `"${MAIL_FROM_NAME}" <${MAIL_FROM_EMAIL}>`,
+      to: user.email,
+      subject: "Welcome to FitGenie — Your account has been created",
+      text: buildWelcomeEmailText({
+        name: user.name,
+        email: user.email,
+      }),
+      html: buildWelcomeEmailHtml({
+        name: user.name,
+        email: user.email,
+      }),
+    });
+
+    await users.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          welcomeEmailSentAt: new Date(),
+          welcomeEmailMessageId: mailResult.messageId || "",
+        },
+        $unset: {
+          welcomeEmailSendingAt: "",
+          welcomeEmailFailedAt: "",
+          welcomeEmailError: "",
+        },
+      }
+    );
+  } catch (emailError) {
+    logger.error({ emailError }, "Welcome email background send failed");
+
+    try {
+      const db = await getDb();
+
+      await db.collection("users").updateOne(
+        { _id: userId },
+        {
+          $set: {
+            welcomeEmailFailedAt: new Date(),
+            welcomeEmailError:
+              emailError.message || "Welcome email background send failed.",
+          },
+          $unset: {
+            welcomeEmailSendingAt: "",
+          },
+        }
+      );
+    } catch (updateError) {
+      logger.error({ updateError }, "Welcome email failure update failed");
+    }
+  }
+}
+
+function queueWelcomeEmail({ user }) {
+  if (!user?._id) {
+    return;
+  }
+
+  setTimeout(() => {
+    sendWelcomeEmailInBackground({ userId: user._id });
+  }, 0);
 }
 
 async function verifyGoogleCredential(credential) {
@@ -399,11 +447,6 @@ app.post("/auth/google", async (req, res) => {
     const users = db.collection("users");
     const now = new Date();
 
-    const existingUser = await users.findOne({
-      provider: "google",
-      email: googleProfile.email,
-    });
-
     await users.updateOne(
       {
         provider: "google",
@@ -427,52 +470,23 @@ app.post("/auth/google", async (req, res) => {
       { upsert: true }
     );
 
-    let user = await users.findOne({
+    const user = await users.findOne({
       provider: "google",
       email: googleProfile.email,
     });
 
-    let welcomeEmail = {
-      sent: false,
-      reason: "existing-user",
-    };
-
-    if (!existingUser) {
-      try {
-        welcomeEmail = await sendWelcomeEmailOnce({ db, user });
-
-        user = await users.findOne({
-          provider: "google",
-          email: googleProfile.email,
-        });
-      } catch (emailError) {
-        logger.error({ emailError }, "Welcome email failed");
-
-        await users.updateOne(
-          { _id: user._id },
-          {
-            $set: {
-              welcomeEmailFailedAt: new Date(),
-              welcomeEmailError:
-                emailError.message || "Welcome email failed.",
-            },
-          }
-        );
-
-        welcomeEmail = {
-          sent: false,
-          reason: emailError.message || "welcome-email-failed",
-        };
-      }
-    }
-
     const token = createToken(user);
+
+    queueWelcomeEmail({ user });
 
     res.status(200).json({
       success: true,
       user: publicUser(user),
       token,
-      welcomeEmail,
+      welcomeEmail: {
+        queued: !Boolean(user.welcomeEmailSentAt),
+        alreadySent: Boolean(user.welcomeEmailSentAt),
+      },
     });
   } catch (error) {
     logger.error({ error }, "Google sign-in failed");
@@ -501,11 +515,6 @@ app.post("/auth/login", async (req, res) => {
     const users = db.collection("users");
     const now = new Date();
 
-    const existingUser = await users.findOne({
-      provider: "email",
-      email,
-    });
-
     await users.updateOne(
       { provider: "email", email },
       {
@@ -523,49 +532,19 @@ app.post("/auth/login", async (req, res) => {
       { upsert: true }
     );
 
-    let user = await users.findOne({ provider: "email", email });
-
-    let welcomeEmail = {
-      sent: false,
-      reason: "existing-user",
-    };
-
-    if (!existingUser) {
-      try {
-        welcomeEmail = await sendWelcomeEmailOnce({ db, user });
-
-        user = await users.findOne({
-          provider: "email",
-          email,
-        });
-      } catch (emailError) {
-        logger.error({ emailError }, "Welcome email failed");
-
-        await users.updateOne(
-          { _id: user._id },
-          {
-            $set: {
-              welcomeEmailFailedAt: new Date(),
-              welcomeEmailError:
-                emailError.message || "Welcome email failed.",
-            },
-          }
-        );
-
-        welcomeEmail = {
-          sent: false,
-          reason: emailError.message || "welcome-email-failed",
-        };
-      }
-    }
-
+    const user = await users.findOne({ provider: "email", email });
     const token = createToken(user);
+
+    queueWelcomeEmail({ user });
 
     res.status(200).json({
       success: true,
       user: publicUser(user),
       token,
-      welcomeEmail,
+      welcomeEmail: {
+        queued: !Boolean(user.welcomeEmailSentAt),
+        alreadySent: Boolean(user.welcomeEmailSentAt),
+      },
     });
   } catch (error) {
     logger.error({ error }, "Email login failed");
