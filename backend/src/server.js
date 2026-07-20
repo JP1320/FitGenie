@@ -437,6 +437,81 @@ app.get("/ready", async (_req, res) => {
   });
 });
 
+app.post("/debug/send-test-email", async (req, res) => {
+  try {
+    const debugSecret = process.env.EMAIL_DEBUG_SECRET || "";
+    const providedSecret = req.headers["x-debug-secret"];
+
+    if (!debugSecret || providedSecret !== debugSecret) {
+      return res.status(403).json({
+        success: false,
+        message: "Debug secret is missing or incorrect.",
+      });
+    }
+
+    const { to } = req.body || {};
+
+    if (!to) {
+      return res.status(400).json({
+        success: false,
+        message: "Recipient email is required.",
+      });
+    }
+
+    if (!isMailConfigured()) {
+      return res.status(500).json({
+        success: false,
+        message: "SMTP email is not configured.",
+        smtp: {
+          host: Boolean(SMTP_HOST),
+          port: Boolean(SMTP_PORT),
+          user: Boolean(SMTP_USER),
+          pass: Boolean(SMTP_PASS),
+          from: Boolean(MAIL_FROM_EMAIL),
+        },
+      });
+    }
+
+    const transporter = getMailTransporter();
+
+    await transporter.verify();
+
+    const result = await transporter.sendMail({
+      from: `"${MAIL_FROM_NAME}" <${MAIL_FROM_EMAIL}>`,
+      to,
+      subject: "FitGenie test email",
+      text: "This is a FitGenie test email. If you received this, SMTP is working.",
+      html: `
+        <div style="font-family:Arial,sans-serif;padding:20px;">
+          <h2>FitGenie test email</h2>
+          <p>This is a FitGenie test email.</p>
+          <p>If you received this, SMTP is working correctly.</p>
+        </div>
+      `,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Test email sent successfully.",
+      messageId: result.messageId,
+      accepted: result.accepted,
+      rejected: result.rejected,
+      response: result.response,
+    });
+  } catch (error) {
+    logger.error({ error }, "Debug test email failed");
+
+    res.status(500).json({
+      success: false,
+      message: error.message || "Test email failed.",
+      code: error.code || "",
+      command: error.command || "",
+      response: error.response || "",
+      responseCode: error.responseCode || "",
+    });
+  }
+});
+
 app.post("/auth/google", async (req, res) => {
   try {
     const { credential } = req.body || {};
