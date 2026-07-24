@@ -30,8 +30,9 @@ function emailToDisplayName(email) {
     return "User";
   }
 
-  return cleanEmail
-    .split("@")[0]
+  const localPart = cleanEmail.split("@")[0] || "User";
+
+  return localPart
     .replace(/[._-]+/g, " ")
     .split(" ")
     .filter(Boolean)
@@ -39,8 +40,8 @@ function emailToDisplayName(email) {
     .join(" ");
 }
 
-function getUserInitial({ name, email, loginMode }) {
-  if (loginMode === "guest") {
+function getInitial(name, email, isGuest) {
+  if (isGuest) {
     return "G";
   }
 
@@ -61,13 +62,16 @@ function AccountBadge() {
     return null;
   }
 
-  if (!authUser && loginMode !== "guest") {
+  const email = String(authUser?.email || "").trim().toLowerCase();
+  const hasRealEmail = Boolean(email);
+
+  const isGuest =
+    !hasRealEmail &&
+    (loginMode === "guest" || authUser?.provider === "guest" || !authUser);
+
+  if (!authUser && !isGuest) {
     return null;
   }
-
-  const isGuest = loginMode === "guest" || authUser?.provider === "guest";
-
-  const email = authUser?.email || "";
 
   const name = isGuest
     ? "Guest User"
@@ -77,15 +81,8 @@ function AccountBadge() {
     ? authUser.name
     : emailToDisplayName(email);
 
-  const subtitle = isGuest
-    ? "Guest mode"
-    : email || authUser?.provider || "Signed in";
-
-  const initial = getUserInitial({
-    name,
-    email,
-    loginMode: isGuest ? "guest" : loginMode,
-  });
+  const subtitle = isGuest ? "Guest mode" : email || "Signed in";
+  const initial = getInitial(name, email, isGuest);
 
   return (
     <button
@@ -155,7 +152,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "10px",
-    maxWidth: "260px",
+    maxWidth: "280px",
     border: "1px solid rgba(255,255,255,0.28)",
     borderRadius: "999px",
     padding: "8px 12px 8px 8px",
@@ -196,7 +193,7 @@ const styles = {
   },
 
   accountName: {
-    maxWidth: "178px",
+    maxWidth: "190px",
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
@@ -206,7 +203,7 @@ const styles = {
   },
 
   accountEmail: {
-    maxWidth: "178px",
+    maxWidth: "190px",
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
