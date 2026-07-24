@@ -2,148 +2,122 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 const initialState = {
-  userId: "u_live_001",
-
-  loginMode: "guest",
+  loginMode: "",
   authUser: null,
   authToken: "",
 
   intent: "",
-  intentSubType: "",
-  forWhom: "",
-  relation: "",
-  occasion: "",
-
-  ageRange: "",
-  age: "",
-  gender: "",
-
-  bodyType: "",
-  size: "",
-  heightCm: "",
-  heightRange: "",
-  scanResult: null,
-
-  selectedProduct: null,
-
-  filters: {
-    style: "",
-    budget: "",
-    fabric: "",
-    fit: "",
-    sleeve: "",
-    length: "",
-  },
-
-  recommendations: null,
-  selectedOutfit: null,
-  confidenceScore: null,
-
-  serviceType: "",
-  marketplace: {},
-
-  ratingFilter: "",
-  locationFilter: "",
+  basicProfile: {},
+  sizeBody: {},
+  scanner: {},
+  guidedFilters: {},
+  recommendations: [],
+  serviceType: {},
+  qualityLocation: {},
   selectedExpert: null,
-
-  deliveryMode: "",
-  schedule: "",
-  deliverySchedule: "",
   delivery: {},
-
-  fitCard: null,
-  order: null,
-  trackingStatus: "Accepted",
-
-  feedback: {
-    fit: 0,
-    service: 0,
-    delivery: 0,
-    image: "",
-  },
+  fitCard: {},
+  tracking: {},
+  feedback: {},
 };
 
 export const useFlowStore = create(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...initialState,
 
-      patch: (keyOrPayload, maybePayload) =>
-        set((state) => {
-          if (
-            typeof keyOrPayload === "string" &&
-            maybePayload &&
-            typeof maybePayload === "object" &&
-            !Array.isArray(maybePayload)
-          ) {
-            return {
-              ...state,
-              [keyOrPayload]: {
-                ...(state[keyOrPayload] || {}),
-                ...maybePayload,
-              },
-            };
-          }
+      patch(keyOrPayload, maybePayload) {
+        if (
+          typeof keyOrPayload === "string" &&
+          maybePayload !== undefined &&
+          maybePayload !== null &&
+          typeof maybePayload === "object" &&
+          !Array.isArray(maybePayload)
+        ) {
+          set((state) => ({
+            [keyOrPayload]: {
+              ...(state[keyOrPayload] || {}),
+              ...maybePayload,
+            },
+          }));
 
-          if (
-            keyOrPayload &&
-            typeof keyOrPayload === "object" &&
-            !Array.isArray(keyOrPayload)
-          ) {
-            return {
-              ...state,
-              ...keyOrPayload,
-            };
-          }
+          return;
+        }
 
-          return state;
-        }),
+        if (typeof keyOrPayload === "string") {
+          set({
+            [keyOrPayload]: maybePayload,
+          });
 
-      patchFilters: (payload) =>
+          return;
+        }
+
+        if (
+          keyOrPayload &&
+          typeof keyOrPayload === "object" &&
+          !Array.isArray(keyOrPayload)
+        ) {
+          set({
+            ...keyOrPayload,
+          });
+        }
+      },
+
+      patchFilters(payload) {
         set((state) => ({
-          filters: {
-            ...state.filters,
-            ...payload,
+          guidedFilters: {
+            ...(state.guidedFilters || {}),
+            ...(payload || {}),
           },
-        })),
+        }));
+      },
 
-      setAuth: ({ loginMode, authUser, authToken }) =>
-        set((state) => ({
-          ...state,
-          loginMode: loginMode || state.loginMode || "guest",
+      setAuth({ loginMode, authUser, authToken }) {
+        set({
+          loginMode: loginMode || "",
           authUser: authUser || null,
           authToken: authToken || "",
-        })),
+        });
+      },
 
-      resetAuth: () =>
-        set((state) => ({
-          ...state,
-          loginMode: "guest",
+      resetAuth() {
+        set({
+          loginMode: "",
           authUser: null,
           authToken: "",
-        })),
+        });
+      },
 
-      resetFlow: () =>
-        set((state) => ({
+      resetFlow() {
+        const current = get();
+
+        set({
           ...initialState,
-          loginMode: state.loginMode,
-          authUser: state.authUser,
-          authToken: state.authToken,
-        })),
+          loginMode: current.loginMode || "",
+          authUser: current.authUser || null,
+          authToken: current.authToken || "",
+        });
+      },
+
+      clearEverything() {
+        set({
+          ...initialState,
+        });
+      },
     }),
     {
       name: "fitgenie-flow-store",
+      version: 3,
       partialize: (state) => {
-        const {
-          patch,
-          patchFilters,
-          setAuth,
-          resetAuth,
-          resetFlow,
-          ...persistedState
-        } = state;
+        const output = {};
 
-        return persistedState;
+        Object.entries(state).forEach(([key, value]) => {
+          if (typeof value !== "function") {
+            output[key] = value;
+          }
+        });
+
+        return output;
       },
     }
   )
