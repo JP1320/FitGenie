@@ -465,11 +465,12 @@ const styles = {
     placeItems: "center",
     padding: "28px",
     borderRadius: "34px",
-    backgroundImage:
-      "linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.10)), url('/backgrounds/rainbow-cloud-bg.jpg')",
+
+    backgroundImage: "url('/rainbow-cloud-bg.png?v=4')",
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: "center center",
     backgroundRepeat: "no-repeat",
+    backgroundColor: "#ffffff",
   },
     
   glowOne: {
