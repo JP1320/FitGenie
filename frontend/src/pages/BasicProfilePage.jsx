@@ -465,17 +465,19 @@ export default function BasicProfilePage() {
 
 const styles = {
   page: {
-    position: "relative",
-    minHeight: "calc(100vh - 40px)",
-    overflow: "hidden",
+    minHeight: "calc(100vh - 110px)",
+    display: "grid",
+    placeItems: "center",
+    padding: "28px",
     borderRadius: "34px",
-    padding: "34px",
-    color: "#14213d",
-    background:
-      "linear-gradient(135deg, #fff7ed 0%, #eef6ff 40%, #f5f3ff 72%, #ecfeff 100%)",
-    border: "1px solid rgba(109, 93, 252, 0.14)",
-    boxShadow: "0 24px 70px rgba(15, 23, 42, 0.12)",
+ 
+    backgroundImage: "url('/rainbow-cloud-bg.png?v=4')",
+    backgroundSize: "cover",
+    backgroundPosition: "center center",
+    backgroundRepeat: "no-repeat",
+    backgroundColor: "#ffffff",
   },
+  
   glowOne: {
     position: "absolute",
     width: "360px",
