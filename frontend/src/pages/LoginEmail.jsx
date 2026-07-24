@@ -9,7 +9,7 @@ const GOOGLE_SCRIPT_ID = "google-identity-services";
 function loadGoogleScript() {
   return new Promise((resolve, reject) => {
     if (window.google?.accounts?.id) {
-      resolve();
+      resolve(); 
       return;
     }
 
