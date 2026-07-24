@@ -9,7 +9,7 @@ const GOOGLE_SCRIPT_ID = "google-identity-services";
 function loadGoogleScript() {
   return new Promise((resolve, reject) => {
     if (window.google?.accounts?.id) {
-      resolve(); 
+      resolve();
       return;
     }
 
@@ -31,6 +31,39 @@ function loadGoogleScript() {
 
     document.head.appendChild(script);
   });
+}
+
+function emailToDisplayName(email) {
+  const cleanEmail = String(email || "").trim().toLowerCase();
+
+  if (!cleanEmail.includes("@")) {
+    return "User";
+  }
+
+  const localPart = cleanEmail.split("@")[0] || "User";
+
+  return localPart
+    .replace(/[._-]+/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function normalizeUser(user, fallbackEmail = "") {
+  const email = String(user?.email || fallbackEmail || "").trim().toLowerCase();
+  const fallbackName = emailToDisplayName(email);
+
+  return {
+    id: user?.id || email || "email-user",
+    name:
+      user?.name && user.name !== email && user.name !== "Guest user"
+        ? user.name
+        : fallbackName,
+    email,
+    picture: user?.picture || "",
+    provider: user?.provider || "email",
+  };
 }
 
 export default function LoginEmail() {
@@ -117,7 +150,7 @@ export default function LoginEmail() {
 
       patch({
         loginMode: "google",
-        authUser: res.data.user,
+        authUser: normalizeUser(res.data.user),
         authToken: res.data.token,
       });
 
@@ -194,7 +227,7 @@ export default function LoginEmail() {
 
       patch({
         loginMode: "email",
-        authUser: res.data.user,
+        authUser: normalizeUser(res.data.user, cleanEmail),
         authToken: res.data.token,
       });
 
@@ -204,6 +237,22 @@ export default function LoginEmail() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function continueAsGuest() {
+    patch({
+      loginMode: "guest",
+      authUser: {
+        id: "guest",
+        name: "Guest User",
+        email: "",
+        picture: "",
+        provider: "guest",
+      },
+      authToken: "",
+    });
+
+    nav("/intent");
   }
 
   function resetManualEmail() {
@@ -227,8 +276,8 @@ export default function LoginEmail() {
             <h1 style={styles.title}>Choose your account</h1>
 
             <p style={styles.subtitle}>
-              Continue with your Google account or type any email address
-              manually to receive a secure verification code.
+              Continue with Gmail, use another email address manually, or
+              explore FitGenie as a guest.
             </p>
           </div>
 
@@ -237,12 +286,10 @@ export default function LoginEmail() {
               <div style={styles.optionIcon}>G</div>
 
               <div style={styles.optionContent}>
-                <h2 style={styles.optionTitle}>
-                  Continue with your Google account
-                </h2>
+                <h2 style={styles.optionTitle}>Continue with Gmail</h2>
 
                 <p style={styles.optionText}>
-                  Select your Google profile and continue instantly.
+                  Select your Google account and continue instantly.
                 </p>
 
                 <div style={styles.googleButtonWrap}>
@@ -259,21 +306,14 @@ export default function LoginEmail() {
               </div>
             </section>
 
-            <div style={styles.divider}>
-              <span style={styles.dividerLine} />
-              <span style={styles.dividerText}>or</span>
-              <span style={styles.dividerLine} />
-            </div>
-
             <section style={styles.optionCard}>
               <div style={styles.optionIcon}>@</div>
 
               <div style={styles.optionContent}>
-                <h2 style={styles.optionTitle}>Add email address manually</h2>
+                <h2 style={styles.optionTitle}>Continue with other mail</h2>
 
                 <p style={styles.optionText}>
-                  Works with Gmail, Outlook, Yahoo, company emails, and custom
-                  domains.
+                  Type any email address and receive a secure verification code.
                 </p>
 
                 {manualStep === "email" ? (
@@ -338,6 +378,27 @@ export default function LoginEmail() {
                     </button>
                   </>
                 )}
+              </div>
+            </section>
+
+            <section style={styles.optionCard}>
+              <div style={styles.optionIcon}>★</div>
+
+              <div style={styles.optionContent}>
+                <h2 style={styles.optionTitle}>Continue as guest user</h2>
+
+                <p style={styles.optionText}>
+                  Explore the FitGenie flow without signing in. You can sign in
+                  later whenever you want.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={continueAsGuest}
+                  style={styles.guestButton}
+                >
+                  Explore as guest
+                </button>
               </div>
             </section>
           </div>
@@ -502,27 +563,6 @@ const styles = {
     display: "inline-flex",
   },
 
-  divider: {
-    display: "grid",
-    gridTemplateColumns: "1fr auto 1fr",
-    alignItems: "center",
-    gap: "12px",
-  },
-
-  dividerLine: {
-    height: "1px",
-    background:
-      "linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent)",
-  },
-
-  dividerText: {
-    color: "#94a3b8",
-    fontSize: "12px",
-    fontWeight: 950,
-    textTransform: "uppercase",
-    letterSpacing: "0.14em",
-  },
-
   label: {
     display: "block",
     marginBottom: "8px",
@@ -556,6 +596,19 @@ const styles = {
     fontWeight: 1000,
     cursor: "pointer",
     boxShadow: "0 18px 45px rgba(34,211,238,0.16)",
+  },
+
+  guestButton: {
+    width: "100%",
+    border: "1px solid rgba(250,204,21,0.42)",
+    borderRadius: "999px",
+    padding: "14px 18px",
+    background:
+      "linear-gradient(135deg, rgba(250,204,21,0.95), rgba(255,255,255,0.84))",
+    color: "#111827",
+    fontWeight: 1000,
+    cursor: "pointer",
+    boxShadow: "0 18px 45px rgba(250,204,21,0.12)",
   },
 
   secondaryButton: {
