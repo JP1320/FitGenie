@@ -460,17 +460,17 @@ export default function IntentPage() {
 
 const styles = {
   page: {
-    position: "relative",
-    minHeight: "calc(100vh - 40px)",
-    overflow: "hidden",
+    minHeight: "calc(100vh - 110px)",
+    display: "grid",
+    placeItems: "center",
+    padding: "28px",
     borderRadius: "34px",
-    padding: "34px",
-    color: "#14213d",
     backgroundImage:
       "linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.10)), url('/backgrounds/rainbow-cloud-bg.jpg')",
     backgroundSize: "cover",
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
+  },
     
   glowOne: {
     position: "absolute",
