@@ -2,8 +2,9 @@ import express from "express";
 import pino from "pino";
 import cors from "cors";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { google } from "googleapis";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import { OAuth2Client } from "google-auth-library";
 
 const app = express();
@@ -205,6 +206,54 @@ function serializeDocument(doc) {
     ...doc,
     _id: String(doc._id),
   };
+}
+
+const EMAIL_LOGIN_CODE_TTL_MINUTES = 10;
+const EMAIL_LOGIN_CODE_MAX_ATTEMPTS = 5;
+
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
+}
+
+function generateEmailCode() {
+  return String(crypto.randomInt(100000, 1000000));
+}
+
+function hashEmailCode(code) {
+  return crypto.createHash("sha256").update(String(code)).digest("hex");
+}
+
+function buildEmailCodeHtml({ code }) {
+  return `
+    <div style="font-family:Arial,sans-serif;background:#070a18;padding:30px;">
+      <div style="max-width:560px;margin:auto;background:#ffffff;border-radius:24px;overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#111827,#1e1b4b);padding:28px;text-align:center;color:white;">
+          <h1 style="margin:0;">FitGenie Login Code</h1>
+          <p style="color:#cbd5e1;">Use this code to continue to FitGenie.</p>
+        </div>
+
+        <div style="padding:30px;text-align:center;">
+          <p style="font-size:15px;color:#475569;">Your verification code is:</p>
+
+          <div style="font-size:36px;letter-spacing:8px;font-weight:800;color:#111827;background:#f8fafc;border:1px solid #e2e8f0;border-radius:18px;padding:18px;margin:20px 0;">
+            ${code}
+          </div>
+
+          <p style="font-size:14px;color:#64748b;">
+            This code expires in ${EMAIL_LOGIN_CODE_TTL_MINUTES} minutes.
+          </p>
+
+          <p style="font-size:13px;color:#94a3b8;margin-top:24px;">
+            If you did not request this code, you can safely ignore this email.
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function escapeHtml(value) {
@@ -629,6 +678,229 @@ app.post("/auth/google", async (req, res) => {
       message:
         error.message ||
         "Unable to complete Google sign-in. Please try again.",
+    });
+  }
+});
+
+app.post("/auth/email/request-code", async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid email address.",
+      });
+    }
+
+    if (!isMailConfigured()) {
+      return res.status(500).json({
+        success: false,
+        message: "Email sending is not configured.",
+      });
+    }
+
+    const db = await getDb();
+    const emailLoginCodes = db.collection("emailLoginCodes");
+
+    const now = new Date();
+    const expiresAt = new Date(
+      now.getTime() + EMAIL_LOGIN_CODE_TTL_MINUTES * 60 * 1000
+    );
+
+    const code = generateEmailCode();
+
+    await emailLoginCodes.deleteMany({
+      email,
+      consumed: false,
+    });
+
+    const result = await emailLoginCodes.insertOne({
+      email,
+      codeHash: hashEmailCode(code),
+      attempts: 0,
+      maxAttempts: EMAIL_LOGIN_CODE_MAX_ATTEMPTS,
+      consumed: false,
+      createdAt: now,
+      expiresAt,
+    });
+
+    await sendEmailWithGmailApi({
+      to: email,
+      subject: "Your FitGenie login code",
+      text: `Your FitGenie login code is ${code}. It expires in ${EMAIL_LOGIN_CODE_TTL_MINUTES} minutes.`,
+      html: buildEmailCodeHtml({ code }),
+    });
+
+    res.status(200).json({
+      success: true,
+      requestId: String(result.insertedId),
+      message: `Verification code sent to ${email}.`,
+    });
+  } catch (error) {
+    logger.error({ error }, "Email login code request failed");
+
+    res.status(500).json({
+      success: false,
+      message: error.message || "Unable to send verification code.",
+    });
+  }
+});
+
+app.post("/auth/email/verify-code", async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const code = String(req.body?.code || "").trim();
+    const requestId = String(req.body?.requestId || "").trim();
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid email address is required.",
+      });
+    }
+
+    if (!requestId || !ObjectId.isValid(requestId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid request ID is required.",
+      });
+    }
+
+    if (!/^\d{6}$/.test(code)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter the 6-digit verification code.",
+      });
+    }
+
+    const db = await getDb();
+    const emailLoginCodes = db.collection("emailLoginCodes");
+    const users = db.collection("users");
+
+    const codeRecord = await emailLoginCodes.findOne({
+      _id: new ObjectId(requestId),
+      email,
+      consumed: false,
+    });
+
+    if (!codeRecord) {
+      return res.status(404).json({
+        success: false,
+        message: "Verification request not found. Please request a new code.",
+      });
+    }
+
+    const now = new Date();
+
+    if (codeRecord.expiresAt && now > codeRecord.expiresAt) {
+      await emailLoginCodes.updateOne(
+        { _id: codeRecord._id },
+        {
+          $set: {
+            consumed: true,
+            expiredAt: now,
+          },
+        }
+      );
+
+      return res.status(410).json({
+        success: false,
+        message: "Verification code expired. Please request a new code.",
+      });
+    }
+
+    if ((codeRecord.attempts || 0) >= EMAIL_LOGIN_CODE_MAX_ATTEMPTS) {
+      await emailLoginCodes.updateOne(
+        { _id: codeRecord._id },
+        {
+          $set: {
+            consumed: true,
+            lockedAt: now,
+          },
+        }
+      );
+
+      return res.status(429).json({
+        success: false,
+        message: "Too many incorrect attempts. Please request a new code.",
+      });
+    }
+
+    if (hashEmailCode(code) !== codeRecord.codeHash) {
+      await emailLoginCodes.updateOne(
+        { _id: codeRecord._id },
+        {
+          $inc: {
+            attempts: 1,
+          },
+          $set: {
+            lastFailedAt: now,
+          },
+        }
+      );
+
+      return res.status(401).json({
+        success: false,
+        message: "Invalid verification code.",
+      });
+    }
+
+    await emailLoginCodes.updateOne(
+      { _id: codeRecord._id },
+      {
+        $set: {
+          consumed: true,
+          verifiedAt: now,
+        },
+      }
+    );
+
+    await users.updateOne(
+      {
+        provider: "email",
+        email,
+      },
+      {
+        $set: {
+          provider: "email",
+          email,
+          name: email,
+          emailVerified: true,
+          updatedAt: now,
+          lastLoginAt: now,
+        },
+        $setOnInsert: {
+          createdAt: now,
+        },
+      },
+      { upsert: true }
+    );
+
+    const user = await users.findOne({
+      provider: "email",
+      email,
+    });
+
+    const token = createToken(user);
+
+    queueWelcomeEmail({ user });
+
+    res.status(200).json({
+      success: true,
+      user: publicUser(user),
+      token,
+      welcomeEmail: {
+        queued: !Boolean(user.welcomeEmailSentAt),
+        alreadySent: Boolean(user.welcomeEmailSentAt),
+      },
+    });
+  } catch (error) {
+    logger.error({ error }, "Email login code verification failed");
+
+    res.status(500).json({
+      success: false,
+      message: error.message || "Email verification failed.",
     });
   }
 });
