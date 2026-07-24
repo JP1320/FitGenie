@@ -467,7 +467,7 @@ const styles = {
     padding: "34px",
     color: "#14213d",
     background:
-      "radial-gradient(circle at 15% 12%, rgba(124,58,237,0.32), transparent 30%), radial-gradient(circle at 85% 18%, rgba(14,165,233,0.28), transparent 32%), linear-gradient(135deg, #0f172a 0%, #1e1b4b 48%, #111827 100%)",
+      "radial-gradient(circle at 14% 12%, rgba(219,39,119,0.30), transparent 30%), radial-gradient(circle at 88% 16%, rgba(37,99,235,0.26), transparent 32%), radial-gradient(circle at 45% 92%, rgba(124,58,237,0.22), transparent 34%), linear-gradient(135deg, #ffffff 0%, #f8fafc 48%, #ffffff 100%)",
     border: "1px solid rgba(109, 93, 252, 0.14)",
     boxShadow: "0 24px 70px rgba(15, 23, 42, 0.12)",
   },
