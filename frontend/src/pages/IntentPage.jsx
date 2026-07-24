@@ -466,11 +466,12 @@ const styles = {
     borderRadius: "34px",
     padding: "34px",
     color: "#14213d",
-    background:
-      "radial-gradient(circle at 3% 8%, rgba(255,255,255,0.95) 0 2px, transparent 4px), radial-gradient(circle at 10% 18%, rgba(255,255,255,0.85) 0 1.5px, transparent 4px), radial-gradient(circle at 88% 70%, rgba(255,255,255,0.95) 0 3px, transparent 7px), radial-gradient(circle at 82% 78%, rgba(255,255,255,0.75) 0 1.5px, transparent 4px), radial-gradient(circle at 22% 48%, rgba(255,255,255,0.50) 0 34px, transparent 72px), radial-gradient(circle at 50% 58%, rgba(255,255,255,0.45) 0 42px, transparent 96px), radial-gradient(circle at 78% 62%, rgba(255,255,255,0.48) 0 38px, transparent 86px), radial-gradient(circle at 8% 8%, rgba(124,58,237,0.65), transparent 32%), radial-gradient(circle at 22% 26%, rgba(236,72,153,0.62), transparent 34%), radial-gradient(circle at 42% 12%, rgba(251,113,133,0.50), transparent 34%), radial-gradient(circle at 62% 16%, rgba(250,204,21,0.56), transparent 36%), radial-gradient(circle at 84% 18%, rgba(190,242,100,0.45), transparent 34%), radial-gradient(circle at 76% 46%, rgba(45,212,191,0.58), transparent 36%), radial-gradient(circle at 50% 58%, rgba(20,184,166,0.60), transparent 40%), radial-gradient(circle at 70% 78%, rgba(37,99,235,0.62), transparent 42%), radial-gradient(circle at 34% 82%, rgba(56,189,248,0.55), transparent 42%), radial-gradient(circle at 96% 92%, rgba(236,72,153,0.50), transparent 34%), linear-gradient(135deg, #fff7fb 0%, #fff0f6 18%, #fff3bf 36%, #ccfbf1 58%, #bfdbfe 78%, #f5d0fe 100%)",
-    border: "1px solid rgba(109, 93, 252, 0.14)",
-    boxShadow: "0 24px 70px rgba(15, 23, 42, 0.12)",
-  },
+    backgroundImage:
+      "linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.10)), url('/backgrounds/rainbow-cloud-bg.jpg')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    
   glowOne: {
     position: "absolute",
     width: "360px",
