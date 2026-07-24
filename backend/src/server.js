@@ -498,6 +498,7 @@ app.get("/ready", async (_req, res) => {
     jwtConfigured: Boolean(JWT_SECRET),
     googleConfigured: Boolean(GOOGLE_CLIENT_ID),
     emailConfigured: isMailConfigured(),
+    emailProvider: "gmail-api",
     database: FITGENIE_DB_NAME,
   });
 });
@@ -526,53 +527,44 @@ app.post("/debug/send-test-email", async (req, res) => {
     if (!isMailConfigured()) {
       return res.status(500).json({
         success: false,
-        message: "SMTP email is not configured.",
-        smtp: {
-          host: Boolean(SMTP_HOST),
-          port: Boolean(SMTP_PORT),
-          user: Boolean(SMTP_USER),
-          pass: Boolean(SMTP_PASS),
-          from: Boolean(MAIL_FROM_EMAIL),
+        message: "Gmail API email is not configured.",
+        gmailApi: {
+          clientId: Boolean(GMAIL_CLIENT_ID),
+          clientSecret: Boolean(GMAIL_CLIENT_SECRET),
+          refreshToken: Boolean(GMAIL_REFRESH_TOKEN),
+          senderEmail: Boolean(GMAIL_SENDER_EMAIL),
         },
       });
     }
 
-    const transporter = getMailTransporter();
-
-    await transporter.verify();
-
-    const result = await transporter.sendMail({
-      from: `"${MAIL_FROM_NAME}" <${MAIL_FROM_EMAIL}>`,
+    const result = await sendEmailWithGmailApi({
       to,
       subject: "FitGenie test email",
-      text: "This is a FitGenie test email. If you received this, SMTP is working.",
+      text: "This is a FitGenie test email. If you received this, Gmail API sending is working.",
       html: `
         <div style="font-family:Arial,sans-serif;padding:20px;">
           <h2>FitGenie test email</h2>
           <p>This is a FitGenie test email.</p>
-          <p>If you received this, SMTP is working correctly.</p>
+          <p>If you received this, Gmail API sending is working correctly.</p>
         </div>
       `,
     });
 
     res.status(200).json({
       success: true,
-      message: "Test email sent successfully.",
-      messageId: result.messageId,
-      accepted: result.accepted,
-      rejected: result.rejected,
-      response: result.response,
+      message: "Test email sent successfully using Gmail API.",
+      id: result.id || "",
+      threadId: result.threadId || "",
     });
   } catch (error) {
-    logger.error({ error }, "Debug test email failed");
+    logger.error({ error }, "Debug Gmail API test email failed");
 
     res.status(500).json({
       success: false,
-      message: error.message || "Test email failed.",
+      message: error.message || "Gmail API test email failed.",
       code: error.code || "",
-      command: error.command || "",
-      response: error.response || "",
-      responseCode: error.responseCode || "",
+      status: error.status || "",
+      errors: error.errors || [],
     });
   }
 });
