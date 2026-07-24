@@ -284,7 +284,7 @@ export default function Welcome() {
 
                     <span style={styles.buttonCopy}>
                       <strong>Continue with Email</strong>
-                      <small>Choose your Google account</small>
+                      <small>Choose your account</small>
                     </span>
 
                     <span style={styles.buttonArrow}>→</span>
