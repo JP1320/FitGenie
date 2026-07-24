@@ -283,7 +283,7 @@ export default function Welcome() {
                     <span style={styles.providerIconGoogle}>G</span>
 
                     <span style={styles.buttonCopy}>
-                      <strong>Continue with Gmail</strong>
+                      <strong>Continue with Email</strong>
                       <small>Choose your Google account</small>
                     </span>
 
