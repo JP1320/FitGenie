@@ -21,7 +21,7 @@ const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET || "";
 const GMAIL_REFRESH_TOKEN = process.env.GMAIL_REFRESH_TOKEN || "";
 const GMAIL_SENDER_EMAIL = process.env.GMAIL_SENDER_EMAIL || "";
 const MAIL_FROM_NAME = process.env.MAIL_FROM_NAME || "FitGenie";
-const MAIL_FROM_EMAIL = process.env.MAIL_FROM_EMAIL || SMTP_USER || "";
+const EMAIL_DEBUG_SECRET = process.env.EMAIL_DEBUG_SECRET || "";
 
 const allowedOrigins = (
   process.env.CORS_ORIGIN ||
@@ -50,7 +50,7 @@ app.use(express.json({ limit: "2mb" }));
 
 let mongoClient = null;
 let mongoDb = null;
-let mailTransporter = null;
+let gmailClient = null;
 
 async function getDb() {
   if (!MONGODB_URI) {
@@ -70,8 +70,6 @@ async function getDb() {
 
   return mongoDb;
 }
-
-let gmailClient = null;
 
 function isMailConfigured() {
   return Boolean(
@@ -358,7 +356,7 @@ async function sendWelcomeEmailInBackground({ userId }) {
         {
           $set: {
             welcomeEmailSkippedAt: new Date(),
-            welcomeEmailSkippedReason: "smtp-not-configured",
+            welcomeEmailSkippedReason: "gmail-api-not-configured",
           },
         }
       );
@@ -366,11 +364,17 @@ async function sendWelcomeEmailInBackground({ userId }) {
       return;
     }
 
+    const staleBefore = new Date(Date.now() - 10 * 60 * 1000);
+
     const claim = await users.updateOne(
       {
         _id: user._id,
         welcomeEmailSentAt: { $exists: false },
-        welcomeEmailSendingAt: { $exists: false },
+        $or: [
+          { welcomeEmailSendingAt: { $exists: false } },
+          { welcomeEmailSendingAt: { $lt: staleBefore } },
+          { welcomeEmailFailedAt: { $exists: true } },
+        ],
       },
       {
         $set: {
@@ -388,11 +392,9 @@ async function sendWelcomeEmailInBackground({ userId }) {
       return;
     }
 
-    const transporter = getMailTransporter();
-
     const mailResult = await sendEmailWithGmailApi({
       to: user.email,
-      subject: "Welcome to FitGenie — Your account has been created",
+      subject: "Welcome to FitGenie - Your account has been created",
       text: buildWelcomeEmailText({
         name: user.name,
         email: user.email,
@@ -505,10 +507,9 @@ app.get("/ready", async (_req, res) => {
 
 app.post("/debug/send-test-email", async (req, res) => {
   try {
-    const debugSecret = process.env.EMAIL_DEBUG_SECRET || "";
     const providedSecret = req.headers["x-debug-secret"];
 
-    if (!debugSecret || providedSecret !== debugSecret) {
+    if (!EMAIL_DEBUG_SECRET || providedSecret !== EMAIL_DEBUG_SECRET) {
       return res.status(403).json({
         success: false,
         message: "Debug secret is missing or incorrect.",
