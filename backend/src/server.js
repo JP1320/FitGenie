@@ -16,11 +16,10 @@ const FITGENIE_DB_NAME = process.env.FITGENIE_DB_NAME || "fitgenie";
 const JWT_SECRET = process.env.JWT_SECRET || "";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 
-const SMTP_HOST = process.env.SMTP_HOST || "";
-const SMTP_PORT = Number(process.env.SMTP_PORT || 465);
-const SMTP_SECURE = String(process.env.SMTP_SECURE || "true") === "true";
-const SMTP_USER = process.env.SMTP_USER || "";
-const SMTP_PASS = process.env.SMTP_PASS || "";
+const GMAIL_CLIENT_ID = process.env.GMAIL_CLIENT_ID || "";
+const GMAIL_CLIENT_SECRET = process.env.GMAIL_CLIENT_SECRET || "";
+const GMAIL_REFRESH_TOKEN = process.env.GMAIL_REFRESH_TOKEN || "";
+const GMAIL_SENDER_EMAIL = process.env.GMAIL_SENDER_EMAIL || "";
 const MAIL_FROM_NAME = process.env.MAIL_FROM_NAME || "FitGenie";
 const MAIL_FROM_EMAIL = process.env.MAIL_FROM_EMAIL || SMTP_USER || "";
 
@@ -72,37 +71,101 @@ async function getDb() {
   return mongoDb;
 }
 
+let gmailClient = null;
+
 function isMailConfigured() {
   return Boolean(
-    SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS && MAIL_FROM_EMAIL
+    GMAIL_CLIENT_ID &&
+      GMAIL_CLIENT_SECRET &&
+      GMAIL_REFRESH_TOKEN &&
+      GMAIL_SENDER_EMAIL
   );
 }
 
-function getMailTransporter() {
+function getGmailClient() {
   if (!isMailConfigured()) {
     throw new Error(
-      "SMTP email is not configured. Add SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and MAIL_FROM_EMAIL in Render environment variables."
+      "Gmail API email is not configured. Add GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN, and GMAIL_SENDER_EMAIL in Render."
     );
   }
 
-  if (mailTransporter) {
-    return mailTransporter;
+  if (gmailClient) {
+    return gmailClient;
   }
 
-  mailTransporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_SECURE,
-    auth: {
-      user: SMTP_USER,
-      pass: SMTP_PASS,
-    },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
+  const oauth2Client = new google.auth.OAuth2(
+    GMAIL_CLIENT_ID,
+    GMAIL_CLIENT_SECRET
+  );
+
+  oauth2Client.setCredentials({
+    refresh_token: GMAIL_REFRESH_TOKEN,
   });
 
-  return mailTransporter;
+  gmailClient = google.gmail({
+    version: "v1",
+    auth: oauth2Client,
+  });
+
+  return gmailClient;
+}
+
+function encodeBase64Url(value) {
+  return Buffer.from(value)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
+function buildRawEmail({ to, subject, text, html }) {
+  const boundary = `fitgenie_${Date.now()}_${Math.random()
+    .toString(16)
+    .slice(2)}`;
+
+  const message = [
+    `From: ${MAIL_FROM_NAME} <${GMAIL_SENDER_EMAIL}>`,
+    `To: ${to}`,
+    `Subject: ${subject}`,
+    "MIME-Version: 1.0",
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    "",
+    `--${boundary}`,
+    "Content-Type: text/plain; charset=UTF-8",
+    "Content-Transfer-Encoding: 7bit",
+    "",
+    text,
+    "",
+    `--${boundary}`,
+    "Content-Type: text/html; charset=UTF-8",
+    "Content-Transfer-Encoding: 7bit",
+    "",
+    html,
+    "",
+    `--${boundary}--`,
+  ].join("\r\n");
+
+  return encodeBase64Url(message);
+}
+
+async function sendEmailWithGmailApi({ to, subject, text, html }) {
+  const gmail = getGmailClient();
+
+  const raw = buildRawEmail({
+    to,
+    subject,
+    text,
+    html,
+  });
+
+  const result = await gmail.users.messages.send({
+    userId: "me",
+    requestBody: {
+      raw,
+    },
+  });
+
+  return result.data;
 }
 
 function createToken(user) {
@@ -327,8 +390,7 @@ async function sendWelcomeEmailInBackground({ userId }) {
 
     const transporter = getMailTransporter();
 
-    const mailResult = await transporter.sendMail({
-      from: `"${MAIL_FROM_NAME}" <${MAIL_FROM_EMAIL}>`,
+    const mailResult = await sendEmailWithGmailApi({
       to: user.email,
       subject: "Welcome to FitGenie — Your account has been created",
       text: buildWelcomeEmailText({
@@ -346,7 +408,7 @@ async function sendWelcomeEmailInBackground({ userId }) {
       {
         $set: {
           welcomeEmailSentAt: new Date(),
-          welcomeEmailMessageId: mailResult.messageId || "",
+          welcomeEmailMessageId: mailResult.id || "",
         },
         $unset: {
           welcomeEmailSendingAt: "",
