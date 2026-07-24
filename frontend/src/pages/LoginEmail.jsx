@@ -225,10 +225,20 @@ export default function LoginEmail() {
         return;
       }
 
+      const emailUser = normalizeUser(res.data.user, cleanEmail);
+
+      localStorage.removeItem("fitgenie-flow-store");
+
       patch({
         loginMode: "email",
-        authUser: normalizeUser(res.data.user, cleanEmail),
-        authToken: res.data.token,
+        authUser: {
+          id: emailUser.id || cleanEmail,
+          name: emailUser.name || cleanEmail.split("@")[0],
+          email: cleanEmail,
+          picture: "",
+          provider: "email",
+        },
+        authToken: res.data.token || "",
       });
 
       nav("/intent");
