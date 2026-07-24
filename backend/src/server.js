@@ -2,7 +2,7 @@ import express from "express";
 import pino from "pino";
 import cors from "cors";
 import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
+import { google } from "googleapis";
 import { MongoClient } from "mongodb";
 import { OAuth2Client } from "google-auth-library";
 
