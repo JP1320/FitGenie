@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import PageShell from "../components/PageShell";
 import { useFlowStore } from "../store/useFlowStore";
 
+const { scanner } = useFlowStore();
+const aiFit = scanner?.aiFit;
 const BODY_TYPES = [
   {
     value: "Rectangle",
@@ -673,6 +675,17 @@ const styles = {
     backgroundRepeat: "no-repeat",
     backgroundColor: "#ffffff",
   },
+
+  aiNotice: {
+    margin: "16px 0",
+    padding: "13px 15px",
+    borderRadius: "18px",
+    background: "rgba(14,165,233,0.12)",
+    border: "1px solid rgba(14,165,233,0.22)",
+    color: "#075985",
+    fontWeight: 800,
+    lineHeight: 1.5,
+  },
   
   glowOne: {
     position: "absolute",
@@ -755,6 +768,15 @@ const styles = {
     fontSize: "16px",
     fontWeight: 600,
   },
+  
+  {aiFit ? (
+    <div style={styles.aiNotice}>
+      <strong>AI Fit Scanner detected:</strong>{" "}
+      {aiFit.estimatedSize} size, {aiFit.bodyType}, {aiFit.fitPreference}.
+      You can confirm or adjust the details below.
+    </div>
+  ) : null}
+
   scannerCard: {
     border: "1px solid rgba(109, 93, 252, 0.14)",
     borderRadius: "28px",
