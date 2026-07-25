@@ -1519,7 +1519,7 @@ const styles = {
     border: "1px solid rgba(255,255,255,0.72)",
     borderRadius: "999px",
     padding: "14px 24px",
-    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
+    background:  "linear-gradient(135deg, #ff7a59 0%, #facc15 52%, #fff7ad 100%)",
     color: "#111827",
     fontWeight: 950,
     cursor: "pointer",
