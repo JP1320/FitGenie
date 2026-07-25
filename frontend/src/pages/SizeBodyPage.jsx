@@ -110,17 +110,36 @@ export default function SizeBodyPage() {
     heightCm,
     heightRange,
     scanResult,
+    scanner,
+    sizeBody,
     body,
     patch,
   } = flow;
 
+  const aiFit = scanner?.aiFit || null;
+  const normalizedAiBodyType = normalizeAiBodyType(
+    aiFit?.bodyType || scanResult?.bodyType
+  );
+  const aiRecommendedSize =
+    aiFit?.estimatedSize || scanResult?.recommendedSize || "";
+  const aiFitType = aiFit?.fitPreference || scanResult?.fitType || "";
+  const hasAiScan = Boolean(aiFit || scanResult);
+
   const selectedBodyTypeValue =
-    bodyType || body?.bodyType || scanResult?.bodyType || "";
+    bodyType || sizeBody?.bodyType || body?.bodyType || normalizedAiBodyType || "";
+
   const selectedSizeValue =
-    size || body?.size || scanResult?.recommendedSize || "";
+    size || sizeBody?.size || body?.size || aiRecommendedSize || "";
+
   const selectedHeightCm =
-    heightCm || body?.heightCm || scanResult?.detectedHeightCm || "";
-  const selectedHeightRange = heightRange || body?.heightRange || "";
+    heightCm ||
+    sizeBody?.heightCm ||
+    body?.heightCm ||
+    scanResult?.detectedHeightCm ||
+    "";
+
+  const selectedHeightRange =
+    heightRange || sizeBody?.heightRange || body?.heightRange || "";
 
   const [heightMode, setHeightMode] = useState(
     selectedHeightCm ? "exact" : "range"
@@ -148,6 +167,34 @@ export default function SizeBodyPage() {
     heightCm: selectedHeightCm,
     heightRange: selectedHeightRange,
   });
+
+  function normalizeAiBodyType(value) {
+    const text = String(value || "").toLowerCase();
+
+    if (!text) return "";
+
+    const exactMatch = BODY_TYPES.find(
+      (item) => item.value.toLowerCase() === text
+    );
+
+    if (exactMatch) return exactMatch.value;
+
+    if (text.includes("inverted")) return "Inverted Triangle";
+    if (text.includes("pear") || text.includes("triangle")) return "Triangle / Pear";
+    if (text.includes("hourglass")) return "Hourglass";
+    if (text.includes("oval") || text.includes("round") || text.includes("soft")) {
+      return "Oval / Round";
+    }
+    if (
+      text.includes("rectangle") ||
+      text.includes("straight") ||
+      text.includes("balanced")
+    ) {
+      return "Rectangle";
+    }
+
+    return "";
+  }
 
   function selectBodyType(value) {
     setError("");
@@ -200,6 +247,23 @@ export default function SizeBodyPage() {
       setError("Please enter height in cm correctly. Example: 172.");
       return;
     }
+
+    patch({
+      bodyType: selectedBodyTypeValue,
+      size: selectedSizeValue,
+      heightCm: selectedHeightCm,
+      heightRange: selectedHeightRange,
+      sizeBody: {
+        ...(sizeBody || {}),
+        bodyType: selectedBodyTypeValue,
+        size: selectedSizeValue,
+        heightCm: selectedHeightCm,
+        heightRange: selectedHeightRange,
+        fitPreference: aiFit?.fitPreference || sizeBody?.fitPreference || scanResult?.fitType || "",
+        fitSource: aiFit ? "ai-fit-scanner-confirmed" : "manual",
+        confirmedAt: new Date().toISOString(),
+      },
+    });
 
     nav("/guided-filters");
   }
@@ -293,6 +357,15 @@ export default function SizeBodyPage() {
                 These details are optional, but they improve the outfit
                 recommendation, size confidence, expert notes, and final Fit Card.
               </p>
+              {aiFit ? (
+                <div style={styles.aiNotice}>
+                  <strong>AI Fit Scanner detected:</strong>{" "}
+                  {aiFit.estimatedSize || "recommended"} size,{" "}
+                  {aiFit.bodyType || "body profile"},{" "}
+                  {aiFit.fitPreference || "fit type"}. You can confirm or adjust the details
+                  below.
+                </div>
+              ) : null}
             </div>
 
             <aside style={styles.scannerCard}>
@@ -598,14 +671,14 @@ export default function SizeBodyPage() {
                 </div>
               </div>
 
-              {scanResult ? (
+              {hasAiScan ? (
                 <div style={styles.scanResultCard}>
                   <span style={styles.scanBadge}>AI scan available</span>
                   <p style={styles.scanResultText}>
                     Recommended size:{" "}
-                    <strong>{scanResult.recommendedSize || "M"}</strong>
+                    <strong>{aiRecommendedSize || "M"}</strong>
                     <br />
-                    Fit type: <strong>{scanResult.fitType || "Regular"}</strong>
+                    Fit type: <strong>{aiFitType || "Regular"}</strong>
                   </p>
                 </div>
               ) : (
