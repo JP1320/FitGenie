@@ -73,9 +73,11 @@ function readFileAsDataUrl(file) {
 export default function Scanner() {
   const nav = useNavigate();
 
-  const captureInputRef = useRef(null);
   const uploadInputRef = useRef(null);
   const redirectTimerRef = useRef(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
 
   const { basicProfile, patch } = useFlowStore();
 
@@ -83,14 +85,122 @@ export default function Scanner() {
   const [scanStatus, setScanStatus] = useState("idle");
   const [scanResult, setScanResult] = useState(null);
   const [error, setError] = useState("");
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraLoading, setCameraLoading] = useState(false);
 
   useEffect(() => {
     return () => {
       if (redirectTimerRef.current) {
         clearTimeout(redirectTimerRef.current);
       }
+
+      stopCamera();
     };
   }, []);
+
+  function stopCamera() {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }
+
+  async function startCamera() {
+    setError("");
+    setCameraLoading(true);
+    setCameraOpen(true);
+
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setError(
+          "Camera access is not supported in this browser. Please use upload photo instead."
+        );
+        setCameraOpen(false);
+        return;
+      }
+
+      stopCamera();
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+    } catch (_error) {
+      setCameraOpen(false);
+      setError(
+        "Camera permission was denied or no camera was found. Please allow camera permission, or use Upload photo."
+      );
+    } finally {
+      setCameraLoading(false);
+    }
+  }
+
+  function closeCamera() {
+    stopCamera();
+    setCameraOpen(false);
+    setCameraLoading(false);
+  }
+
+  async function captureFromCamera() {
+    setError("");
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (!video || !canvas) {
+      setError("Camera is not ready yet. Please try again.");
+      return;
+    }
+
+    const width = video.videoWidth || 1280;
+    const height = video.videoHeight || 720;
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      setError("Unable to capture photo. Please try again.");
+      return;
+    }
+
+    context.drawImage(video, 0, 0, width, height);
+
+    canvas.toBlob(
+      async (blob) => {
+        if (!blob) {
+          setError("Unable to capture photo. Please try again.");
+          return;
+        }
+
+        const file = new File([blob], "fitgenie-camera-capture.jpg", {
+          type: "image/jpeg",
+        });
+
+        closeCamera();
+
+        await handleScanFile(file, "capture");
+      },
+      "image/jpeg",
+      0.92
+    );
+  }
 
   async function handleScanFile(file, scanMode) {
     setError("");
@@ -148,10 +258,6 @@ export default function Scanner() {
       setScanStatus("idle");
       setError("Unable to scan this image. Please try again.");
     }
-  }
-
-  function capturePhoto() {
-    captureInputRef.current?.click();
   }
 
   function uploadPhoto() {
@@ -232,25 +338,17 @@ export default function Scanner() {
             </div>
 
             <input
-              ref={captureInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={(event) =>
-                handleScanFile(event.target.files?.[0], "capture")
-              }
-              style={{ display: "none" }}
-            />
-
-            <input
               ref={uploadInputRef}
               type="file"
               accept="image/*"
-              onChange={(event) =>
-                handleScanFile(event.target.files?.[0], "upload")
-              }
+              onChange={(event) => {
+                handleScanFile(event.target.files?.[0], "upload");
+                event.target.value = "";
+              }}
               style={{ display: "none" }}
             />
+
+            <canvas ref={canvasRef} style={{ display: "none" }} />
 
             {scanResult ? (
               <div style={styles.resultBox}>
@@ -289,14 +387,15 @@ export default function Scanner() {
             <div style={styles.actions}>
               <button
                 type="button"
-                onClick={capturePhoto}
-                disabled={scanStatus === "scanning"}
+                onClick={startCamera}
+                disabled={scanStatus === "scanning" || cameraLoading}
                 style={{
                   ...styles.captureButton,
-                  opacity: scanStatus === "scanning" ? 0.72 : 1,
+                  opacity:
+                    scanStatus === "scanning" || cameraLoading ? 0.72 : 1,
                 }}
               >
-                Capture photo
+                {cameraLoading ? "Opening camera..." : "Capture photo"}
               </button>
 
               <button
@@ -325,6 +424,70 @@ export default function Scanner() {
             </div>
           </div>
         </section>
+
+        {cameraOpen ? (
+          <div style={styles.cameraModal}>
+            <div style={styles.cameraCard}>
+              <div style={styles.cameraHeader}>
+                <div>
+                  <p style={styles.cameraLabel}>Camera permission required</p>
+                  <h2 style={styles.cameraTitle}>Capture your fit photo</h2>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={closeCamera}
+                  style={styles.cameraClose}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div style={styles.videoWrap}>
+                {cameraLoading ? (
+                  <div style={styles.cameraLoading}>
+                    Waiting for camera permission...
+                  </div>
+                ) : null}
+
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  style={styles.video}
+                />
+              </div>
+
+              <p style={styles.cameraTip}>
+                Stand straight in good lighting. Use a full-body or half-body
+                frame for better fit estimation.
+              </p>
+
+              <div style={styles.cameraActions}>
+                <button
+                  type="button"
+                  onClick={closeCamera}
+                  style={styles.cameraCancel}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={captureFromCamera}
+                  disabled={cameraLoading}
+                  style={{
+                    ...styles.cameraCapture,
+                    opacity: cameraLoading ? 0.72 : 1,
+                  }}
+                >
+                  Take photo
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </main>
     </StepShell>
   );
@@ -612,5 +775,128 @@ const styles = {
     border: "1px solid rgba(239,68,68,0.24)",
     color: "#991b1b",
     fontWeight: 800,
+  },
+
+  cameraModal: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 10000,
+    display: "grid",
+    placeItems: "center",
+    padding: "22px",
+    background: "rgba(15,23,42,0.62)",
+    backdropFilter: "blur(12px)",
+  },
+
+  cameraCard: {
+    width: "min(720px, 100%)",
+    borderRadius: "30px",
+    padding: "20px",
+    background: "rgba(255,255,255,0.94)",
+    border: "1px solid rgba(255,255,255,0.8)",
+    boxShadow: "0 30px 90px rgba(15,23,42,0.36)",
+  },
+
+  cameraHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "14px",
+    alignItems: "flex-start",
+    marginBottom: "14px",
+  },
+
+  cameraLabel: {
+    margin: "0 0 4px",
+    color: "#0369a1",
+    fontSize: "12px",
+    fontWeight: 950,
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+  },
+
+  cameraTitle: {
+    margin: 0,
+    color: "#0f172a",
+    fontSize: "26px",
+    letterSpacing: "-0.04em",
+  },
+
+  cameraClose: {
+    width: "42px",
+    height: "42px",
+    border: "1px solid rgba(15,23,42,0.12)",
+    borderRadius: "999px",
+    background: "#ffffff",
+    color: "#0f172a",
+    fontSize: "26px",
+    fontWeight: 900,
+    cursor: "pointer",
+    lineHeight: 1,
+  },
+
+  videoWrap: {
+    position: "relative",
+    overflow: "hidden",
+    borderRadius: "24px",
+    minHeight: "420px",
+    background: "#020617",
+  },
+
+  video: {
+    width: "100%",
+    height: "420px",
+    objectFit: "cover",
+    display: "block",
+    transform: "scaleX(-1)",
+  },
+
+  cameraLoading: {
+    position: "absolute",
+    inset: 0,
+    zIndex: 1,
+    display: "grid",
+    placeItems: "center",
+    color: "#ffffff",
+    fontWeight: 950,
+    background: "rgba(15,23,42,0.48)",
+  },
+
+  cameraTip: {
+    margin: "14px 0",
+    color: "#475569",
+    fontSize: "14px",
+    fontWeight: 700,
+    lineHeight: 1.55,
+  },
+
+  cameraActions: {
+    display: "flex",
+    gap: "12px",
+    justifyContent: "flex-end",
+    flexWrap: "wrap",
+  },
+
+  cameraCancel: {
+    minWidth: "150px",
+    border: "1px solid rgba(15,23,42,0.12)",
+    borderRadius: "999px",
+    padding: "13px 18px",
+    background: "#ffffff",
+    color: "#334155",
+    fontWeight: 950,
+    cursor: "pointer",
+  },
+
+  cameraCapture: {
+    minWidth: "170px",
+    border: "none",
+    borderRadius: "999px",
+    padding: "13px 18px",
+    background:
+      "linear-gradient(135deg, #22d3ee 0%, #a78bfa 52%, #f472b6 100%)",
+    color: "#ffffff",
+    fontWeight: 950,
+    cursor: "pointer",
+    boxShadow: "0 18px 42px rgba(14,165,233,0.28)",
   },
 };
