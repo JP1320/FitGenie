@@ -270,8 +270,7 @@ export default function LoginEmail() {
             <h1 style={styles.title}>Choose your account</h1>
 
             <p style={styles.subtitle}>
-              Continue with Gmail, use another email address manually, or
-              explore FitGenie as a guest.
+              Continue with Gmail or use another email address manually.
             </p>
           </div>
 
@@ -570,19 +569,6 @@ const styles = {
     fontWeight: 1000,
     cursor: "pointer",
     boxShadow: "0 18px 45px rgba(34,211,238,0.16)",
-  },
-
-  guestButton: {
-    width: "100%",
-    border: "1px solid rgba(250,204,21,0.42)",
-    borderRadius: "999px",
-    padding: "14px 18px",
-    background:
-      "linear-gradient(135deg, rgba(250,204,21,0.95), rgba(255,255,255,0.84))",
-    color: "#111827",
-    fontWeight: 1000,
-    cursor: "pointer",
-    boxShadow: "0 18px 45px rgba(250,204,21,0.12)",
   },
 
   secondaryButton: {
