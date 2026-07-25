@@ -249,22 +249,6 @@ export default function LoginEmail() {
     }
   }
 
-  function continueAsGuest() {
-    patch({
-      loginMode: "guest",
-      authUser: {
-        id: "guest",
-        name: "Guest User",
-        email: "",
-        picture: "",
-        provider: "guest",
-      },
-      authToken: "",
-    });
-
-    nav("/intent");
-  }
-
   function resetManualEmail() {
     setManualStep("email");
     setManualCode("");
@@ -391,26 +375,6 @@ export default function LoginEmail() {
               </div>
             </section>
 
-            <section style={styles.optionCard}>
-              <div style={styles.optionIcon}>★</div>
-
-              <div style={styles.optionContent}>
-                <h2 style={styles.optionTitle}>Continue as guest user</h2>
-
-                <p style={styles.optionText}>
-                  Explore the FitGenie flow without signing in. You can sign in
-                  later whenever you want.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={continueAsGuest}
-                  style={styles.guestButton}
-                >
-                  Explore as guest
-                </button>
-              </div>
-            </section>
           </div>
 
           {info ? <div style={styles.infoBox}>{info}</div> : null}
