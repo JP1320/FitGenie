@@ -671,17 +671,19 @@ export default function ExpertsPage() {
 
 const styles = {
   page: {
-    position: "relative",
-    minHeight: "calc(100vh - 40px)",
-    overflow: "hidden",
+    minHeight: "calc(100vh - 110px)",
+    display: "grid",
+    placeItems: "center",
+    padding: "28px",
     borderRadius: "34px",
-    padding: "34px",
-    color: "#14213d",
-    background:
-      "linear-gradient(135deg, #fff7ed 0%, #eef6ff 40%, #f5f3ff 72%, #ecfeff 100%)",
-    border: "1px solid rgba(109, 93, 252, 0.14)",
-    boxShadow: "0 24px 70px rgba(15, 23, 42, 0.12)",
+
+    backgroundImage: "url('/rainbow-cloud-bg.png?v=4')",
+    backgroundSize: "cover",
+    backgroundPosition: "center center",
+    backgroundRepeat: "no-repeat",
+    backgroundColor: "#ffffff",
   },
+  
   glowOne: {
     position: "absolute",
     width: "360px",
@@ -1305,13 +1307,13 @@ const styles = {
   },
   nextButton: {
     minWidth: "230px",
-    border: "0",
+    border:  "1px solid rgba(255,255,255,0.72)",
     borderRadius: "999px",
     padding: "14px 24px",
-    background: "linear-gradient(135deg, #6d5dfc, #00bcd4)",
-    color: "#ffffff",
-    fontWeight: 900,
+    background:  "linear-gradient(135deg, #ff7a59 0%, #facc15 52%, #fff7ad 100%)",
+    color: "#111827",
+    fontWeight: 950,
     cursor: "pointer",
-    boxShadow: "0 16px 34px rgba(79, 70, 229, 0.28)",
+    boxShadow:  "0 18px 45px rgba(255,122,89,0.34), 0 8px 24px rgba(250,204,21,0.24)",
   },
 };
