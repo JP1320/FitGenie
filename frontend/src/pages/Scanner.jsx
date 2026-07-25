@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import StepShell from "../components/StepShell";
 import { useFlowStore } from "../store/useFlowStore";
@@ -13,7 +13,11 @@ function inferFitFromImage({ file, basicProfile }) {
   let shoulderProfile = "Standard shoulder";
   let lengthPreference = "Regular length";
 
-  if (ageRange.includes("0") || ageRange.includes("4") || ageRange.includes("11")) {
+  if (
+    ageRange.includes("0") ||
+    ageRange.includes("4") ||
+    ageRange.includes("11")
+  ) {
     estimatedSize = "S";
     lengthPreference = "Short regular";
   }
@@ -68,7 +72,10 @@ function readFileAsDataUrl(file) {
 
 export default function Scanner() {
   const nav = useNavigate();
-  const fileInputRef = useRef(null);
+
+  const captureInputRef = useRef(null);
+  const uploadInputRef = useRef(null);
+  const redirectTimerRef = useRef(null);
 
   const { basicProfile, patch } = useFlowStore();
 
@@ -77,7 +84,15 @@ export default function Scanner() {
   const [scanResult, setScanResult] = useState(null);
   const [error, setError] = useState("");
 
-  async function handleFile(file) {
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current);
+      }
+    };
+  }, []);
+
+  async function handleScanFile(file, scanMode) {
     setError("");
 
     if (!file) {
@@ -85,18 +100,19 @@ export default function Scanner() {
     }
 
     if (!file.type.startsWith("image/")) {
-      setError("Please upload a valid image file.");
+      setError("Please choose a valid image file.");
       return;
     }
 
     setScanStatus("scanning");
+    setScanResult(null);
 
     try {
       const imagePreview = await readFileAsDataUrl(file);
 
       setPreview(imagePreview);
 
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      await new Promise((resolve) => setTimeout(resolve, 1300));
 
       const inferredFit = inferFitFromImage({
         file,
@@ -109,6 +125,8 @@ export default function Scanner() {
       patch({
         scanner: {
           completed: true,
+          skipped: false,
+          scanMode,
           imagePreview,
           scannedAt: new Date().toISOString(),
           aiFit: inferredFit,
@@ -122,21 +140,25 @@ export default function Scanner() {
           fitSource: "ai-fit-scanner",
         },
       });
+
+      redirectTimerRef.current = setTimeout(() => {
+        nav("/size-body");
+      }, 900);
     } catch (_error) {
       setScanStatus("idle");
       setError("Unable to scan this image. Please try again.");
     }
   }
 
-  function openCamera() {
-    fileInputRef.current?.click();
+  function capturePhoto() {
+    captureInputRef.current?.click();
   }
 
-  function continueToFitDetails() {
-    nav("/size-body");
+  function uploadPhoto() {
+    uploadInputRef.current?.click();
   }
 
-  function skipToManualFit() {
+  function enterFitDetailsManually() {
     patch({
       scanner: {
         completed: false,
@@ -158,21 +180,36 @@ export default function Scanner() {
             <h1 style={styles.title}>Not sure about size?</h1>
 
             <p style={styles.subtitle}>
-              Capture or upload a photo and FitGenie will create a smart fit
-              profile before you choose the look you want.
+              Capture a photo, upload an existing photo, or enter your fit
+              details manually. FitGenie will use this information to understand
+              your size and outfit fit better.
             </p>
+
+            <div style={styles.mottoBox}>
+              <strong style={styles.mottoTitle}>Main FitGenie idea</strong>
+              <span style={styles.mottoText}>
+                One scan helps estimate your fit profile before outfit
+                recommendations are created.
+              </span>
+            </div>
           </div>
 
           <div style={styles.scannerShell}>
             <div style={styles.previewBox}>
               {preview ? (
-                <img src={preview} alt="AI fit scan preview" style={styles.previewImage} />
+                <img
+                  src={preview}
+                  alt="AI fit scan preview"
+                  style={styles.previewImage}
+                />
               ) : (
                 <div style={styles.placeholder}>
                   <div style={styles.scanIcon}>◎</div>
+
                   <p style={styles.placeholderTitle}>Ready to scan your fit</p>
+
                   <p style={styles.placeholderText}>
-                    Use a clear full or half-body photo with good lighting.
+                    Use a clear full-body or half-body photo with good lighting.
                   </p>
                 </div>
               )}
@@ -183,14 +220,35 @@ export default function Scanner() {
                   <p style={styles.scanText}>Scanning fit profile...</p>
                 </div>
               ) : null}
+
+              {scanStatus === "complete" ? (
+                <div style={styles.completeOverlay}>
+                  <div style={styles.completeIcon}>✓</div>
+                  <p style={styles.completeText}>
+                    Fit profile created. Moving to fit details...
+                  </p>
+                </div>
+              ) : null}
             </div>
 
             <input
-              ref={fileInputRef}
+              ref={captureInputRef}
               type="file"
               accept="image/*"
               capture="environment"
-              onChange={(event) => handleFile(event.target.files?.[0])}
+              onChange={(event) =>
+                handleScanFile(event.target.files?.[0], "capture")
+              }
+              style={{ display: "none" }}
+            />
+
+            <input
+              ref={uploadInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(event) =>
+                handleScanFile(event.target.files?.[0], "upload")
+              }
               style={{ display: "none" }}
             />
 
@@ -198,17 +256,23 @@ export default function Scanner() {
               <div style={styles.resultBox}>
                 <div style={styles.resultItem}>
                   <span style={styles.resultLabel}>Estimated size</span>
-                  <strong style={styles.resultValue}>{scanResult.estimatedSize}</strong>
+                  <strong style={styles.resultValue}>
+                    {scanResult.estimatedSize}
+                  </strong>
                 </div>
 
                 <div style={styles.resultItem}>
                   <span style={styles.resultLabel}>Body profile</span>
-                  <strong style={styles.resultValue}>{scanResult.bodyType}</strong>
+                  <strong style={styles.resultValue}>
+                    {scanResult.bodyType}
+                  </strong>
                 </div>
 
                 <div style={styles.resultItem}>
                   <span style={styles.resultLabel}>Suggested fit</span>
-                  <strong style={styles.resultValue}>{scanResult.fitPreference}</strong>
+                  <strong style={styles.resultValue}>
+                    {scanResult.fitPreference}
+                  </strong>
                 </div>
 
                 <div style={styles.resultItem}>
@@ -223,23 +287,41 @@ export default function Scanner() {
             {error ? <div style={styles.error}>{error}</div> : null}
 
             <div style={styles.actions}>
-              <button type="button" onClick={openCamera} style={styles.primaryButton}>
-                {preview ? "Scan another photo" : "Capture / Upload photo"}
+              <button
+                type="button"
+                onClick={capturePhoto}
+                disabled={scanStatus === "scanning"}
+                style={{
+                  ...styles.captureButton,
+                  opacity: scanStatus === "scanning" ? 0.72 : 1,
+                }}
+              >
+                Capture photo
               </button>
 
-              {scanResult ? (
-                <button
-                  type="button"
-                  onClick={continueToFitDetails}
-                  style={styles.nextButton}
-                >
-                  Continue to Fit Details
-                </button>
-              ) : (
-                <button type="button" onClick={skipToManualFit} style={styles.secondaryButton}>
-                  Enter fit manually
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={uploadPhoto}
+                disabled={scanStatus === "scanning"}
+                style={{
+                  ...styles.uploadButton,
+                  opacity: scanStatus === "scanning" ? 0.72 : 1,
+                }}
+              >
+                Upload photo
+              </button>
+
+              <button
+                type="button"
+                onClick={enterFitDetailsManually}
+                disabled={scanStatus === "scanning"}
+                style={{
+                  ...styles.manualButton,
+                  opacity: scanStatus === "scanning" ? 0.72 : 1,
+                }}
+              >
+                Enter fit details manually
+              </button>
             </div>
           </div>
         </section>
@@ -263,7 +345,7 @@ const styles = {
   },
 
   card: {
-    width: "min(920px, 100%)",
+    width: "min(940px, 100%)",
     display: "grid",
     gridTemplateColumns: "0.9fr 1.1fr",
     gap: "24px",
@@ -307,6 +389,31 @@ const styles = {
     fontSize: "16px",
     lineHeight: 1.7,
     fontWeight: 700,
+  },
+
+  mottoBox: {
+    marginTop: "20px",
+    padding: "16px",
+    borderRadius: "22px",
+    background:
+      "linear-gradient(135deg, rgba(255,255,255,0.82), rgba(240,249,255,0.72))",
+    border: "1px solid rgba(14,165,233,0.18)",
+  },
+
+  mottoTitle: {
+    display: "block",
+    color: "#0f172a",
+    fontSize: "14px",
+    fontWeight: 950,
+    marginBottom: "6px",
+  },
+
+  mottoText: {
+    display: "block",
+    color: "#475569",
+    fontSize: "14px",
+    fontWeight: 700,
+    lineHeight: 1.55,
   },
 
   scannerShell: {
@@ -397,6 +504,36 @@ const styles = {
     textShadow: "0 4px 18px rgba(0,0,0,0.38)",
   },
 
+  completeOverlay: {
+    position: "absolute",
+    inset: 0,
+    display: "grid",
+    placeItems: "center",
+    alignContent: "center",
+    gap: "10px",
+    background: "rgba(15,23,42,0.34)",
+    color: "#ffffff",
+    textAlign: "center",
+    fontWeight: 950,
+  },
+
+  completeIcon: {
+    width: "70px",
+    height: "70px",
+    display: "grid",
+    placeItems: "center",
+    borderRadius: "999px",
+    background: "linear-gradient(135deg, #22c55e, #bbf7d0)",
+    color: "#052e16",
+    fontSize: "34px",
+    boxShadow: "0 18px 42px rgba(34,197,94,0.28)",
+  },
+
+  completeText: {
+    margin: 0,
+    textShadow: "0 4px 18px rgba(0,0,0,0.38)",
+  },
+
   resultBox: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
@@ -426,47 +563,46 @@ const styles = {
   },
 
   actions: {
-    display: "flex",
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
     gap: "12px",
-    flexWrap: "wrap",
   },
 
-  primaryButton: {
-    flex: "1 1 220px",
+  captureButton: {
     border: "none",
     borderRadius: "999px",
-    padding: "14px 20px",
+    padding: "14px 18px",
     background:
-      "linear-gradient(135deg, #22d3ee 0%, #a78bfa 52%, #f472b6 100%)",
+      "linear-gradient(135deg, #22d3ee 0%, #38bdf8 45%, #a78bfa 100%)",
     color: "#ffffff",
     fontWeight: 950,
     cursor: "pointer",
     boxShadow: "0 18px 42px rgba(14,165,233,0.28)",
   },
 
-  nextButton: {
-    flex: "1 1 220px",
-    border: "1px solid rgba(255,255,255,0.72)",
+  uploadButton: {
+    border: "none",
     borderRadius: "999px",
-    padding: "14px 20px",
+    padding: "14px 18px",
+    background:
+      "linear-gradient(135deg, #f472b6 0%, #c084fc 52%, #818cf8 100%)",
+    color: "#ffffff",
+    fontWeight: 950,
+    cursor: "pointer",
+    boxShadow: "0 18px 42px rgba(192,132,252,0.24)",
+  },
+
+  manualButton: {
+    border: "1px solid rgba(15,23,42,0.12)",
+    borderRadius: "999px",
+    padding: "14px 18px",
     background:
       "linear-gradient(135deg, #ff7a59 0%, #facc15 52%, #fff7ad 100%)",
     color: "#111827",
     fontWeight: 950,
     cursor: "pointer",
     boxShadow:
-      "0 18px 45px rgba(255,122,89,0.34), 0 8px 24px rgba(250,204,21,0.24)",
-  },
-
-  secondaryButton: {
-    flex: "1 1 220px",
-    border: "1px solid rgba(15,23,42,0.12)",
-    borderRadius: "999px",
-    padding: "14px 20px",
-    background: "rgba(255,255,255,0.78)",
-    color: "#0f172a",
-    fontWeight: 950,
-    cursor: "pointer",
+      "0 18px 45px rgba(255,122,89,0.26), 0 8px 24px rgba(250,204,21,0.2)",
   },
 
   error: {
