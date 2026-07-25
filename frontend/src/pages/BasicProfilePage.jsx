@@ -138,7 +138,7 @@ export default function BasicProfilePage() {
       return;
     }
 
-    nav("/size-body");
+    nav("/camera-scan");
   }
 
   return (
