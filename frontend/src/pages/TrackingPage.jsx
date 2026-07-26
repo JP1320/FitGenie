@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import PageShell from "../components/PageShell";
@@ -123,55 +123,7 @@ export default function TrackingPage() {
   const currentStep = ORDER_STEPS[currentIndex] || ORDER_STEPS[0];
   const progressPercent = getProgressPercent(currentStatus);
 
-  const [statusMessage, setStatusMessage] = useState("");
   const [error, setError] = useState("");
-
-  const nextStep = useMemo(() => {
-    return ORDER_STEPS[currentIndex + 1] || null;
-  }, [currentIndex]);
-
-  function updateStatus(nextStatus) {
-    setError("");
-    setStatusMessage(`${nextStatus} status saved.`);
-
-    patch({
-      trackingStatus: nextStatus,
-      order: {
-        ...(state.order || {}),
-        bookingId: orderId,
-        orderId,
-        status: nextStatus,
-        timeline: buildTimeline(nextStatus),
-        updatedAt: new Date().toISOString(),
-      },
-    });
-  }
-
-  function moveToNextStatus() {
-    if (!nextStep) {
-      setStatusMessage("Order is already at the final delivery stage.");
-      return;
-    }
-
-    updateStatus(nextStep.value);
-  }
-
-  function markAsDelivered() {
-    updateStatus("Shipped / Ready for Pickup");
-
-    patch({
-      order: {
-        ...(state.order || {}),
-        bookingId: orderId,
-        orderId,
-        status: "Shipped / Ready for Pickup",
-        timeline: buildTimeline("Shipped / Ready for Pickup"),
-        deliveredAt: new Date().toISOString(),
-      },
-    });
-
-    nav("/feedback");
-  }
 
   function goToFeedback() {
     if (currentStatus !== "Shipped / Ready for Pickup") {
@@ -390,66 +342,6 @@ export default function TrackingPage() {
                 </div>
               </section>
 
-              <section style={styles.block}>
-                <div style={styles.blockHeader}>
-                  <span style={styles.blockIcon}>⚙️</span>
-
-                  <div>
-                    <h2 style={styles.blockTitle}>Update Status</h2>
-                    <p style={styles.blockText}>
-                      Demo controls for moving the order through the tracking
-                      timeline.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="tracking-status-grid" style={styles.statusGrid}>
-                  {ORDER_STEPS.map((step) => {
-                    const selected = currentStatus === step.value;
-
-                    return (
-                      <motion.button
-                        key={step.value}
-                        type="button"
-                        whileHover={{ y: -4 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => updateStatus(step.value)}
-                        style={{
-                          ...styles.statusButton,
-                          ...(selected
-                            ? {
-                                borderColor: step.accent,
-                                background: "#ffffff",
-                                boxShadow: `0 14px 30px ${step.accent}20`,
-                              }
-                            : {}),
-                        }}
-                      >
-                        <span>{step.icon}</span>
-                        <strong>{step.value}</strong>
-                      </motion.button>
-                    );
-                  })}
-                </div>
-
-                <div className="tracking-actions-grid" style={styles.quickActions}>
-                  <button
-                    type="button"
-                    onClick={moveToNextStatus}
-                    style={styles.secondaryButton}
-                  >
-                    Move to Next Status
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={markAsDelivered}
-                    style={styles.primaryButton}
-                  >
-                    Delivery Confirmed
-                  </button>
-                </div>
-              </section>
 
               <section style={styles.messageGrid}>
                 <div style={styles.messageCard}>
@@ -534,9 +426,6 @@ export default function TrackingPage() {
                 </div>
               </div>
 
-              {statusMessage ? (
-                <div style={styles.successBox}>{statusMessage}</div>
-              ) : null}
 
               <div style={styles.nextCard}>
                 <span style={styles.nextBadge}>Final step</span>
@@ -582,17 +471,9 @@ export default function TrackingPage() {
             <button
               type="button"
               onClick={goToFeedback}
-              style={styles.secondaryButton}
-            >
-              Delivery & Feedback
-            </button>
-
-            <button
-              type="button"
-              onClick={markAsDelivered}
               style={styles.nextButton}
             >
-              Continue to Feedback →
+              Delivery & Feedback →
             </button>
           </div>
         </motion.div>
