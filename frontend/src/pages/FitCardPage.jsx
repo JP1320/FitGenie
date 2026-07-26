@@ -142,8 +142,26 @@ export default function FitCardPage() {
 
               <section style={styles.primaryDetails}>
                 <div style={styles.mainNameBlock}>
-                  <span style={styles.smallLabel}>Account</span>
-                  <strong style={styles.mainName}>{getUserLabel(authUser)}</strong>
+                  <span style={styles.smallLabel}>Name</span>
+
+                  <input
+                    value={customerName}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setCustomerName(value);
+
+                      if (typeof flow.patch === "function") {
+                        flow.patch({
+                          fitCard: {
+                            ...(fitCard || {}),
+                            customerName: value,
+                          },
+                        });
+                      }
+                    }}
+                    placeholder="Type customer name here"
+                    style={styles.nameInput}
+                  />
                 </div>
 
                 <div style={styles.miniGrid}>
@@ -326,6 +344,15 @@ export default function FitCardPage() {
               ← Back to Delivery
             </button>
 
+            <button
+              type="button"
+              onClick={downloadFitCard}
+              style={styles.downloadButton}
+              disabled={downloading}
+            >
+              {downloading ? "Preparing download..." : "Download FitCard"}
+            </button>
+            
             <button
               type="button"
               onClick={() => nav("/tracking")}
