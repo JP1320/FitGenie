@@ -397,6 +397,35 @@ const styles = {
       "0 34px 90px rgba(15,23,42,0.22), inset 0 0 0 1px rgba(255,255,255,0.75)",
   },
 
+  nameInput: {
+    width: "100%",
+    border: "1px solid rgba(202,158,54,0.22)",
+    borderRadius: "16px",
+    padding: "12px 14px",
+    background: "rgba(255,255,255,0.72)",
+    color: "#111827",
+    fontSize: "18px",
+    fontWeight: 900,
+    textAlign: "center",
+    outline: "none",
+    boxSizing: "border-box",
+    fontFamily: "Georgia, 'Times New Roman', serif",
+  },
+
+  downloadButton: {
+    minWidth: "210px",
+    border: "1px solid rgba(202,158,54,0.42)",
+    borderRadius: "999px",
+    padding: "14px 22px",
+    background:
+      "linear-gradient(135deg, #fff7ad 0%, #facc15 48%, #caa03a 100%)",
+    color: "#111827",
+    fontWeight: 950,
+    cursor: "pointer",
+    boxShadow:
+      "0 18px 45px rgba(202,158,54,0.24), 0 8px 24px rgba(250,204,21,0.2)",
+  },
+ 
   topGoldWave: {
     position: "absolute",
     top: "-120px",
