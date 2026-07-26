@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useRef, useState } from "react";
+import html2canvas from "html2canvas";
 import { useNavigate } from "react-router-dom";
 import PageShell from "../components/PageShell";
 import { useFlowStore } from "../store/useFlowStore";
@@ -43,6 +44,8 @@ function getExpertLabel(selectedExpert) {
 export default function FitCardPage() {
   const nav = useNavigate();
   const flow = useFlowStore();
+  const fitCardRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
 
   const {
     authUser,
@@ -78,11 +81,40 @@ export default function FitCardPage() {
   const deliveryData = delivery || {};
   const fitCardData = fitCard || {};
 
+  const [customerName, setCustomerName] = useState(
+    fitCardData.customerName || ""
+  );
+
+  async function downloadFitCard() {
+    if (!fitCardRef.current) return;
+
+    setDownloading(true);
+
+    try {
+      const canvas = await html2canvas(fitCardRef.current, {
+        scale: 2,
+        backgroundColor: null,
+        useCORS: true,
+      });
+
+      const link = document.createElement("a");
+      const safeName = customerName
+        ? customerName.trim().replace(/[^a-z0-9]/gi, "-").toLowerCase()
+        : "fitgenie-user";
+
+      link.download = `fitgenie-fit-card-${safeName}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   return (
     <PageShell>
       <main style={styles.page}>
         <section style={styles.outer}>
-          <div style={styles.inviteCard}>
+          <div ref={fitCardRef} style={styles.inviteCard}>
             <div style={styles.topGoldWave} />
             <div style={styles.topGoldWaveTwo} />
             <div style={styles.bottomGoldWave} />
